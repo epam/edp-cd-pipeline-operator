@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cd-pipeline-handler-controller
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: cd-pipeline-handler-controller
+  template:
+    metadata:
+      labels:
+        name: cd-pipeline-handler-controller
+    spec:
+      serviceAccountName: cd-pipeline-handler-controller
+      containers:
+        - name: cd-pipeline-handler-controller
+          # Replace this with the built image name
+          image: REPLACE_IMAGE
+          command:
+          - cd-pipeline-handler-controller
+          imagePullPolicy: Always
+          env:
+            - name: WATCH_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: OPERATOR_NAME
+              value: "cd-pipeline-handler-controller"
