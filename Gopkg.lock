@@ -32,10 +32,9 @@
   version = "v1.0.0"
 
 [[projects]]
-  name = "github.com/coreos/prometheus-operator"
-  packages = ["pkg/apis/monitoring","pkg/apis/monitoring/v1","pkg/client/versioned/scheme","pkg/client/versioned/typed/monitoring/v1"]
-  revision = "72ec4b9b16ef11700724dc71fec77112536eed40"
-  version = "v0.26.0"
+  name = "github.com/bndr/gojenkins"
+  packages = ["."]
+  revision = "de43c03cf849dd63a9737df6e05791c7a176c93d"
 
 [[projects]]
   name = "github.com/davecgh/go-spew"
@@ -206,10 +205,22 @@
   version = "1.0.1"
 
 [[projects]]
-  branch = "master"
+  name = "github.com/openshift/api"
+  packages = ["build/v1"]
+  revision = "0d921e363e951d89f583292c60d013c318df64dc"
+  version = "v3.9.0"
+
+[[projects]]
+  name = "github.com/openshift/client-go"
+  packages = ["build/clientset/versioned/scheme","build/clientset/versioned/typed/build/v1"]
+  revision = "1fa528d3be060e4c7178eb69e76d37cf7e699e3c"
+  version = "v3.9.0"
+
+[[projects]]
   name = "github.com/operator-framework/operator-sdk"
-  packages = ["pkg/k8sutil","pkg/leader","pkg/log/zap","pkg/metrics","version"]
-  revision = "76d13fccc3672c0ad4eb969abb9b9885678771e4"
+  packages = ["pkg/k8sutil","version"]
+  revision = "6754b70169f1b62355516947270e33b9f73d8159"
+  version = "v0.5.0"
 
 [[projects]]
   name = "github.com/pborman/uuid"
@@ -257,7 +268,7 @@
   branch = "master"
   name = "github.com/prometheus/procfs"
   packages = ["."]
-  revision = "e22ddced71425e65e388b17b7d0289c5ea77d06e"
+  revision = "8368d24ba045f26503eb745b624d930cbe214c79"
 
 [[projects]]
   name = "github.com/rogpeppe/go-internal"
@@ -304,8 +315,8 @@
 [[projects]]
   branch = "master"
   name = "golang.org/x/net"
-  packages = ["context","context/ctxhttp","http/httpguts","http2","http2/hpack","idna"]
-  revision = "4a65cf94b67935be46fbc55ddaea48ae3f7a1471"
+  packages = ["context","context/ctxhttp","html","html/atom","http/httpguts","http2","http2/hpack","idna"]
+  revision = "1da14a5a36f220ea3f03470682b737b1dfd5de22"
 
 [[projects]]
   branch = "master"
@@ -317,7 +328,7 @@
   branch = "master"
   name = "golang.org/x/sys"
   packages = ["unix","windows"]
-  revision = "16da32be82c5df9a338c27758247c0b7b0bd8fea"
+  revision = "ebb4019f01c946537c3ea6b99f0eca5283552a8f"
 
 [[projects]]
   name = "golang.org/x/text"
@@ -335,7 +346,7 @@
   branch = "master"
   name = "golang.org/x/tools"
   packages = ["go/ast/astutil","go/gcexportdata","go/internal/gcimporter","go/internal/packagesdriver","go/packages","go/types/typeutil","imports","internal/fastwalk","internal/gopathwalk","internal/module","internal/semver"]
-  revision = "681f9ce8ac52c4ba431539a515ecb7f2ab72eca0"
+  revision = "2e9de471ebd3a3af420e4dd35a826936b94da7f6"
 
 [[projects]]
   name = "google.golang.org/appengine"
@@ -399,7 +410,7 @@
 
 [[projects]]
   name = "sigs.k8s.io/controller-runtime"
-  packages = ["pkg/cache","pkg/cache/internal","pkg/client","pkg/client/apiutil","pkg/client/config","pkg/internal/recorder","pkg/leaderelection","pkg/manager","pkg/metrics","pkg/patch","pkg/recorder","pkg/runtime/inject","pkg/runtime/log","pkg/runtime/signals","pkg/webhook/admission","pkg/webhook/admission/types","pkg/webhook/internal/metrics","pkg/webhook/types"]
+  packages = ["pkg/cache","pkg/cache/internal","pkg/client","pkg/client/apiutil","pkg/client/config","pkg/controller","pkg/event","pkg/handler","pkg/internal/controller","pkg/internal/controller/metrics","pkg/internal/recorder","pkg/leaderelection","pkg/manager","pkg/metrics","pkg/patch","pkg/predicate","pkg/reconcile","pkg/recorder","pkg/runtime/inject","pkg/runtime/log","pkg/runtime/scheme","pkg/runtime/signals","pkg/source","pkg/source/internal","pkg/webhook/admission","pkg/webhook/admission/types","pkg/webhook/internal/metrics","pkg/webhook/types"]
   revision = "12d98582e72927b6cd0123e2b4e819f9341ce62c"
   version = "v0.1.10"
 
@@ -418,6 +429,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "903667189e43e675727fd3082957bcb0d3f0483c28b378efe4f22e8a2e99d651"
+  inputs-digest = "540bd00127acb7b569774a9102a55e2d9dbc724fd0f78243ef5849751f0d9251"
   solver-name = "gps-cdcl"
   solver-version = 1

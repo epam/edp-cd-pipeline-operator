@@ -1,9 +1,10 @@
 package cdpipeline
 
 import (
-	"context"
-
 	edpv1alpha1 "cd-pipeline-handler-controller/pkg/apis/edp/v1alpha1"
+	"cd-pipeline-handler-controller/service"
+	"context"
+	"log"
 
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -12,16 +13,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
-
-var log = logf.Log.WithName("controller_cdpipeline")
-
-/**
-* USER ACTION REQUIRED: This is a scaffold file intended for the user to modify with their own Controller
-* business logic.  Delete these comments after modifying this file.*
- */
 
 // Add creates a new CDPipeline Controller and adds it to the Manager. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
@@ -63,14 +56,11 @@ type ReconcileCDPipeline struct {
 
 // Reconcile reads that state of the cluster for a CDPipeline object and makes changes based on the state read
 // and what is in the CDPipeline.Spec
-// TODO(user): Modify this Reconcile function to implement your Controller logic.  This example creates
-// a Pod as an example
 // Note:
 // The Controller will requeue the Request to be processed again if the returned error is non-nil or
 // Result.Requeue is true, otherwise upon completion it will remove the work from the queue.
 func (r *ReconcileCDPipeline) Reconcile(request reconcile.Request) (reconcile.Result, error) {
-	reqLogger := log.WithValues("Request.Namespace", request.Namespace, "Request.Name", request.Name)
-	reqLogger.Info("Reconciling CDPipeline")
+	log.Println("Reconciling CDPipeline")
 
 	// Fetch the CDPipeline instance
 	instance := &edpv1alpha1.CDPipeline{}
@@ -86,6 +76,15 @@ func (r *ReconcileCDPipeline) Reconcile(request reconcile.Request) (reconcile.Re
 		return reconcile.Result{}, err
 	}
 
+	log.Printf("CDPipeline: %v", instance)
 
+
+	err = service.CreateCDPipeline(instance)
+	if err != nil {
+		log.Printf("[ERROR] Creation of CD pipeline was unsuccessful. %v", err)
+	}
+	_ = r.client.Update(context.TODO(), instance)
+
+	log.Printf("Reconciling CD pipeline %v/%v has been finished", request.Namespace, request.Name)
 	return reconcile.Result{}, nil
 }

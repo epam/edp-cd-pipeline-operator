@@ -1,7 +1,10 @@
 apiVersion: edp.epam.com/v1alpha1
 kind: CDPipeline
 metadata:
-  name: example-cdpipeline
+  name: cdpipeline
 spec:
-  # Add fields here
-  size: 3
+  name: "test"
+  codebaseBranch: ["release1", "release2", "release3"]
+status:
+  status: "initialized"
+  lastTimeUpdated: 0001-01-01T00:00:00Z

@@ -12,19 +12,15 @@ spec:
       labels:
         name: cd-pipeline-handler-controller
     spec:
-      serviceAccountName: cd-pipeline-handler-controller
+      serviceAccountName: edp
       containers:
         - name: cd-pipeline-handler-controller
           # Replace this with the built image name
           image: REPLACE_IMAGE
-          command:
-          - cd-pipeline-handler-controller
           imagePullPolicy: Always
           env:
             - name: WATCH_NAMESPACE
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.namespace
+              value: REPLACE_VALUE
             - name: POD_NAME
               valueFrom:
                 fieldRef:
