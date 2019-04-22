@@ -1,4 +1,5 @@
 # Temporary Build Files
+Gopkg.lock
 build/_output
 build/_test
 vendor/*

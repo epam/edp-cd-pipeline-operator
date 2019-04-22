@@ -4,13 +4,16 @@ import (
 	"bytes"
 	edpv1alpha1 "cd-pipeline-handler-controller/pkg/apis/edp/v1alpha1"
 	ClientSet "cd-pipeline-handler-controller/pkg/openshift"
+	Openshift "cd-pipeline-handler-controller/pkg/openshift"
+	"cd-pipeline-handler-controller/pkg/settings"
 	"errors"
 	"fmt"
-	"text/template"
 	"github.com/bndr/gojenkins"
+	rbacV1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"log"
 	"net/http"
+	"text/template"
 	"time"
 )
 
@@ -37,6 +40,48 @@ func CreateCDPipeline(cr *edpv1alpha1.CDPipeline) error {
 	setStatusFields(cr, StatusInProgress, time.Now())
 
 	clientSet := ClientSet.CreateOpenshiftClients()
+
+	edpName, err := settings.GetUserSettingConfigMap(clientSet, cr.Namespace, "edp_name")
+	if err != nil {
+		rollback(cr)
+		return err
+	}
+
+	err = Openshift.CreateProject(clientSet, cr.Name, edpName)
+	if err != nil {
+		rollback(cr)
+		return err
+	}
+
+	err = Openshift.CreateRoleBinding(
+		clientSet,
+		edpName,
+		edpName+"-"+cr.Name,
+		rbacV1.RoleRef{Name: "admin", APIGroup: "rbac.authorization.k8s.io", Kind: "ClusterRole"},
+		[]rbacV1.Subject{
+			{Kind: "Group", Name: edpName + "-edp-super-admin", APIGroup: "rbac.authorization.k8s.io"},
+			{Kind: "Group", Name: edpName + "-edp-admin", APIGroup: "rbac.authorization.k8s.io"},
+		},
+	)
+	if err != nil {
+		rollback(cr)
+		return err
+	}
+
+	err = Openshift.CreateRoleBinding(
+		clientSet,
+		edpName,
+		edpName+"-"+cr.Name,
+		rbacV1.RoleRef{Name: "view", APIGroup: "rbac.authorization.k8s.io", Kind: "ClusterRole"},
+		[]rbacV1.Subject{
+			{Kind: "Group", Name: edpName + "-edp-view", APIGroup: "rbac.authorization.k8s.io"},
+		},
+	)
+	if err != nil {
+		rollback(cr)
+		return err
+	}
+
 	jenkinsUrl := fmt.Sprintf("http://jenkins.%s:8080", cr.Namespace)
 	jenkinsToken, jenkinsUsername, err := getJenkinsCreds(clientSet, cr.Namespace)
 	if err != nil {
@@ -89,7 +134,7 @@ func initJenkins(url string, username string, token string) (*Jenkins, error) {
 
 func createFolder(jenkins Jenkins, name string) (*gojenkins.Folder, error) {
 	folderPostfix := "-cd-pipeline"
-	log.Printf("Start creating folder %v in Jenkins for CD pipeline", name + folderPostfix)
+	log.Printf("Start creating folder %v in Jenkins for CD pipeline", name+folderPostfix)
 
 	folder, err := jenkins.client.CreateFolder(name + folderPostfix)
 	if err != nil {
