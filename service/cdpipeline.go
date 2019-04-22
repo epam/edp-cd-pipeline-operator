@@ -88,9 +88,10 @@ func initJenkins(url string, username string, token string) (*Jenkins, error) {
 }
 
 func createFolder(jenkins Jenkins, name string) (*gojenkins.Folder, error) {
-	log.Printf("Start creating folder %v in Jenkins for CD pipeline", name)
+	folderPostfix := "-cd-pipeline"
+	log.Printf("Start creating folder %v in Jenkins for CD pipeline", name + folderPostfix)
 
-	folder, err := jenkins.client.CreateFolder(name)
+	folder, err := jenkins.client.CreateFolder(name + folderPostfix)
 	if err != nil {
 		return nil, err
 	}
