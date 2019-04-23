@@ -81,7 +81,7 @@ func (r *ReconcileCDPipeline) Reconcile(request reconcile.Request) (reconcile.Re
 
 	err = service.CreateCDPipeline(instance)
 	if err != nil {
-		log.Printf("[ERROR] Creation of CD pipeline was unsuccessful. %v", err)
+		log.Print(err)
 	}
 	_ = r.client.Update(context.TODO(), instance)
 
