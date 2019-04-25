@@ -59,8 +59,9 @@ func CreateCDPipeline(cr *edpv1alpha1.CDPipeline) error {
 		edpName+"-"+cr.Name,
 		rbacV1.RoleRef{Name: "admin", APIGroup: "rbac.authorization.k8s.io", Kind: "ClusterRole"},
 		[]rbacV1.Subject{
-			{Kind: "Group", Name: edpName + "-edp-super-admin", APIGroup: "rbac.authorization.k8s.io"},
-			{Kind: "Group", Name: edpName + "-edp-admin", APIGroup: "rbac.authorization.k8s.io"},
+			{Kind: "Group", Name: edpName + "-edp-super-admin"},
+			{Kind: "Group", Name: edpName + "-edp-admin"},
+			{Kind: "ServiceAccount", Name: "jenkins", Namespace: edpName + "-edp-cicd"},
 		},
 	)
 	if err != nil {
@@ -74,7 +75,7 @@ func CreateCDPipeline(cr *edpv1alpha1.CDPipeline) error {
 		edpName+"-"+cr.Name,
 		rbacV1.RoleRef{Name: "view", APIGroup: "rbac.authorization.k8s.io", Kind: "ClusterRole"},
 		[]rbacV1.Subject{
-			{Kind: "Group", Name: edpName + "-edp-view", APIGroup: "rbac.authorization.k8s.io"},
+			{Kind: "Group", Name: edpName + "-edp-view"},
 		},
 	)
 	if err != nil {
