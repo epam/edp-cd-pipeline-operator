@@ -4,11 +4,12 @@ metadata:
   name: team-a-sit
 spec:
   name: "sit"
-  cdPipeline: "team-a"
+  cdPipeline: "test"
   description: "SIT environment for dedicated team"
   qualityGate: "manual"
   triggerType: "is-changed"
-  input: "build"
+  order: 1
+  jenkinsStep: "build"
 status:
   status: "initialized"
   lastTimeUpdated: 0001-01-01T00:00:00Z

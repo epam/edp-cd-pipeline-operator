@@ -11,13 +11,13 @@ import (
 	"strconv"
 )
 
-func CreateProject(clientSet *ClientSet, cdPipelineName string, edpName string) error {
+func CreateProject(clientSet *ClientSet, projectName string, projectDescription string) error {
 	_, err := clientSet.ProjectClient.ProjectRequests().Create(
 		&projectV1.ProjectRequest{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: edpName + "-" + cdPipelineName,
+				Name: projectName,
 			},
-			Description: "Deploy project for CD pipeline " + cdPipelineName,
+			Description: projectDescription,
 		},
 	)
 
@@ -27,7 +27,7 @@ func CreateProject(clientSet *ClientSet, cdPipelineName string, edpName string) 
 		return errors.New(errorMsg)
 	}
 
-	log.Printf("Project %v has been created", edpName+"-"+cdPipelineName)
+	log.Printf("Project %v has been created in openshift", projectName)
 	return nil
 }
 

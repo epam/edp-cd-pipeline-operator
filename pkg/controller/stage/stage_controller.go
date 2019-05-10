@@ -1,8 +1,11 @@
 package stage
 
 import (
+	"cd-pipeline-handler-controller/service"
 	"context"
+	"k8s.io/apimachinery/pkg/types"
 	"log"
+	"time"
 
 	edpv1alpha1 "cd-pipeline-handler-controller/pkg/apis/edp/v1alpha1"
 
@@ -76,9 +79,41 @@ func (r *ReconcileStage) Reconcile(request reconcile.Request) (reconcile.Result,
 		return reconcile.Result{}, err
 	}
 
+	cdPipeline, err := r.getCdPipeline(*instance)
+
+	if err != nil {
+		log.Printf("[ERROR] Cannot get CD pipeline. Reason: %s", err)
+		return reconcile.Result{RequeueAfter: 10 * time.Second}, err
+	}
+
+	if cdPipeline.Status.Status != service.StatusFinished {
+		log.Printf("[ERROR] CD pipeline %s is not ready yet.", cdPipeline.Name)
+		return reconcile.Result{RequeueAfter: 10 * time.Second}, nil
+	}
+
 	log.Printf("Stage: %v", instance)
+
+	err = service.CreateStage(instance)
+	if err != nil {
+		log.Print(err)
+	}
+	_ = r.client.Update(context.TODO(), instance)
 
 
 	log.Printf("Reconciling Stage %v/%v has been finished", request.Namespace, request.Name)
 	return reconcile.Result{}, nil
+}
+
+func (r *ReconcileStage) getCdPipeline(pipeline edpv1alpha1.Stage) (*edpv1alpha1.CDPipeline, error) {
+	instance := &edpv1alpha1.CDPipeline{}
+	err := r.client.Get(context.TODO(), types.NamespacedName{
+		Namespace: pipeline.Namespace,
+		Name:      pipeline.Spec.CdPipeline,
+	}, instance)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return instance, nil
 }

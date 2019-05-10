@@ -1,28 +1,15 @@
 package service
 
 import (
-	"bytes"
 	edpv1alpha1 "cd-pipeline-handler-controller/pkg/apis/edp/v1alpha1"
+	jenkinsClient "cd-pipeline-handler-controller/pkg/jenkins"
 	ClientSet "cd-pipeline-handler-controller/pkg/openshift"
-	Openshift "cd-pipeline-handler-controller/pkg/openshift"
-	"cd-pipeline-handler-controller/pkg/settings"
 	"errors"
 	"fmt"
-	"github.com/bndr/gojenkins"
-	rbacV1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"log"
-	"net/http"
-	"text/template"
 	"time"
 )
-
-type Jenkins struct {
-	client   gojenkins.Jenkins
-	Url      string
-	Username string
-	Token    string
-}
 
 const (
 	StatusInit       = "initialized"
@@ -37,153 +24,32 @@ func CreateCDPipeline(cr *edpv1alpha1.CDPipeline) error {
 		return errors.New(fmt.Sprintf("CD Pipeline %v is not in init status. Skipped", cr.Spec.Name))
 	}
 
-	setStatusFields(cr, StatusInProgress, time.Now())
+	setCdPipelineStatusFields(cr, StatusInProgress, time.Now())
 
 	clientSet := ClientSet.CreateOpenshiftClients()
-
-	edpName, err := settings.GetUserSettingConfigMap(clientSet, cr.Namespace, "edp_name")
-	if err != nil {
-		rollback(cr)
-		return err
-	}
-
-	err = Openshift.CreateProject(clientSet, cr.Name, edpName)
-	if err != nil {
-		rollback(cr)
-		return err
-	}
-
-	err = Openshift.CreateRoleBinding(
-		clientSet,
-		edpName,
-		edpName+"-"+cr.Name,
-		rbacV1.RoleRef{Name: "admin", APIGroup: "rbac.authorization.k8s.io", Kind: "ClusterRole"},
-		[]rbacV1.Subject{
-			{Kind: "Group", Name: edpName + "-edp-super-admin"},
-			{Kind: "Group", Name: edpName + "-edp-admin"},
-			{Kind: "ServiceAccount", Name: "jenkins", Namespace: edpName + "-edp-cicd"},
-		},
-	)
-	if err != nil {
-		rollback(cr)
-		return err
-	}
-
-	err = Openshift.CreateRoleBinding(
-		clientSet,
-		edpName,
-		edpName+"-"+cr.Name,
-		rbacV1.RoleRef{Name: "view", APIGroup: "rbac.authorization.k8s.io", Kind: "ClusterRole"},
-		[]rbacV1.Subject{
-			{Kind: "Group", Name: edpName + "-edp-view"},
-		},
-	)
-	if err != nil {
-		rollback(cr)
-		return err
-	}
 
 	jenkinsUrl := fmt.Sprintf("http://jenkins.%s:8080", cr.Namespace)
 	jenkinsToken, jenkinsUsername, err := getJenkinsCreds(clientSet, cr.Namespace)
 	if err != nil {
-		rollback(cr)
+		rollbackCdPipeline(cr)
 		return err
 	}
 
-	jenkins, err := initJenkins(jenkinsUrl, jenkinsUsername, jenkinsToken)
+	jenkins, err := jenkinsClient.Init(jenkinsUrl, jenkinsUsername, jenkinsToken)
 	if err != nil {
-		rollback(cr)
+		rollbackCdPipeline(cr)
 		return err
 	}
 
-	folder, err := createFolder(*jenkins, cr.Name)
+	_, err = jenkins.CreateFolder(cr.Name + "-cd-pipeline")
 	if err != nil {
-		rollback(cr)
+		rollbackCdPipeline(cr)
 		return err
 	}
 
-	err = createCDPipeline(*jenkins, cr.Name, folder.GetName())
-	if err != nil {
-		rollback(cr)
-		return err
-	}
-
-	setStatusFields(cr, StatusFinished, time.Now())
+	setCdPipelineStatusFields(cr, StatusFinished, time.Now())
 	log.Printf("CD pipeline has been created. Status: %v", StatusFinished)
 	return nil
-}
-
-func initJenkins(url string, username string, token string) (*Jenkins, error) {
-	log.Printf("Start initializing client for Jenkins: %v", url)
-
-	jenkins := gojenkins.CreateJenkins(&http.Client{}, url, username, token)
-
-	_, err := jenkins.Init()
-	if err != nil {
-		return nil, err
-	}
-
-	log.Printf("Client for Jenkins %v has been initialized", url)
-
-	return &Jenkins{
-		client:   *jenkins,
-		Url:      url,
-		Username: username,
-		Token:    token,
-	}, nil
-}
-
-func createFolder(jenkins Jenkins, name string) (*gojenkins.Folder, error) {
-	folderPostfix := "-cd-pipeline"
-	log.Printf("Start creating folder %v in Jenkins for CD pipeline", name+folderPostfix)
-
-	folder, err := jenkins.client.CreateFolder(name + folderPostfix)
-	if err != nil {
-		return nil, err
-	}
-
-	log.Printf("Folder %v in Jenkins for CD pipeline has been created", name)
-	return folder, nil
-}
-
-func createCDPipeline(jenkins Jenkins, name string, folder string) error {
-	log.Printf("Start creating CD pipeline %v in jenkins", name)
-	jobFullName := fmt.Sprintf("%v/job/%v", folder, name)
-
-	job, err := getJenkinsJob(jenkins, jobFullName)
-	if err != nil {
-		return err
-	}
-
-	cdPipelineConfig, err := createCDPipelineConfig(name)
-	if err != nil {
-		return err
-	}
-
-	if job != nil {
-		log.Printf("CD pipeline with name %v exist in jenkins. Creation skipped.", name)
-	} else {
-		_, err = jenkins.client.CreateJobInFolder(*cdPipelineConfig, name, folder)
-		if err != nil {
-			return err
-		}
-
-		log.Printf("CD pipeline %v has been created", name)
-	}
-
-	return nil
-}
-
-func getJenkinsJob(jenkins Jenkins, name string) (*gojenkins.Job, error) {
-	log.Printf("Start getting CD Pipeline %v in Jenkins", name)
-	job, err := jenkins.client.GetJob(name)
-	if err != nil {
-		return nil, checkErrForNotFound(err)
-	}
-
-	log.Printf("CD Pipeline %v in Jenkins has been recieved", name)
-
-	return job, nil
 }
 
 func getJenkinsCreds(clientSet *ClientSet.ClientSet, namespace string) (string, string, error) {
@@ -200,41 +66,12 @@ func getJenkinsCreds(clientSet *ClientSet.ClientSet, namespace string) (string, 
 	return string(jenkinsTokenSecret.Data["token"]), string(jenkinsTokenSecret.Data["username"]), nil
 }
 
-func rollback(cr *edpv1alpha1.CDPipeline) {
-	setStatusFields(cr, StatusFailed, time.Now())
+func rollbackCdPipeline(cr *edpv1alpha1.CDPipeline) {
+	setCdPipelineStatusFields(cr, StatusFailed, time.Now())
 }
 
-func setStatusFields(cr *edpv1alpha1.CDPipeline, status string, time time.Time) {
+func setCdPipelineStatusFields(cr *edpv1alpha1.CDPipeline, status string, time time.Time) {
 	cr.Status.Status = status
 	cr.Status.LastTimeUpdated = time
 	log.Printf("Status for CD pipeline %v has been updated to '%v' at %v.", cr.Spec.Name, status, time)
-}
-
-func checkErrForNotFound(err error) error {
-	if err.Error() == "404" {
-		log.Printf("CD pipeline in Jenkins hasn't been found")
-		return nil
-	}
-	return err
-}
-
-func createCDPipelineConfig(name string) (*string, error) {
-	var cdPipelineBuffer bytes.Buffer
-
-	jenkinsName := map[string]interface{}{
-		"name": name,
-	}
-
-	tmpl, err := template.New("cd-pipeline.tmpl").ParseFiles("/usr/local/bin/pipelines/cd-pipeline.tmpl")
-	if err != nil {
-		return nil, err
-	}
-
-	if err := tmpl.Execute(&cdPipelineBuffer, jenkinsName); err != nil {
-		return nil, err
-	}
-
-	cdPipeline := cdPipelineBuffer.String()
-
-	return &cdPipeline, nil
 }
