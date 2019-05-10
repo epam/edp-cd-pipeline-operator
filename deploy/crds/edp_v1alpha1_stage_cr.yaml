@@ -1,0 +1,14 @@
+apiVersion: edp.epam.com/v1alpha1
+kind: Stage
+metadata:
+  name: team-a-sit
+spec:
+  name: "sit"
+  cdPipeline: "team-a"
+  description: "SIT environment for dedicated team"
+  qualityGate: "manual"
+  triggerType: "is-changed"
+  input: "build"
+status:
+  status: "initialized"
+  lastTimeUpdated: 0001-01-01T00:00:00Z

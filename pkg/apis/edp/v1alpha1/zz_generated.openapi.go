@@ -16,6 +16,9 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"cd-pipeline-handler-controller/pkg/apis/edp/v1alpha1.CDPipeline":       schema_pkg_apis_edp_v1alpha1_CDPipeline(ref),
 		"cd-pipeline-handler-controller/pkg/apis/edp/v1alpha1.CDPipelineSpec":   schema_pkg_apis_edp_v1alpha1_CDPipelineSpec(ref),
 		"cd-pipeline-handler-controller/pkg/apis/edp/v1alpha1.CDPipelineStatus": schema_pkg_apis_edp_v1alpha1_CDPipelineStatus(ref),
+		"cd-pipeline-handler-controller/pkg/apis/edp/v1alpha1.Stage":            schema_pkg_apis_edp_v1alpha1_Stage(ref),
+		"cd-pipeline-handler-controller/pkg/apis/edp/v1alpha1.StageSpec":        schema_pkg_apis_edp_v1alpha1_StageSpec(ref),
+		"cd-pipeline-handler-controller/pkg/apis/edp/v1alpha1.StageStatus":      schema_pkg_apis_edp_v1alpha1_StageStatus(ref),
 	}
 }
 
@@ -67,7 +70,29 @@ func schema_pkg_apis_edp_v1alpha1_CDPipelineSpec(ref common.ReferenceCallback) c
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "CDPipelineSpec defines the desired state of CDPipeline",
-				Properties:  map[string]spec.Schema{},
+				Properties: map[string]spec.Schema{
+					"name": {
+						SchemaProps: spec.SchemaProps{
+							Description: "INSERT ADDITIONAL SPEC FIELDS - desired state of cluster Important: Run \"operator-sdk generate k8s\" to regenerate code after modifying this file Add custom validation using kubebuilder tags: https://book.kubebuilder.io/beyond_basics/generating_crd.html",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"codebaseBranch": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Type:   []string{"string"},
+										Format: "",
+									},
+								},
+							},
+						},
+					},
+				},
+				Required: []string{"name", "codebaseBranch"},
 			},
 		},
 		Dependencies: []string{},
@@ -79,6 +104,88 @@ func schema_pkg_apis_edp_v1alpha1_CDPipelineStatus(ref common.ReferenceCallback)
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "CDPipelineStatus defines the observed state of CDPipeline",
+				Properties: map[string]spec.Schema{
+					"lastTimeUpdated": {
+						SchemaProps: spec.SchemaProps{
+							Description: "INSERT ADDITIONAL STATUS FIELD - define observed state of cluster Important: Run \"operator-sdk generate k8s\" to regenerate code after modifying this file Add custom validation using kubebuilder tags: https://book.kubebuilder.io/beyond_basics/generating_crd.html",
+							Type:        []string{"string"},
+							Format:      "date-time",
+						},
+					},
+					"status": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+				},
+				Required: []string{"lastTimeUpdated", "status"},
+			},
+		},
+		Dependencies: []string{},
+	}
+}
+
+func schema_pkg_apis_edp_v1alpha1_Stage(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "Stage is the Schema for the stages API",
+				Properties: map[string]spec.Schema{
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"apiVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"metadata": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"),
+						},
+					},
+					"spec": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("cd-pipeline-handler-controller/pkg/apis/edp/v1alpha1.StageSpec"),
+						},
+					},
+					"status": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("cd-pipeline-handler-controller/pkg/apis/edp/v1alpha1.StageStatus"),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"cd-pipeline-handler-controller/pkg/apis/edp/v1alpha1.StageSpec", "cd-pipeline-handler-controller/pkg/apis/edp/v1alpha1.StageStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+	}
+}
+
+func schema_pkg_apis_edp_v1alpha1_StageSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "StageSpec defines the desired state of Stage",
+				Properties:  map[string]spec.Schema{},
+			},
+		},
+		Dependencies: []string{},
+	}
+}
+
+func schema_pkg_apis_edp_v1alpha1_StageStatus(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "StageStatus defines the observed state of Stage",
 				Properties:  map[string]spec.Schema{},
 			},
 		},
