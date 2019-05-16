@@ -35,7 +35,7 @@ func CreateStage(cr *edpv1alpha1.Stage) error {
 		return err
 	}
 
-	err = setupJenkins(clientSet, cr.Namespace, cr.Name, cr.Spec.CdPipeline)
+	err = setupJenkins(clientSet, cr.Namespace, cr.Spec.Name, cr.Spec.CdPipeline)
 	if err != nil {
 		rollbackStage(cr)
 		return err
