@@ -29,7 +29,7 @@ func CreateStage(cr *edpv1alpha1.Stage) error {
 		return err
 	}
 
-	err = setupOpenshift(clientSet, edpName, cr.Spec.CdPipeline, cr.Name)
+	err = setupOpenshift(clientSet, edpName, cr.Spec.CdPipeline, cr.Spec.Name)
 	if err != nil {
 		rollbackStage(cr)
 		return err
