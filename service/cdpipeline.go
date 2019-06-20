@@ -19,30 +19,37 @@ const (
 )
 
 func CreateCDPipeline(cr *edpv1alpha1.CDPipeline) error {
+	log.Printf("Start creating CD Pipeline: %v", cr.Spec.Name)
 	if cr.Status.Status != StatusInit {
 		log.Printf("CD Pipeline %v is not in init status. Skipped", cr.Spec.Name)
 		return errors.New(fmt.Sprintf("CD Pipeline %v is not in init status. Skipped", cr.Spec.Name))
 	}
+	log.Printf("CD Pipeline %v has 'init' status", cr.Spec.Name)
 
 	setCdPipelineStatusFields(cr, StatusInProgress, time.Now())
 
 	clientSet := ClientSet.CreateOpenshiftClients()
 
 	jenkinsUrl := fmt.Sprintf("http://jenkins.%s:8080", cr.Namespace)
+	log.Printf("Jenkins URL has been generated: %v", jenkinsUrl)
+
 	jenkinsToken, jenkinsUsername, err := getJenkinsCreds(clientSet, cr.Namespace)
 	if err != nil {
+		log.Println("Couldn't fetch Jenkins creds")
 		rollbackCdPipeline(cr)
 		return err
 	}
 
 	jenkins, err := jenkinsClient.Init(jenkinsUrl, jenkinsUsername, jenkinsToken)
 	if err != nil {
+		log.Println("Couldn't initialize Jenkins client")
 		rollbackCdPipeline(cr)
 		return err
 	}
 
 	_, err = jenkins.CreateFolder(cr.Name + "-cd-pipeline")
 	if err != nil {
+		log.Println("Couldn't create folder for Jenkins")
 		rollbackCdPipeline(cr)
 		return err
 	}

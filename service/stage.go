@@ -15,28 +15,33 @@ import (
 )
 
 func CreateStage(cr *edpv1alpha1.Stage) error {
+	log.Printf("Start creating Stage %v for CD Pipeline %v", cr.Spec.Name, cr.Spec.CdPipeline)
 	if cr.Status.Status != StatusInit {
 		log.Printf("Stage %v is not in init status. Skipped", cr.Spec.Name)
 		return errors.New(fmt.Sprintf("Stage %v is not in init status. Skipped", cr.Spec.Name))
 	}
+	log.Printf("Stage %v has 'init' status", cr.Spec.Name)
 
 	setStageStatusFields(cr, StatusInProgress, time.Now())
 
 	clientSet := Openshift.CreateOpenshiftClients()
 	edpName, err := settings.GetUserSettingConfigMap(clientSet, cr.Namespace, "edp_name")
 	if err != nil {
+		log.Println("Couldn't fetch user settings config map")
 		rollbackStage(cr)
 		return err
 	}
 
 	err = setupOpenshift(clientSet, edpName, cr.Spec.CdPipeline, cr.Spec.Name)
 	if err != nil {
+		log.Println("Couldn't setup Openshift client")
 		rollbackStage(cr)
 		return err
 	}
 
 	err = setupJenkins(clientSet, cr.Namespace, cr.Spec.Name, cr.Spec.CdPipeline)
 	if err != nil {
+		log.Println("Couldn't setup Jenkins")
 		rollbackStage(cr)
 		return err
 	}
