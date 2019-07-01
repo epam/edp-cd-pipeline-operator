@@ -1,14 +1,14 @@
 package openshift
 
 import (
+	"crypto/rand"
 	"errors"
 	"fmt"
 	projectV1 "github.com/openshift/api/project/v1"
 	rbacV1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"log"
-	"math/rand"
-	"strconv"
+	"math/big"
 )
 
 func CreateProject(clientSet *ClientSet, projectName string, projectDescription string) error {
@@ -32,10 +32,11 @@ func CreateProject(clientSet *ClientSet, projectName string, projectDescription 
 }
 
 func CreateRoleBinding(clientSet *ClientSet, edpName string, namespace string, roleRef rbacV1.RoleRef, subjects []rbacV1.Subject) error {
-	_, err := clientSet.RbacClient.RoleBindings(namespace).Create(
+	randPostfix, err := rand.Int(rand.Reader, big.NewInt(10000))
+	_, err = clientSet.RbacClient.RoleBindings(namespace).Create(
 		&rbacV1.RoleBinding{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: edpName + "-" + roleRef.Name + "-" + strconv.Itoa(rand.Int()),
+				Name: fmt.Sprintf("%s-%s-%d", edpName, roleRef.Name, randPostfix),
 			},
 			RoleRef:  roleRef,
 			Subjects: subjects,
