@@ -6,6 +6,22 @@
     <keepDependencies>false</keepDependencies>
     <properties>
         <org.jenkinsci.plugins.workflow.job.properties.DisableConcurrentBuildsJobProperty/>
+        <hudson.model.ParametersDefinitionProperty>
+          <parameterDefinitions>
+            <hudson.model.StringParameterDefinition>
+              <name>MAX_PARALLEL_APPS</name>
+              <description></description>
+              <defaultValue>2</defaultValue>
+              <trim>false</trim>
+            </hudson.model.StringParameterDefinition>
+            <hudson.model.StringParameterDefinition>
+              <name>MAX_PARALLEL_SERVICES</name>
+              <description></description>
+              <defaultValue>2</defaultValue>
+              <trim>false</trim>
+            </hudson.model.StringParameterDefinition>
+           </parameterDefinitions>
+        </hudson.model.ParametersDefinitionProperty>
     </properties>
     <definition class="org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition" plugin="workflow-cps@2.54">
         <script>@Library([&apos;edp-library-stages&apos;, &apos;edp-library-pipelines&apos;]) _
