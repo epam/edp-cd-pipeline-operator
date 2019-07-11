@@ -82,7 +82,10 @@ func (r *ReconcileCDPipeline) Reconcile(request reconcile.Request) (reconcile.Re
 	if err != nil {
 		log.Print(err)
 	}
-	_ = r.client.Status().Update(context.TODO(), instance)
+	err = r.client.Status().Update(context.TODO(), instance)
+	if err != nil {
+		_ = r.client.Update(context.TODO(), instance)
+	}
 
 	log.Printf("Reconciling CD pipeline %v/%v has been finished", request.Namespace, request.Name)
 	return reconcile.Result{}, nil

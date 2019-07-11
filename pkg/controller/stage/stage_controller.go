@@ -97,7 +97,10 @@ func (r *ReconcileStage) Reconcile(request reconcile.Request) (reconcile.Result,
 	if err != nil {
 		log.Print(err)
 	}
-	_ = r.client.Status().Update(context.TODO(), instance)
+	err = r.client.Status().Update(context.TODO(), instance)
+	if err != nil {
+		_ = r.client.Update(context.TODO(), instance)
+	}
 
 	log.Printf("Reconciling Stage %v/%v has been finished", request.Namespace, request.Name)
 	return reconcile.Result{}, nil
