@@ -14,9 +14,10 @@ type CDPipelineSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
 	// Add custom validation using kubebuilder tags: https://book.kubebuilder.io/beyond_basics/generating_crd.html
-	Name               string   `json:"name"`
-	CodebaseBranch     []string `json:"codebase_branch"`
-	ThirdPartyServices []string `json:"services"`
+	Name                  string   `json:"name"`
+	CodebaseBranch        []string `json:"codebase_branch"`
+	ThirdPartyServices    []string `json:"services"`
+	ApplicationsToPromote []string `json:"applicationsToPromote"`
 }
 
 // CDPipelineStatus defines the observed state of CDPipeline
