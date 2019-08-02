@@ -8,11 +8,10 @@ import (
 	"cd-pipeline-handler-controller/pkg/settings"
 	"errors"
 	"fmt"
+	rbacV1 "k8s.io/api/rbac/v1"
 	"log"
 	"text/template"
 	"time"
-
-	rbacV1 "k8s.io/api/rbac/v1"
 )
 
 func CreateStage(cr *edpv1alpha1.Stage) error {
@@ -93,7 +92,7 @@ func createRoleBinding(clientSet *Openshift.ClientSet, edpName string, projectNa
 			{Kind: "Group", Name: edpName + "-edp-super-admin"},
 			{Kind: "Group", Name: edpName + "-edp-admin"},
 			{Kind: "ServiceAccount", Name: "jenkins", Namespace: edpName + "-edp-cicd"},
-			{Kind: "ServiceAccount", Name: "edp-admin-console", Namespace: edpName + "-edp-cicd"},
+			{Kind: "ServiceAccount", Name: "admin-console", Namespace: edpName + "-edp-cicd"},
 		},
 	)
 	if err != nil {
