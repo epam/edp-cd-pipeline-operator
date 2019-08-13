@@ -6,15 +6,24 @@ import (
 	jenkinsClient "cd-pipeline-handler-controller/pkg/jenkins"
 	Openshift "cd-pipeline-handler-controller/pkg/openshift"
 	"cd-pipeline-handler-controller/pkg/settings"
+	"context"
 	"errors"
 	"fmt"
 	rbacV1 "k8s.io/api/rbac/v1"
 	"log"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"text/template"
 	"time"
 )
 
-func CreateStage(cr *edpv1alpha1.Stage) error {
+type CDStageService struct {
+	Resource *edpv1alpha1.Stage
+	Client   client.Client
+}
+
+func (s CDStageService) CreateStage() error {
+	cr := s.Resource
+
 	log.Printf("Start creating Stage %v for CD Pipeline %v", cr.Spec.Name, cr.Spec.CdPipeline)
 	if cr.Status.Status != StatusInit {
 		log.Printf("Stage %v is not in init status. Skipped", cr.Spec.Name)
@@ -22,43 +31,88 @@ func CreateStage(cr *edpv1alpha1.Stage) error {
 	}
 	log.Printf("Stage %v has 'init' status", cr.Spec.Name)
 
-	setStageStatusFields(cr, StatusInProgress, time.Now())
+	err := s.updateStatus(edpv1alpha1.StageStatus{
+		Status:          StatusInProgress,
+		Available:       false,
+		LastTimeUpdated: time.Now(),
+		Action:          edpv1alpha1.AcceptCDStageRegistration,
+		Result:          edpv1alpha1.Success,
+		Username:        "system",
+		Value:           "inactive",
+	})
+	if err != nil {
+		return fmt.Errorf("error has been occurred in cd_stage status update: %v", err)
+	}
 
 	clientSet := Openshift.CreateOpenshiftClients()
+
 	edpName, err := settings.GetUserSettingConfigMap(clientSet, cr.Namespace, "edp_name")
 	if err != nil {
 		log.Println("Couldn't fetch user settings config map")
-		rollbackStage(cr)
+		s.setFailedFields(edpv1alpha1.FetchingUserSettingsConfigMap, err.Error())
 		return err
 	}
 
 	err = setupOpenshift(clientSet, edpName, cr.Spec.CdPipeline, cr.Spec.Name)
 	if err != nil {
 		log.Println("Couldn't setup Openshift client")
-		rollbackStage(cr)
+		s.setFailedFields(edpv1alpha1.OpenshiftProjectCreation, err.Error())
 		return err
 	}
 
 	err = setupJenkins(clientSet, cr.Namespace, cr.Spec.Name, cr.Spec.CdPipeline)
 	if err != nil {
 		log.Println("Couldn't setup Jenkins")
-		rollbackStage(cr)
+		s.setFailedFields(edpv1alpha1.JenkinsConfiguration, err.Error())
 		return err
 	}
 
-	setStageStatusFields(cr, StatusFinished, time.Now())
+	err = s.updateStatus(edpv1alpha1.StageStatus{
+		Status:          StatusFinished,
+		Available:       true,
+		LastTimeUpdated: time.Now(),
+		Username:        "system",
+		Action:          edpv1alpha1.SetupDeploymentTemplates,
+		Result:          edpv1alpha1.Success,
+		Value:           "active",
+	})
+	if err != nil {
+		return fmt.Errorf("error has been occurred in cd_stage status update: %v", err)
+	}
+
 	log.Printf("Stage %v has been created. Status: %v", cr.Name, StatusFinished)
 	return nil
 }
 
-func rollbackStage(cr *edpv1alpha1.Stage) {
-	setStageStatusFields(cr, StatusFailed, time.Now())
+func (s CDStageService) updateStatus(status edpv1alpha1.StageStatus) error {
+	s.Resource.Status = status
+
+	err := s.Client.Status().Update(context.TODO(), s.Resource)
+	if err != nil {
+		err := s.Client.Update(context.TODO(), s.Resource)
+		if err != nil {
+			return err
+		}
+	}
+
+	log.Printf("Status for CD Stage %v is set up.", s.Resource.Name)
+
+	return nil
 }
 
-func setStageStatusFields(cr *edpv1alpha1.Stage, status string, time time.Time) {
-	cr.Status.Status = status
-	cr.Status.LastTimeUpdated = time
-	log.Printf("Status for stage %v has been updated to '%v' at %v.", cr.Spec.Name, status, time)
+func (s CDStageService) setFailedFields(action edpv1alpha1.ActionType, message string) {
+	s.Resource.Status = edpv1alpha1.StageStatus{
+		Status:          StatusFailed,
+		Available:       false,
+		LastTimeUpdated: time.Now(),
+		Username:        "system",
+		Action:          action,
+		Result:          edpv1alpha1.Error,
+		DetailedMessage: message,
+		Value:           "failed",
+	}
+
+	log.Printf("Status %v for CD Stage %v is set up.", edpv1alpha1.Error, s.Resource.Name)
 }
 
 func createStageConfig(name string) (*string, error) {

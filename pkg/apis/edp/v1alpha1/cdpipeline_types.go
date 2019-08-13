@@ -21,14 +21,36 @@ type CDPipelineSpec struct {
 	ApplicationsToPromote []string `json:"applicationsToPromote"`
 }
 
+type ActionType string
+type Result string
+
+const (
+	AcceptCDPipelineRegistration       ActionType = "accept_cd_pipeline_registration"
+	AcceptCDStageRegistration          ActionType = "accept_cd_stage_registration"
+	JenkinsConfiguration               ActionType = "jenkins_configuration"
+	FetchingUserSettingsConfigMap      ActionType = "fetching_user_settings_config_map"
+	OpenshiftProjectCreation           ActionType = "openshift_project_creation"
+	SetupInitialStructureForCDPipeline ActionType = "setup_initial_structure"
+	SetupDeploymentTemplates           ActionType = "setup_deployment_templates"
+
+	Success Result = "success"
+	Error   Result = "error"
+)
+
 // CDPipelineStatus defines the observed state of CDPipeline
 // +k8s:openapi-gen=true
 type CDPipelineStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
 	// Add custom validation using kubebuilder tags: https://book.kubebuilder.io/beyond_basics/generating_crd.html
-	LastTimeUpdated time.Time `json:"last_time_updated"`
-	Status          string    `json:"status"`
+	Available       bool       `json:"available"`
+	LastTimeUpdated time.Time  `json:"last_time_updated"`
+	Status          string     `json:"status"`
+	Username        string     `json:"username"`
+	Action          ActionType `json:"action"`
+	Result          Result     `json:"result"`
+	DetailedMessage string     `json:"detailed_message"`
+	Value           string     `json:"value"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

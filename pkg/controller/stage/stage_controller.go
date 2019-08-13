@@ -86,17 +86,25 @@ func (r *ReconcileStage) Reconcile(request reconcile.Request) (reconcile.Result,
 		return reconcile.Result{RequeueAfter: 10 * time.Second}, err
 	}
 
-	if cdPipeline.Status.Status != service.StatusFinished {
+	if !cdPipeline.Status.Available {
 		log.Printf("[ERROR] CD pipeline %s is not ready yet.", cdPipeline.Name)
 		return reconcile.Result{RequeueAfter: 10 * time.Second}, nil
 	}
 
 	log.Printf("Stage: %v", instance)
 
-	err = service.CreateStage(instance)
+	cdStageService := service.CDStageService{
+		Resource: instance,
+		Client:   r.client,
+	}
+
+	log.Printf("CD Stage service has been created.")
+
+	err = cdStageService.CreateStage()
 	if err != nil {
 		log.Print(err)
 	}
+
 	err = r.client.Status().Update(context.TODO(), instance)
 	if err != nil {
 		_ = r.client.Update(context.TODO(), instance)

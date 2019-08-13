@@ -78,10 +78,18 @@ func (r *ReconcileCDPipeline) Reconcile(request reconcile.Request) (reconcile.Re
 
 	log.Printf("CDPipeline: %v", instance)
 
-	err = service.CreateCDPipeline(instance)
+	pipelineService := service.CDPipelineService{
+		Resource: instance,
+		Client:   r.client,
+	}
+
+	log.Printf("Pipeline service has been created.")
+
+	err = pipelineService.CreateCDPipeline()
 	if err != nil {
 		log.Print(err)
 	}
+
 	err = r.client.Status().Update(context.TODO(), instance)
 	if err != nil {
 		_ = r.client.Update(context.TODO(), instance)
