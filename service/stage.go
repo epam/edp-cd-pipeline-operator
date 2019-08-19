@@ -2,10 +2,10 @@ package service
 
 import (
 	"bytes"
-	edpv1alpha1 "cd-pipeline-handler-controller/pkg/apis/edp/v1alpha1"
-	jenkinsClient "cd-pipeline-handler-controller/pkg/jenkins"
-	Openshift "cd-pipeline-handler-controller/pkg/openshift"
-	"cd-pipeline-handler-controller/pkg/settings"
+	edpv1alpha1 "cd-pipeline-operator/pkg/apis/edp/v1alpha1"
+	jenkinsClient "cd-pipeline-operator/pkg/jenkins"
+	Openshift "cd-pipeline-operator/pkg/openshift"
+	"cd-pipeline-operator/pkg/settings"
 	"errors"
 	"fmt"
 	rbacV1 "k8s.io/api/rbac/v1"

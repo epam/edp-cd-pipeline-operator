@@ -1,8 +1,8 @@
 package cdpipeline
 
 import (
-	edpv1alpha1 "cd-pipeline-handler-controller/pkg/apis/edp/v1alpha1"
-	"cd-pipeline-handler-controller/service"
+	edpv1alpha1 "cd-pipeline-operator/pkg/apis/edp/v1alpha1"
+	"cd-pipeline-operator/service"
 	"context"
 	"log"
 

@@ -1,13 +1,13 @@
 package stage
 
 import (
-	"cd-pipeline-handler-controller/service"
+	"cd-pipeline-operator/service"
 	"context"
 	"k8s.io/apimachinery/pkg/types"
 	"log"
 	"time"
 
-	edpv1alpha1 "cd-pipeline-handler-controller/pkg/apis/edp/v1alpha1"
+	edpv1alpha1 "cd-pipeline-operator/pkg/apis/edp/v1alpha1"
 
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"

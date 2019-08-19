@@ -1,7 +1,7 @@
 package settings
 
 import (
-	"cd-pipeline-handler-controller/pkg/openshift"
+	"cd-pipeline-operator/pkg/openshift"
 	"errors"
 	"fmt"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
