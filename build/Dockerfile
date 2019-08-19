@@ -1,12 +1,12 @@
 FROM alpine:3.8
 
-ENV OPERATOR=/usr/local/bin/cd-pipeline-handler-controller \
+ENV OPERATOR=/usr/local/bin/cd-pipeline-operator \
     USER_UID=1001 \
-    USER_NAME=cd-pipeline-handler-controller \
-    HOME=/home/cd-pipeline-handler-controller
+    USER_NAME=cd-pipeline-operator \
+    HOME=/home/cd-pipeline-operator
 
 # install operator binary
-COPY cd-pipeline-handler-controller ${OPERATOR}
+COPY cd-pipeline-operator ${OPERATOR}
 
 COPY bin /usr/local/bin
 COPY pipelines /usr/local/bin/pipelines

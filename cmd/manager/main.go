@@ -7,8 +7,8 @@ import (
 	"os"
 	"runtime"
 
-	"cd-pipeline-handler-controller/pkg/apis"
-	"cd-pipeline-handler-controller/pkg/controller"
+	"cd-pipeline-operator/pkg/apis"
+	"cd-pipeline-operator/pkg/controller"
 
 	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
 	sdkVersion "github.com/operator-framework/operator-sdk/version"
@@ -30,7 +30,7 @@ func main() {
 
 	namespace, err := k8sutil.GetWatchNamespace()
 	if err != nil {
-		log.Fatalf( "Failed to get watch namespace. %v", err)
+		log.Fatalf("Failed to get watch namespace. %v", err)
 		os.Exit(1)
 	}
 

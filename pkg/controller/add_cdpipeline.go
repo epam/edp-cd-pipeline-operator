@@ -1,7 +1,7 @@
 package controller
 
 import (
-	"cd-pipeline-handler-controller/pkg/controller/cdpipeline"
+	"cd-pipeline-operator/pkg/controller/cdpipeline"
 )
 
 func init() {

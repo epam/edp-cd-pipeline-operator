@@ -1,20 +1,20 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: cd-pipeline-handler-controller-v2
+  name: cd-pipeline-operator-v2
 spec:
   replicas: 1
   selector:
     matchLabels:
-      name: cd-pipeline-handler-controller-v2
+      name: cd-pipeline-operator-v2
   template:
     metadata:
       labels:
-        name: cd-pipeline-handler-controller-v2
+        name: cd-pipeline-operator-v2
     spec:
       serviceAccountName: edp
       containers:
-        - name: cd-pipeline-handler-controller-v2
+        - name: cd-pipeline-operator-v2
           # Replace this with the built image name
           image: REPLACE_IMAGE
           imagePullPolicy: Always
@@ -26,4 +26,4 @@ spec:
                 fieldRef:
                   fieldPath: metadata.name
             - name: OPERATOR_NAME
-              value: "cd-pipeline-handler-controller-v2"
+              value: "cd-pipeline-operator-v2"
