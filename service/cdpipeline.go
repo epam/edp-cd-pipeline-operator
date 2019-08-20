@@ -35,15 +35,17 @@ func (s CDPipelineService) CreateCDPipeline() error {
 	}
 	log.Printf("CD Pipeline %v has 'init' status", cr.Spec.Name)
 
-	err := s.updateStatus(edpv1alpha1.CDPipelineStatus{
+	pipelineStatus := edpv1alpha1.CDPipelineStatus{
 		Status:          StatusInProgress,
 		Available:       false,
 		LastTimeUpdated: time.Now(),
-		Action:          edpv1alpha1.AcceptCDPipelineRegistration,
 		Result:          edpv1alpha1.Success,
 		Username:        "system",
 		Value:           "inactive",
-	})
+	}
+
+	pipelineStatus.Action = edpv1alpha1.AcceptCDPipelineRegistration
+	err := s.updateStatus(pipelineStatus)
 	if err != nil {
 		return fmt.Errorf("error has been occurred in cd_pipeline status update: %v", err)
 	}
@@ -68,8 +70,14 @@ func (s CDPipelineService) CreateCDPipeline() error {
 	_, err = jenkins.CreateFolder(cr.Name + "-cd-pipeline")
 	if err != nil {
 		log.Println("Couldn't create folder for Jenkins")
-		s.setFailedFields(edpv1alpha1.JenkinsConfiguration, err.Error())
+		s.setFailedFields(edpv1alpha1.CreateJenkinsDirectory, err.Error())
 		return err
+	}
+
+	pipelineStatus.Action = edpv1alpha1.CreateJenkinsDirectory
+	err = s.updateStatus(pipelineStatus)
+	if err != nil {
+		return fmt.Errorf("error has been occurred in cd_pipeline status update: %v", err)
 	}
 
 	err = s.updateStatus(edpv1alpha1.CDPipelineStatus{

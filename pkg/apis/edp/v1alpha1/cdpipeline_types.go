@@ -32,6 +32,8 @@ const (
 	OpenshiftProjectCreation           ActionType = "openshift_project_creation"
 	SetupInitialStructureForCDPipeline ActionType = "setup_initial_structure"
 	SetupDeploymentTemplates           ActionType = "setup_deployment_templates"
+	CreateJenkinsDirectory             ActionType = "create_jenkins_directory"
+	CreateJenkinsPipeline              ActionType = "create_jenkins_pipeline"
 
 	Success Result = "success"
 	Error   Result = "error"

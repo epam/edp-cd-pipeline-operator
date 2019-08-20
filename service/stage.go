@@ -31,15 +31,17 @@ func (s CDStageService) CreateStage() error {
 	}
 	log.Printf("Stage %v has 'init' status", cr.Spec.Name)
 
-	err := s.updateStatus(edpv1alpha1.StageStatus{
+	stageStatus := edpv1alpha1.StageStatus{
 		Status:          StatusInProgress,
 		Available:       false,
 		LastTimeUpdated: time.Now(),
-		Action:          edpv1alpha1.AcceptCDStageRegistration,
 		Result:          edpv1alpha1.Success,
 		Username:        "system",
 		Value:           "inactive",
-	})
+	}
+
+	stageStatus.Action = edpv1alpha1.AcceptCDStageRegistration
+	err := s.updateStatus(stageStatus)
 	if err != nil {
 		return fmt.Errorf("error has been occurred in cd_stage status update: %v", err)
 	}
@@ -60,11 +62,23 @@ func (s CDStageService) CreateStage() error {
 		return err
 	}
 
+	stageStatus.Action = edpv1alpha1.OpenshiftProjectCreation
+	err = s.updateStatus(stageStatus)
+	if err != nil {
+		return fmt.Errorf("error has been occurred in cd_stage status update: %v", err)
+	}
+
 	err = setupJenkins(clientSet, cr.Namespace, cr.Spec.Name, cr.Spec.CdPipeline)
 	if err != nil {
 		log.Println("Couldn't setup Jenkins")
-		s.setFailedFields(edpv1alpha1.JenkinsConfiguration, err.Error())
+		s.setFailedFields(edpv1alpha1.CreateJenkinsPipeline, err.Error())
 		return err
+	}
+
+	stageStatus.Action = edpv1alpha1.CreateJenkinsPipeline
+	err = s.updateStatus(stageStatus)
+	if err != nil {
+		return fmt.Errorf("error has been occurred in cd_stage status update: %v", err)
 	}
 
 	err = s.updateStatus(edpv1alpha1.StageStatus{
