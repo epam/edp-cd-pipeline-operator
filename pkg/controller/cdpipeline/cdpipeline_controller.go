@@ -1,9 +1,9 @@
 package cdpipeline
 
 import (
-	edpv1alpha1 "cd-pipeline-operator/pkg/apis/edp/v1alpha1"
-	"cd-pipeline-operator/service"
 	"context"
+	edpv1alpha1 "github.com/epmd-edp/cd-pipeline-operator/v2/pkg/apis/edp/v1alpha1"
+	"github.com/epmd-edp/cd-pipeline-operator/v2/service"
 	"log"
 
 	"k8s.io/apimachinery/pkg/api/errors"

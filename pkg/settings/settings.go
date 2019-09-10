@@ -1,9 +1,9 @@
 package settings
 
 import (
-	"cd-pipeline-operator/pkg/openshift"
 	"errors"
 	"fmt"
+	"github.com/epmd-edp/cd-pipeline-operator/v2/pkg/openshift"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"log"
 )

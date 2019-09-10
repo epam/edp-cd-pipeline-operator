@@ -1,7 +1,7 @@
 package apis
 
 import (
-	"cd-pipeline-operator/pkg/apis/edp/v1alpha1"
+	"github.com/epmd-edp/cd-pipeline-operator/v2/pkg/apis/edp/v1alpha1"
 )
 
 func init() {

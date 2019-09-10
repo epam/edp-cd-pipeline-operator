@@ -1,12 +1,12 @@
 package service
 
 import (
-	edpv1alpha1 "cd-pipeline-operator/pkg/apis/edp/v1alpha1"
-	jenkinsClient "cd-pipeline-operator/pkg/jenkins"
-	ClientSet "cd-pipeline-operator/pkg/openshift"
 	"context"
 	"errors"
 	"fmt"
+	edpv1alpha1 "github.com/epmd-edp/cd-pipeline-operator/v2/pkg/apis/edp/v1alpha1"
+	jenkinsClient "github.com/epmd-edp/cd-pipeline-operator/v2/pkg/jenkins"
+	ClientSet "github.com/epmd-edp/cd-pipeline-operator/v2/pkg/openshift"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"log"
 	"sigs.k8s.io/controller-runtime/pkg/client"

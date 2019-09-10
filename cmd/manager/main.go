@@ -7,8 +7,8 @@ import (
 	"os"
 	"runtime"
 
-	"cd-pipeline-operator/pkg/apis"
-	"cd-pipeline-operator/pkg/controller"
+	"github.com/epmd-edp/cd-pipeline-operator/v2/pkg/apis"
+	"github.com/epmd-edp/cd-pipeline-operator/v2/pkg/controller"
 
 	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
 	sdkVersion "github.com/operator-framework/operator-sdk/version"

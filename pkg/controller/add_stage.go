@@ -1,7 +1,7 @@
 package controller
 
 import (
-	"cd-pipeline-operator/pkg/controller/stage"
+	"github.com/epmd-edp/cd-pipeline-operator/v2/pkg/controller/stage"
 )
 
 func init() {

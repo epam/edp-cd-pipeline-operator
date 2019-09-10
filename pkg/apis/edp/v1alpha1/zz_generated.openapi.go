@@ -13,12 +13,12 @@ import (
 
 func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenAPIDefinition {
 	return map[string]common.OpenAPIDefinition{
-		"cd-pipeline-operator/pkg/apis/edp/v1alpha1.CDPipeline":       schema_pkg_apis_edp_v1alpha1_CDPipeline(ref),
-		"cd-pipeline-operator/pkg/apis/edp/v1alpha1.CDPipelineSpec":   schema_pkg_apis_edp_v1alpha1_CDPipelineSpec(ref),
-		"cd-pipeline-operator/pkg/apis/edp/v1alpha1.CDPipelineStatus": schema_pkg_apis_edp_v1alpha1_CDPipelineStatus(ref),
-		"cd-pipeline-operator/pkg/apis/edp/v1alpha1.Stage":            schema_pkg_apis_edp_v1alpha1_Stage(ref),
-		"cd-pipeline-operator/pkg/apis/edp/v1alpha1.StageSpec":        schema_pkg_apis_edp_v1alpha1_StageSpec(ref),
-		"cd-pipeline-operator/pkg/apis/edp/v1alpha1.StageStatus":      schema_pkg_apis_edp_v1alpha1_StageStatus(ref),
+		"github.com/epmd-edp/cd-pipeline-operator/v2/pkg/apis/edp/v1alpha1.CDPipeline":       schema_pkg_apis_edp_v1alpha1_CDPipeline(ref),
+		"github.com/epmd-edp/cd-pipeline-operator/v2/pkg/apis/edp/v1alpha1.CDPipelineSpec":   schema_pkg_apis_edp_v1alpha1_CDPipelineSpec(ref),
+		"github.com/epmd-edp/cd-pipeline-operator/v2/pkg/apis/edp/v1alpha1.CDPipelineStatus": schema_pkg_apis_edp_v1alpha1_CDPipelineStatus(ref),
+		"github.com/epmd-edp/cd-pipeline-operator/v2/pkg/apis/edp/v1alpha1.Stage":            schema_pkg_apis_edp_v1alpha1_Stage(ref),
+		"github.com/epmd-edp/cd-pipeline-operator/v2/pkg/apis/edp/v1alpha1.StageSpec":        schema_pkg_apis_edp_v1alpha1_StageSpec(ref),
+		"github.com/epmd-edp/cd-pipeline-operator/v2/pkg/apis/edp/v1alpha1.StageStatus":      schema_pkg_apis_edp_v1alpha1_StageStatus(ref),
 	}
 }
 
@@ -49,19 +49,19 @@ func schema_pkg_apis_edp_v1alpha1_CDPipeline(ref common.ReferenceCallback) commo
 					},
 					"spec": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("cd-pipeline-operator/pkg/apis/edp/v1alpha1.CDPipelineSpec"),
+							Ref: ref("github.com/epmd-edp/cd-pipeline-operator/v2/pkg/apis/edp/v1alpha1.CDPipelineSpec"),
 						},
 					},
 					"status": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("cd-pipeline-operator/pkg/apis/edp/v1alpha1.CDPipelineStatus"),
+							Ref: ref("github.com/epmd-edp/cd-pipeline-operator/v2/pkg/apis/edp/v1alpha1.CDPipelineStatus"),
 						},
 					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"cd-pipeline-operator/pkg/apis/edp/v1alpha1.CDPipelineSpec", "cd-pipeline-operator/pkg/apis/edp/v1alpha1.CDPipelineStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+			"github.com/epmd-edp/cd-pipeline-operator/v2/pkg/apis/edp/v1alpha1.CDPipelineSpec", "github.com/epmd-edp/cd-pipeline-operator/v2/pkg/apis/edp/v1alpha1.CDPipelineStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
 	}
 }
 
@@ -153,19 +153,19 @@ func schema_pkg_apis_edp_v1alpha1_Stage(ref common.ReferenceCallback) common.Ope
 					},
 					"spec": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("cd-pipeline-operator/pkg/apis/edp/v1alpha1.StageSpec"),
+							Ref: ref("github.com/epmd-edp/cd-pipeline-operator/v2/pkg/apis/edp/v1alpha1.StageSpec"),
 						},
 					},
 					"status": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("cd-pipeline-operator/pkg/apis/edp/v1alpha1.StageStatus"),
+							Ref: ref("github.com/epmd-edp/cd-pipeline-operator/v2/pkg/apis/edp/v1alpha1.StageStatus"),
 						},
 					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"cd-pipeline-operator/pkg/apis/edp/v1alpha1.StageSpec", "cd-pipeline-operator/pkg/apis/edp/v1alpha1.StageStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+			"github.com/epmd-edp/cd-pipeline-operator/v2/pkg/apis/edp/v1alpha1.StageSpec", "github.com/epmd-edp/cd-pipeline-operator/v2/pkg/apis/edp/v1alpha1.StageStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
 	}
 }
 
