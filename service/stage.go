@@ -133,7 +133,8 @@ func createStageConfig(name string) (*string, error) {
 	var cdPipelineBuffer bytes.Buffer
 
 	jenkinsName := map[string]interface{}{
-		"name": name,
+		"name":               name,
+		"gitServerCrVersion": "v2",
 	}
 
 	tmpl, err := template.New("cd-pipeline.tmpl").ParseFiles("/usr/local/bin/pipelines/cd-pipeline.tmpl")
