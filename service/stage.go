@@ -68,7 +68,7 @@ func (s CDStageService) CreateStage() error {
 		return fmt.Errorf("error has been occurred in cd_stage status update: %v", err)
 	}
 
-	err = setupJenkins(clientSet, cr.Namespace, cr.Spec.Name, cr.Spec.CdPipeline)
+	err = setupJenkins(clientSet, s.Client, cr.Namespace, cr.Spec.Name, cr.Spec.CdPipeline)
 	if err != nil {
 		log.Println("Couldn't setup Jenkins")
 		s.setFailedFields(edpv1alpha1.CreateJenkinsPipeline, err.Error())
@@ -198,10 +198,10 @@ func setupOpenshift(clientSet *Openshift.ClientSet, edpName string, cdPipelineNa
 	return nil
 }
 
-func setupJenkins(clientSet *Openshift.ClientSet, namespace string, stageName string, cdPipelineName string) error {
+func setupJenkins(clientSet *Openshift.ClientSet, k8sClient client.Client, namespace string, stageName string, cdPipelineName string) error {
 	pipelineFolderName := cdPipelineName + "-cd-pipeline"
 	jenkinsUrl := fmt.Sprintf("http://jenkins.%s:8080", namespace)
-	jenkinsToken, jenkinsUsername, err := getJenkinsCreds(clientSet, namespace)
+	jenkinsToken, jenkinsUsername, err := getJenkinsCreds(clientSet, k8sClient, namespace)
 	if err != nil {
 		return err
 	}

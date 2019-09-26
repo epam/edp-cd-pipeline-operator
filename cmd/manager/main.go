@@ -9,6 +9,7 @@ import (
 
 	"github.com/epmd-edp/cd-pipeline-operator/v2/pkg/apis"
 	"github.com/epmd-edp/cd-pipeline-operator/v2/pkg/controller"
+	jenkinsApis "github.com/epmd-edp/jenkins-operator/v2/pkg/apis"
 
 	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
 	sdkVersion "github.com/operator-framework/operator-sdk/version"
@@ -52,6 +53,11 @@ func main() {
 
 	// Setup Scheme for all resources
 	if err := apis.AddToScheme(mgr.GetScheme()); err != nil {
+		log.Fatal(err)
+		os.Exit(1)
+	}
+
+	if err := jenkinsApis.AddToScheme(mgr.GetScheme()); err != nil {
 		log.Fatal(err)
 		os.Exit(1)
 	}
