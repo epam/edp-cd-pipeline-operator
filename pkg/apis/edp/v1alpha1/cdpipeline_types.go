@@ -29,7 +29,7 @@ const (
 	AcceptCDStageRegistration          ActionType = "accept_cd_stage_registration"
 	JenkinsConfiguration               ActionType = "jenkins_configuration"
 	FetchingUserSettingsConfigMap      ActionType = "fetching_user_settings_config_map"
-	OpenshiftProjectCreation           ActionType = "openshift_project_creation"
+	PlatformProjectCreation            ActionType = "platform_project_creation"
 	SetupInitialStructureForCDPipeline ActionType = "setup_initial_structure"
 	SetupDeploymentTemplates           ActionType = "setup_deployment_templates"
 	CreateJenkinsDirectory             ActionType = "create_jenkins_directory"

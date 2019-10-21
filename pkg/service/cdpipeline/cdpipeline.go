@@ -1,16 +1,13 @@
-package service
+package cdpipeline
 
 import (
 	"context"
 	"fmt"
 	edpv1alpha1 "github.com/epmd-edp/cd-pipeline-operator/v2/pkg/apis/edp/v1alpha1"
 	jenkinsClient "github.com/epmd-edp/cd-pipeline-operator/v2/pkg/jenkins"
-	ClientSet "github.com/epmd-edp/cd-pipeline-operator/v2/pkg/openshift"
-	jenkinsApi "github.com/epmd-edp/jenkins-operator/v2/pkg/apis/v2/v1alpha1"
-	jenkinsOperatorSpec "github.com/epmd-edp/jenkins-operator/v2/pkg/service/jenkins/spec"
+	"github.com/epmd-edp/cd-pipeline-operator/v2/pkg/platform"
+	"github.com/epmd-edp/cd-pipeline-operator/v2/pkg/service/helper"
 	"github.com/pkg/errors"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"log"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"time"
@@ -19,6 +16,7 @@ import (
 type CDPipelineService struct {
 	Resource *edpv1alpha1.CDPipeline
 	Client   client.Client
+	Platform platform.PlatformService
 }
 
 const (
@@ -56,9 +54,9 @@ func (s CDPipelineService) CreateCDPipeline() error {
 	jenkinsUrl := fmt.Sprintf("http://jenkins.%s:8080", cr.Namespace)
 	log.Printf("Jenkins URL has been generated: %v", jenkinsUrl)
 
-	jenkinsToken, jenkinsUsername, err := getJenkinsCreds(ClientSet.CreateOpenshiftClients(), s.Client, cr.Namespace)
+	jenkinsToken, jenkinsUsername, err := helper.GetJenkinsCreds(s.Platform, s.Client, cr.Namespace)
 	if err != nil {
-		log.Println("Couldn't fetch Jenkins creds")
+		log.Printf("Couldn't fetch Jenkins creds")
 		s.setFailedFields(edpv1alpha1.JenkinsConfiguration, err.Error())
 		return err
 	}
@@ -129,33 +127,4 @@ func (s CDPipelineService) setFailedFields(action edpv1alpha1.ActionType, messag
 	}
 
 	log.Printf("Status %v for CD Pipeline %v is set up.", edpv1alpha1.Error, s.Resource.Name)
-}
-
-func getJenkinsCreds(clientSet *ClientSet.ClientSet, k8sClient client.Client, namespace string) (string, string, error) {
-	options := client.ListOptions{Namespace: namespace}
-	jenkinsList := &jenkinsApi.JenkinsList{}
-
-	err := k8sClient.List(context.TODO(), &options, jenkinsList)
-	if err != nil {
-		if k8serrors.IsNotFound(err) {
-			return "", "", errors.Wrapf(err, "Jenkins installation is not found in namespace %v", namespace)
-		}
-		return "", "", errors.Wrapf(err, "Unable to get Jenkins CRs in namespace %v", namespace)
-	}
-
-	if len(jenkinsList.Items) == 0 {
-		errors.Wrapf(err, "Jenkins installation is not found in namespace %v", namespace)
-	}
-
-	jenkins := &jenkinsList.Items[0]
-	annotationKey := fmt.Sprintf("%v/%v", jenkinsOperatorSpec.EdpAnnotationsPrefix, jenkinsOperatorSpec.JenkinsTokenAnnotationSuffix)
-	jenkinsTokenSecretName := jenkins.Annotations[annotationKey]
-	jenkinsTokenSecret, err := clientSet.CoreClient.Secrets(namespace).Get(jenkinsTokenSecretName, metav1.GetOptions{})
-	if err != nil {
-		if k8serrors.IsNotFound(err) {
-			return "", "", errors.Wrapf(err, "Secret %v in not found", jenkinsTokenSecretName)
-		}
-		return "", "", errors.Wrapf(err, "Getting secret %v failed", jenkinsTokenSecretName)
-	}
-	return string(jenkinsTokenSecret.Data["password"]), string(jenkinsTokenSecret.Data["username"]), nil
 }

@@ -1,4 +1,4 @@
-package service
+package stage
 
 import (
 	"bytes"
@@ -7,8 +7,8 @@ import (
 	"fmt"
 	edpv1alpha1 "github.com/epmd-edp/cd-pipeline-operator/v2/pkg/apis/edp/v1alpha1"
 	jenkinsClient "github.com/epmd-edp/cd-pipeline-operator/v2/pkg/jenkins"
-	Openshift "github.com/epmd-edp/cd-pipeline-operator/v2/pkg/openshift"
-	"github.com/epmd-edp/cd-pipeline-operator/v2/pkg/settings"
+	"github.com/epmd-edp/cd-pipeline-operator/v2/pkg/platform"
+	"github.com/epmd-edp/cd-pipeline-operator/v2/pkg/service/helper"
 	rbacV1 "k8s.io/api/rbac/v1"
 	"log"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -16,9 +16,17 @@ import (
 	"time"
 )
 
+const (
+	StatusInit       = "initialized"
+	StatusFailed     = "failed"
+	StatusFinished   = "created"
+	StatusInProgress = "in progress"
+)
+
 type CDStageService struct {
 	Resource *edpv1alpha1.Stage
 	Client   client.Client
+	Platform platform.PlatformService
 }
 
 func (s CDStageService) CreateStage() error {
@@ -46,29 +54,28 @@ func (s CDStageService) CreateStage() error {
 		return fmt.Errorf("error has been occurred in cd_stage status update: %v", err)
 	}
 
-	clientSet := Openshift.CreateOpenshiftClients()
+	d, err := s.Platform.GetConfigMapData(cr.Namespace, "user-settings")
+	edpName := d["edp_name"]
 
-	edpName, err := settings.GetUserSettingConfigMap(clientSet, cr.Namespace, "edp_name")
 	if err != nil {
 		log.Println("Couldn't fetch user settings config map")
 		s.setFailedFields(edpv1alpha1.FetchingUserSettingsConfigMap, err.Error())
 		return err
 	}
 
-	err = setupOpenshift(clientSet, edpName, cr.Spec.CdPipeline, cr.Spec.Name)
+	err = s.setupPlatform(edpName, cr.Spec.CdPipeline, cr.Spec.Name)
 	if err != nil {
-		log.Println("Couldn't setup Openshift client")
-		s.setFailedFields(edpv1alpha1.OpenshiftProjectCreation, err.Error())
+		s.setFailedFields(edpv1alpha1.PlatformProjectCreation, err.Error())
 		return err
 	}
 
-	stageStatus.Action = edpv1alpha1.OpenshiftProjectCreation
+	stageStatus.Action = edpv1alpha1.PlatformProjectCreation
 	err = s.updateStatus(stageStatus)
 	if err != nil {
 		return fmt.Errorf("error has been occurred in cd_stage status update: %v", err)
 	}
 
-	err = setupJenkins(clientSet, s.Client, cr.Namespace, cr.Spec.Name, cr.Spec.CdPipeline)
+	err = s.setupJenkins(cr.Namespace, cr.Spec.Name, cr.Spec.CdPipeline)
 	if err != nil {
 		log.Println("Couldn't setup Jenkins")
 		s.setFailedFields(edpv1alpha1.CreateJenkinsPipeline, err.Error())
@@ -151,9 +158,8 @@ func createStageConfig(name string) (*string, error) {
 	return &cdPipeline, nil
 }
 
-func createRoleBinding(clientSet *Openshift.ClientSet, edpName string, projectName string) error {
-	err := Openshift.CreateRoleBinding(
-		clientSet,
+func (s CDStageService) createRoleBinding(edpName string, projectName string) error {
+	err := s.Platform.CreateRoleBinding(
 		edpName,
 		projectName,
 		rbacV1.RoleRef{Name: "admin", APIGroup: "rbac.authorization.k8s.io", Kind: "ClusterRole"},
@@ -168,8 +174,7 @@ func createRoleBinding(clientSet *Openshift.ClientSet, edpName string, projectNa
 		return err
 	}
 
-	err = Openshift.CreateRoleBinding(
-		clientSet,
+	err = s.Platform.CreateRoleBinding(
 		edpName,
 		projectName,
 		rbacV1.RoleRef{Name: "view", APIGroup: "rbac.authorization.k8s.io", Kind: "ClusterRole"},
@@ -183,25 +188,25 @@ func createRoleBinding(clientSet *Openshift.ClientSet, edpName string, projectNa
 	return nil
 }
 
-func setupOpenshift(clientSet *Openshift.ClientSet, edpName string, cdPipelineName string, stageName string) error {
+func (s CDStageService) setupPlatform(edpName string, cdPipelineName string, stageName string) error {
 	projectName := edpName + "-" + cdPipelineName + "-" + stageName
 
-	err := Openshift.CreateProject(clientSet, projectName, "Deploy project for stage "+stageName)
+	err := s.Platform.CreateProject(projectName, "Deploy project for stage "+stageName)
 	if err != nil {
 		return err
 	}
 
-	err = createRoleBinding(clientSet, edpName, projectName)
+	err = s.createRoleBinding(edpName, projectName)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func setupJenkins(clientSet *Openshift.ClientSet, k8sClient client.Client, namespace string, stageName string, cdPipelineName string) error {
+func (s CDStageService) setupJenkins(namespace string, stageName string, cdPipelineName string) error {
 	pipelineFolderName := cdPipelineName + "-cd-pipeline"
 	jenkinsUrl := fmt.Sprintf("http://jenkins.%s:8080", namespace)
-	jenkinsToken, jenkinsUsername, err := getJenkinsCreds(clientSet, k8sClient, namespace)
+	jenkinsToken, jenkinsUsername, err := helper.GetJenkinsCreds(s.Platform, s.Client, namespace)
 	if err != nil {
 		return err
 	}

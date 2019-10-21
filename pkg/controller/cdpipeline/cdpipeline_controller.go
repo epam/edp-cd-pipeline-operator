@@ -3,7 +3,9 @@ package cdpipeline
 import (
 	"context"
 	edpv1alpha1 "github.com/epmd-edp/cd-pipeline-operator/v2/pkg/apis/edp/v1alpha1"
-	"github.com/epmd-edp/cd-pipeline-operator/v2/service"
+	"github.com/epmd-edp/cd-pipeline-operator/v2/pkg/controller/helper"
+	"github.com/epmd-edp/cd-pipeline-operator/v2/pkg/platform"
+	"github.com/epmd-edp/cd-pipeline-operator/v2/pkg/service/cdpipeline"
 	"log"
 
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -78,16 +80,22 @@ func (r *ReconcileCDPipeline) Reconcile(request reconcile.Request) (reconcile.Re
 
 	log.Printf("CDPipeline: %v", instance)
 
-	pipelineService := service.CDPipelineService{
+	p, err := platform.NewPlatformService(helper.GetPlatformTypeEnv())
+	if err != nil {
+		log.Printf("Failed to create Platform service. Result: %v", err)
+	}
+
+	pipelineService := cdpipeline.CDPipelineService{
 		Resource: instance,
 		Client:   r.client,
+		Platform: p,
 	}
 
 	log.Printf("Pipeline service has been created.")
 
 	err = pipelineService.CreateCDPipeline()
 	if err != nil {
-		log.Print(err)
+		log.Printf("CD pipeline %v/%v creation failed", request.Namespace, request.Name)
 	}
 
 	err = r.client.Status().Update(context.TODO(), instance)

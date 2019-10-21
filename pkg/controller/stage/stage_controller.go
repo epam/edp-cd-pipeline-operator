@@ -2,7 +2,9 @@ package stage
 
 import (
 	"context"
-	"github.com/epmd-edp/cd-pipeline-operator/v2/service"
+	"github.com/epmd-edp/cd-pipeline-operator/v2/pkg/controller/helper"
+	"github.com/epmd-edp/cd-pipeline-operator/v2/pkg/platform"
+	"github.com/epmd-edp/cd-pipeline-operator/v2/pkg/service/stage"
 	"k8s.io/apimachinery/pkg/types"
 	"log"
 	"time"
@@ -93,9 +95,16 @@ func (r *ReconcileStage) Reconcile(request reconcile.Request) (reconcile.Result,
 
 	log.Printf("Stage: %v", instance)
 
-	cdStageService := service.CDStageService{
+	p, err := platform.NewPlatformService(helper.GetPlatformTypeEnv())
+	if err != nil {
+		log.Printf("[ERROR] Cannot initialize platform service. Reason: %v", err)
+		return reconcile.Result{RequeueAfter: 10 * time.Second}, err
+	}
+
+	cdStageService := stage.CDStageService{
 		Resource: instance,
 		Client:   r.client,
+		Platform: p,
 	}
 
 	log.Printf("CD Stage service has been created.")
