@@ -11,9 +11,11 @@ import (
 	coreV1Client "k8s.io/client-go/kubernetes/typed/core/v1"
 	rbacV1Client "k8s.io/client-go/kubernetes/typed/rbac/v1"
 	"k8s.io/client-go/rest"
-	"log"
 	"math/big"
+	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
+
+var log = logf.Log.WithName("kubernetes_service")
 
 // K8SService struct for K8S platform service
 type K8SService struct {
@@ -40,6 +42,7 @@ func New(config *rest.Config) (*K8SService, error) {
 
 // CreateProject creates Kubernetes namespace
 func (service K8SService) CreateProject(projectName string, projectDescription string) error {
+	log.Info("Start creating project...", "project name", projectName)
 	_, err := service.coreClient.Namespaces().Create(
 		&coreV1.Namespace{
 			ObjectMeta: metav1.ObjectMeta{
@@ -53,6 +56,7 @@ func (service K8SService) CreateProject(projectName string, projectDescription s
 
 // CreateRoleBinding creates RoleBinding
 func (service K8SService) CreateRoleBinding(edpName string, namespace string, roleRef rbacV1.RoleRef, subjects []rbacV1.Subject) error {
+	log.Info("Start creating role binding", "edp name", edpName, "namespace", namespace, "role name", roleRef)
 	randPostfix, err := rand.Int(rand.Reader, big.NewInt(10000))
 	_, err = service.rbacClient.RoleBindings(namespace).Create(
 		&rbacV1.RoleBinding{
@@ -69,9 +73,12 @@ func (service K8SService) CreateRoleBinding(edpName string, namespace string, ro
 
 // GetSecret return data field of Secret
 func (service K8SService) GetSecretData(namespace string, name string) (map[string][]byte, error) {
+	reqLog := log.WithValues("secret name", name, "namespace", namespace)
+	reqLog.Info("Start retrieving secret data...")
+
 	secret, err := service.coreClient.Secrets(namespace).Get(name, metav1.GetOptions{})
 	if err != nil && k8sErrors.IsNotFound(err) {
-		log.Printf(fmt.Sprintf("Secret %v in namespace %v not found", name, namespace))
+		reqLog.Info("Secret not found")
 		return nil, nil
 	} else if err != nil {
 		return nil, err
@@ -81,8 +88,8 @@ func (service K8SService) GetSecretData(namespace string, name string) (map[stri
 
 // GetConfigMapData return data field of ConfigMap
 func (service K8SService) GetConfigMapData(namespace string, name string) (map[string]string, error) {
+	log.Info("Start retrieving config map data", "config map name", name, "namespace", namespace)
 	configMap, err := service.coreClient.ConfigMaps(namespace).Get(name, metav1.GetOptions{})
-
 	if err != nil {
 		if k8sErrors.IsNotFound(err) {
 			return nil, errors.Wrapf(err, "Config map %v in namespace %v not found", name, namespace)

@@ -6,16 +6,21 @@ import (
 	"github.com/epmd-edp/cd-pipeline-operator/v2/pkg/controller/helper"
 	"github.com/epmd-edp/cd-pipeline-operator/v2/pkg/platform"
 	"github.com/epmd-edp/cd-pipeline-operator/v2/pkg/service/cdpipeline"
-	"log"
-
-	"k8s.io/apimachinery/pkg/api/errors"
+	"github.com/pkg/errors"
+	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 	"sigs.k8s.io/controller-runtime/pkg/source"
+)
+
+var (
+	_   reconcile.Reconciler = &ReconcileCDPipeline{}
+	log                      = logf.Log.WithName("cd_pipeline_controller")
 )
 
 // Add creates a new CDPipeline Controller and adds it to the Manager. The Manager will set fields on the Controller
@@ -46,8 +51,6 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	return nil
 }
 
-var _ reconcile.Reconciler = &ReconcileCDPipeline{}
-
 // ReconcileCDPipeline reconciles a CDPipeline object
 type ReconcileCDPipeline struct {
 	// This client, initialized using mgr.Client() above, is a split client
@@ -62,13 +65,13 @@ type ReconcileCDPipeline struct {
 // The Controller will requeue the Request to be processed again if the returned error is non-nil or
 // Result.Requeue is true, otherwise upon completion it will remove the work from the queue.
 func (r *ReconcileCDPipeline) Reconcile(request reconcile.Request) (reconcile.Result, error) {
-	log.Println("Reconciling CDPipeline")
-
+	reqLog := log.WithValues("Request.Namespace", request.Namespace, "Request.Name", request.Name)
+	reqLog.Info("Reconciling CDPipeline")
 	// Fetch the CDPipeline instance
 	instance := &edpv1alpha1.CDPipeline{}
 	err := r.client.Get(context.TODO(), request.NamespacedName, instance)
 	if err != nil {
-		if errors.IsNotFound(err) {
+		if k8sErrors.IsNotFound(err) {
 			// Request object not found, could have been deleted after reconcile request.
 			// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
 			// Return and don't requeue
@@ -77,32 +80,31 @@ func (r *ReconcileCDPipeline) Reconcile(request reconcile.Request) (reconcile.Re
 		// Error reading the object - requeue the request.
 		return reconcile.Result{}, err
 	}
+	reqLog.Info("Successful fetching of CR", "CDPipeline", *instance)
 
-	log.Printf("CDPipeline: %v", instance)
+	defer r.updateStatus(instance)
 
 	p, err := platform.NewPlatformService(helper.GetPlatformTypeEnv())
 	if err != nil {
-		log.Printf("Failed to create Platform service. Result: %v", err)
+		return reconcile.Result{}, errors.Wrap(err, "Failed to create Platform service")
 	}
-
 	pipelineService := cdpipeline.CDPipelineService{
 		Resource: instance,
 		Client:   r.client,
 		Platform: p,
 	}
-
-	log.Printf("Pipeline service has been created.")
-
 	err = pipelineService.CreateCDPipeline()
 	if err != nil {
-		log.Printf("CD pipeline %v/%v creation failed", request.Namespace, request.Name)
+		return reconcile.Result{}, errors.Wrap(err, "Failed to create CD Pipeline")
 	}
 
-	err = r.client.Status().Update(context.TODO(), instance)
+	reqLog.Info("Reconciling of CD Pipeline has been finished")
+	return reconcile.Result{}, nil
+}
+
+func (r *ReconcileCDPipeline) updateStatus(instance *edpv1alpha1.CDPipeline) {
+	err := r.client.Status().Update(context.TODO(), instance)
 	if err != nil {
 		_ = r.client.Update(context.TODO(), instance)
 	}
-
-	log.Printf("Reconciling CD pipeline %v/%v has been finished", request.Namespace, request.Name)
-	return reconcile.Result{}, nil
 }

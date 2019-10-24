@@ -3,18 +3,20 @@ package stage
 import (
 	"bytes"
 	"context"
-	"errors"
 	"fmt"
 	edpv1alpha1 "github.com/epmd-edp/cd-pipeline-operator/v2/pkg/apis/edp/v1alpha1"
 	jenkinsClient "github.com/epmd-edp/cd-pipeline-operator/v2/pkg/jenkins"
 	"github.com/epmd-edp/cd-pipeline-operator/v2/pkg/platform"
 	"github.com/epmd-edp/cd-pipeline-operator/v2/pkg/service/helper"
+	"github.com/pkg/errors"
 	rbacV1 "k8s.io/api/rbac/v1"
-	"log"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 	"text/template"
 	"time"
 )
+
+var log = logf.Log.WithName("cd_stage_service")
 
 const (
 	StatusInit       = "initialized"
@@ -31,14 +33,14 @@ type CDStageService struct {
 
 func (s CDStageService) CreateStage() error {
 	cr := s.Resource
+	reqLog := log.WithValues("stage name", cr.Spec.Name, "cd pipeline name", cr.Spec.CdPipeline,
+		"namespace", cr.Namespace)
+	reqLog.Info("Start creating Stage...")
 
-	log.Printf("Start creating Stage %v for CD Pipeline %v", cr.Spec.Name, cr.Spec.CdPipeline)
 	if cr.Status.Status != StatusInit {
-		log.Printf("Stage %v is not in init status. Skipped", cr.Spec.Name)
-		return errors.New(fmt.Sprintf("Stage %v is not in init status. Skipped", cr.Spec.Name))
+		reqLog.Info("Stage is not in init status. Skipped")
+		return nil
 	}
-	log.Printf("Stage %v has 'init' status", cr.Spec.Name)
-
 	stageStatus := edpv1alpha1.StageStatus{
 		Status:          StatusInProgress,
 		Available:       false,
@@ -47,48 +49,33 @@ func (s CDStageService) CreateStage() error {
 		Username:        "system",
 		Value:           "inactive",
 	}
-
 	stageStatus.Action = edpv1alpha1.AcceptCDStageRegistration
 	err := s.updateStatus(stageStatus)
 	if err != nil {
-		return fmt.Errorf("error has been occurred in cd_stage status update: %v", err)
+		return errors.Wrap(err, "error has been occurred in cd_stage status update")
 	}
-
 	d, err := s.Platform.GetConfigMapData(cr.Namespace, "user-settings")
 	edpName := d["edp_name"]
-
 	if err != nil {
-		log.Println("Couldn't fetch user settings config map")
 		s.setFailedFields(edpv1alpha1.FetchingUserSettingsConfigMap, err.Error())
-		return err
+		return errors.Wrap(err, "failed to fetch user settings config map")
 	}
-
 	err = s.setupPlatform(edpName, cr.Spec.CdPipeline, cr.Spec.Name)
 	if err != nil {
 		s.setFailedFields(edpv1alpha1.PlatformProjectCreation, err.Error())
-		return err
+		return errors.Wrap(err, "failed to setup platform")
 	}
-
 	stageStatus.Action = edpv1alpha1.PlatformProjectCreation
 	err = s.updateStatus(stageStatus)
 	if err != nil {
-		return fmt.Errorf("error has been occurred in cd_stage status update: %v", err)
+		return errors.Wrap(err, "error has been occurred in cd_stage status update")
 	}
-
 	err = s.setupJenkins(cr.Namespace, cr.Spec.Name, cr.Spec.CdPipeline)
 	if err != nil {
-		log.Println("Couldn't setup Jenkins")
 		s.setFailedFields(edpv1alpha1.CreateJenkinsPipeline, err.Error())
-		return err
+		return errors.Wrap(err, "failed to setup Jenkins")
 	}
-
-	stageStatus.Action = edpv1alpha1.CreateJenkinsPipeline
-	err = s.updateStatus(stageStatus)
-	if err != nil {
-		return fmt.Errorf("error has been occurred in cd_stage status update: %v", err)
-	}
-
-	err = s.updateStatus(edpv1alpha1.StageStatus{
+	cr.Status = edpv1alpha1.StageStatus{
 		Status:          StatusFinished,
 		Available:       true,
 		LastTimeUpdated: time.Now(),
@@ -96,18 +83,14 @@ func (s CDStageService) CreateStage() error {
 		Action:          edpv1alpha1.SetupDeploymentTemplates,
 		Result:          edpv1alpha1.Success,
 		Value:           "active",
-	})
-	if err != nil {
-		return fmt.Errorf("error has been occurred in cd_stage status update: %v", err)
 	}
 
-	log.Printf("Stage %v has been created. Status: %v", cr.Name, StatusFinished)
+	reqLog.Info("Stage has been created")
 	return nil
 }
 
 func (s CDStageService) updateStatus(status edpv1alpha1.StageStatus) error {
 	s.Resource.Status = status
-
 	err := s.Client.Status().Update(context.TODO(), s.Resource)
 	if err != nil {
 		err := s.Client.Update(context.TODO(), s.Resource)
@@ -116,8 +99,7 @@ func (s CDStageService) updateStatus(status edpv1alpha1.StageStatus) error {
 		}
 	}
 
-	log.Printf("Status for CD Stage %v is set up.", s.Resource.Name)
-
+	log.Info("Status for CD Stage", "cd stage name", s.Resource.Name)
 	return nil
 }
 
@@ -132,8 +114,6 @@ func (s CDStageService) setFailedFields(action edpv1alpha1.ActionType, message s
 		DetailedMessage: message,
 		Value:           "failed",
 	}
-
-	log.Printf("Status %v for CD Stage %v is set up.", edpv1alpha1.Error, s.Resource.Name)
 }
 
 func createStageConfig(name string) (*string, error) {
@@ -174,7 +154,7 @@ func (s CDStageService) createRoleBinding(edpName string, projectName string) er
 		return err
 	}
 
-	err = s.Platform.CreateRoleBinding(
+	return s.Platform.CreateRoleBinding(
 		edpName,
 		projectName,
 		rbacV1.RoleRef{Name: "view", APIGroup: "rbac.authorization.k8s.io", Kind: "ClusterRole"},
@@ -182,10 +162,6 @@ func (s CDStageService) createRoleBinding(edpName string, projectName string) er
 			{Kind: "Group", Name: edpName + "-edp-view"},
 		},
 	)
-	if err != nil {
-		return err
-	}
-	return nil
 }
 
 func (s CDStageService) setupPlatform(edpName string, cdPipelineName string, stageName string) error {
@@ -196,11 +172,7 @@ func (s CDStageService) setupPlatform(edpName string, cdPipelineName string, sta
 		return err
 	}
 
-	err = s.createRoleBinding(edpName, projectName)
-	if err != nil {
-		return err
-	}
-	return nil
+	return s.createRoleBinding(edpName, projectName)
 }
 
 func (s CDStageService) setupJenkins(namespace string, stageName string, cdPipelineName string) error {
@@ -221,9 +193,5 @@ func (s CDStageService) setupJenkins(namespace string, stageName string, cdPipel
 		return err
 	}
 
-	err = jenkins.CreateJob(stageName, pipelineFolderName, *stageConfig)
-	if err != nil {
-		return err
-	}
-	return nil
+	return jenkins.CreateJob(stageName, pipelineFolderName, *stageConfig)
 }

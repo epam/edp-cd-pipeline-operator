@@ -5,20 +5,26 @@ import (
 	"github.com/epmd-edp/cd-pipeline-operator/v2/pkg/controller/helper"
 	"github.com/epmd-edp/cd-pipeline-operator/v2/pkg/platform"
 	"github.com/epmd-edp/cd-pipeline-operator/v2/pkg/service/stage"
+	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/types"
-	"log"
 	"time"
 
 	edpv1alpha1 "github.com/epmd-edp/cd-pipeline-operator/v2/pkg/apis/edp/v1alpha1"
 
-	"k8s.io/apimachinery/pkg/api/errors"
+	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 	"sigs.k8s.io/controller-runtime/pkg/source"
+)
+
+var (
+	_   reconcile.Reconciler = &ReconcileStage{}
+	log                      = logf.Log.WithName("stage_controller")
 )
 
 // Add creates a new Stage Controller and adds it to the Manager. The Manager will set fields on the Controller
@@ -49,8 +55,6 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	return nil
 }
 
-var _ reconcile.Reconciler = &ReconcileStage{}
-
 // ReconcileStage reconciles a Stage object
 type ReconcileStage struct {
 	// This client, initialized using mgr.Client() above, is a split client
@@ -65,13 +69,14 @@ type ReconcileStage struct {
 // The Controller will requeue the Request to be processed again if the returned error is non-nil or
 // Result.Requeue is true, otherwise upon completion it will remove the work from the queue.
 func (r *ReconcileStage) Reconcile(request reconcile.Request) (reconcile.Result, error) {
-	log.Println("Reconciling Stage")
+	reqLog := log.WithValues("Request.Namespace", request.Namespace, "Request.Name", request.Name)
+	reqLog.Info("Reconciling Stage")
 
 	// Fetch the Stage instance
 	instance := &edpv1alpha1.Stage{}
 	err := r.client.Get(context.TODO(), request.NamespacedName, instance)
 	if err != nil {
-		if errors.IsNotFound(err) {
+		if k8sErrors.IsNotFound(err) {
 			// Request object not found, could have been deleted after reconcile request.
 			// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
 			// Return and don't requeue
@@ -80,46 +85,35 @@ func (r *ReconcileStage) Reconcile(request reconcile.Request) (reconcile.Result,
 		// Error reading the object - requeue the request.
 		return reconcile.Result{}, err
 	}
+	reqLog.Info("Successful fetching of CR", "Stage", *instance)
 
 	cdPipeline, err := r.getCdPipeline(*instance)
-
 	if err != nil {
-		log.Printf("[ERROR] Cannot get CD pipeline. Reason: %s", err)
-		return reconcile.Result{RequeueAfter: 10 * time.Second}, err
+		return reconcile.Result{}, errors.Wrap(err, "Failed to get parent CD Pipeline")
 	}
-
 	if !cdPipeline.Status.Available {
-		log.Printf("[ERROR] CD pipeline %s is not ready yet.", cdPipeline.Name)
+		reqLog.Info("Parent CD pipeline is not ready yet", "CD Pipeline name", cdPipeline.Name)
 		return reconcile.Result{RequeueAfter: 10 * time.Second}, nil
 	}
 
-	log.Printf("Stage: %v", instance)
-
 	p, err := platform.NewPlatformService(helper.GetPlatformTypeEnv())
 	if err != nil {
-		log.Printf("[ERROR] Cannot initialize platform service. Reason: %v", err)
-		return reconcile.Result{RequeueAfter: 10 * time.Second}, err
+		return reconcile.Result{}, errors.Wrap(err, "Failed to initialize platform service")
 	}
+
+	defer r.updateStatus(instance)
 
 	cdStageService := stage.CDStageService{
 		Resource: instance,
 		Client:   r.client,
 		Platform: p,
 	}
-
-	log.Printf("CD Stage service has been created.")
-
 	err = cdStageService.CreateStage()
 	if err != nil {
-		log.Print(err)
+		return reconcile.Result{}, errors.Wrap(err, "Failed to create Stage")
 	}
 
-	err = r.client.Status().Update(context.TODO(), instance)
-	if err != nil {
-		_ = r.client.Update(context.TODO(), instance)
-	}
-
-	log.Printf("Reconciling Stage %v/%v has been finished", request.Namespace, request.Name)
+	reqLog.Info("Reconciling of Stage has been finished")
 	return reconcile.Result{}, nil
 }
 
@@ -135,4 +129,11 @@ func (r *ReconcileStage) getCdPipeline(pipeline edpv1alpha1.Stage) (*edpv1alpha1
 	}
 
 	return instance, nil
+}
+
+func (r *ReconcileStage) updateStatus(instance *edpv1alpha1.Stage) {
+	err := r.client.Status().Update(context.TODO(), instance)
+	if err != nil {
+		_ = r.client.Update(context.TODO(), instance)
+	}
 }
