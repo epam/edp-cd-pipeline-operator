@@ -3,8 +3,8 @@ package cdpipeline
 import (
 	"context"
 	edpv1alpha1 "github.com/epmd-edp/cd-pipeline-operator/v2/pkg/apis/edp/v1alpha1"
-	"github.com/epmd-edp/cd-pipeline-operator/v2/pkg/controller/helper"
 	"github.com/epmd-edp/cd-pipeline-operator/v2/pkg/platform"
+	"github.com/epmd-edp/cd-pipeline-operator/v2/pkg/platform/helper"
 	"github.com/epmd-edp/cd-pipeline-operator/v2/pkg/service/cdpipeline"
 	"github.com/pkg/errors"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"

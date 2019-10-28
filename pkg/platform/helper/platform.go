@@ -1,8 +1,6 @@
 package helper
 
-import (
-	"os"
-)
+import "os"
 
 const (
 	platformType       = "PLATFORM_TYPE"
@@ -16,4 +14,8 @@ func GetPlatformTypeEnv() string {
 		return pt
 	}
 	return PlatformOpenshift
+}
+
+func IsOpenshift() bool {
+	return GetPlatformTypeEnv() == PlatformOpenshift
 }

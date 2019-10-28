@@ -2,8 +2,8 @@ package stage
 
 import (
 	"context"
-	"github.com/epmd-edp/cd-pipeline-operator/v2/pkg/controller/helper"
 	"github.com/epmd-edp/cd-pipeline-operator/v2/pkg/platform"
+	"github.com/epmd-edp/cd-pipeline-operator/v2/pkg/platform/helper"
 	"github.com/epmd-edp/cd-pipeline-operator/v2/pkg/service/stage"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/types"

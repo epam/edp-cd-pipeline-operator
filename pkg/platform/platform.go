@@ -1,7 +1,7 @@
 package platform
 
 import (
-	"github.com/epmd-edp/cd-pipeline-operator/v2/pkg/controller/helper"
+	"github.com/epmd-edp/cd-pipeline-operator/v2/pkg/platform/helper"
 	"github.com/epmd-edp/cd-pipeline-operator/v2/pkg/platform/kubernetes"
 	"github.com/epmd-edp/cd-pipeline-operator/v2/pkg/platform/openshift"
 	"github.com/pkg/errors"

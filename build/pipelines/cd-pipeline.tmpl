@@ -31,8 +31,12 @@
     </properties>
     <definition class="org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition" plugin="workflow-cps@2.54">
         <script>@Library([&apos;edp-library-stages&apos;, &apos;edp-library-pipelines&apos;]) _
-
-Deploy()</script>
+            {{if .isOpenshift}}
+                Deploy()
+            {{else}}
+                DeployHelm()
+            {{end}}
+        </script>
         <sandbox>true</sandbox>
     </definition>
     <triggers/>
