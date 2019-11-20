@@ -55,7 +55,7 @@ func (s CDStageService) CreateStage() error {
 	if err != nil {
 		return errors.Wrap(err, "error has been occurred in cd_stage status update")
 	}
-	d, err := s.Platform.GetConfigMapData(cr.Namespace, "user-settings")
+	d, err := s.Platform.GetConfigMapData(cr.Namespace, "edp-config")
 	edpName := d["edp_name"]
 	if err != nil {
 		s.setFailedFields(edpv1alpha1.FetchingUserSettingsConfigMap, err.Error())
