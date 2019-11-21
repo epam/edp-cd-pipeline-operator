@@ -61,7 +61,7 @@ func (s CDStageService) CreateStage() error {
 		s.setFailedFields(edpv1alpha1.FetchingUserSettingsConfigMap, err.Error())
 		return errors.Wrap(err, "failed to fetch user settings config map")
 	}
-	err = s.setupPlatform(edpName, cr.Spec.CdPipeline, cr.Spec.Name)
+	err = s.setupPlatform(edpName, cr.Spec.CdPipeline, cr.Spec.Name, cr.Namespace)
 	if err != nil {
 		s.setFailedFields(edpv1alpha1.PlatformProjectCreation, err.Error())
 		return errors.Wrap(err, "failed to setup platform")
@@ -140,7 +140,7 @@ func createStageConfig(name string) (*string, error) {
 	return &cdPipeline, nil
 }
 
-func (s CDStageService) createRoleBinding(edpName string, projectName string) error {
+func (s CDStageService) createRoleBinding(edpName string, projectName string, namespace string) error {
 	err := s.Platform.CreateRoleBinding(
 		edpName,
 		projectName,
@@ -148,8 +148,8 @@ func (s CDStageService) createRoleBinding(edpName string, projectName string) er
 		[]rbacV1.Subject{
 			{Kind: "Group", Name: edpName + "-edp-super-admin"},
 			{Kind: "Group", Name: edpName + "-edp-admin"},
-			{Kind: "ServiceAccount", Name: "jenkins", Namespace: edpName + "-edp-cicd"},
-			{Kind: "ServiceAccount", Name: "edp-admin-console", Namespace: edpName + "-edp-cicd"},
+			{Kind: "ServiceAccount", Name: "jenkins", Namespace: namespace},
+			{Kind: "ServiceAccount", Name: "edp-admin-console", Namespace: namespace},
 		},
 	)
 	if err != nil {
@@ -166,7 +166,7 @@ func (s CDStageService) createRoleBinding(edpName string, projectName string) er
 	)
 }
 
-func (s CDStageService) setupPlatform(edpName string, cdPipelineName string, stageName string) error {
+func (s CDStageService) setupPlatform(edpName string, cdPipelineName string, stageName string, namespace string) error {
 	projectName := edpName + "-" + cdPipelineName + "-" + stageName
 
 	err := s.Platform.CreateProject(projectName, "Deploy project for stage "+stageName)
@@ -174,7 +174,7 @@ func (s CDStageService) setupPlatform(edpName string, cdPipelineName string, sta
 		return err
 	}
 
-	return s.createRoleBinding(edpName, projectName)
+	return s.createRoleBinding(edpName, projectName, namespace)
 }
 
 func (s CDStageService) setupJenkins(namespace string, stageName string, cdPipelineName string) error {
