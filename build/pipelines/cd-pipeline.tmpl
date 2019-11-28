@@ -26,6 +26,12 @@
               <defaultValue>{{.gitServerCrVersion}}</defaultValue>
               <trim>false</trim>
             </hudson.model.StringParameterDefinition>
+            <hudson.model.StringParameterDefinition>
+              <name>STAGES</name>
+              <description></description>
+              <defaultValue>{{.pipelineStages}}</defaultValue>
+              <trim>false</trim>
+            </hudson.model.StringParameterDefinition>
            </parameterDefinitions>
         </hudson.model.ParametersDefinitionProperty>
     </properties>

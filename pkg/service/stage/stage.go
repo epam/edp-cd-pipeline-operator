@@ -3,6 +3,7 @@ package stage
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	edpv1alpha1 "github.com/epmd-edp/cd-pipeline-operator/v2/pkg/apis/edp/v1alpha1"
 	jenkinsClient "github.com/epmd-edp/cd-pipeline-operator/v2/pkg/jenkins"
@@ -71,7 +72,12 @@ func (s CDStageService) CreateStage() error {
 	if err != nil {
 		return errors.Wrap(err, "error has been occurred in cd_stage status update")
 	}
-	err = s.setupJenkins(cr.Namespace, cr.Spec.Name, cr.Spec.CdPipeline)
+	ps, err := s.createStageJSON(*cr)
+	if err != nil {
+		return err
+	}
+
+	err = s.setupJenkins(cr.Namespace, cr.Spec.Name, cr.Spec.CdPipeline, ps)
 	if err != nil {
 		s.setFailedFields(edpv1alpha1.CreateJenkinsPipeline, err.Error())
 		return errors.Wrap(err, "failed to setup Jenkins")
@@ -88,6 +94,41 @@ func (s CDStageService) CreateStage() error {
 
 	reqLog.Info("Stage has been created")
 	return nil
+}
+
+type pipelineStage struct {
+	Name string `json:"name"`
+	StepName string `json:"step_name"`
+}
+
+func (s CDStageService) createStageJSON(cr edpv1alpha1.Stage) (string, error) {
+	j := []pipelineStage{
+		{
+			Name: "Init",
+			StepName: "Init",
+		},
+		{
+			Name: "Deploy",
+			StepName: "Deploy",
+		},
+	}
+
+	for _, ps := range cr.Spec.QualityGates {
+		i := pipelineStage{
+			Name: ps.QualityGateType,
+			StepName: ps.StepName,
+		}
+
+		j = append(j, i)
+	}
+	j = append(j, pipelineStage{Name: "Promote-images", StepName: "Promote-images"})
+
+	o, err := json.Marshal(j)
+	if err != nil {
+		return "", err
+	}
+
+	return string(o), err
 }
 
 func (s CDStageService) updateStatus(status edpv1alpha1.StageStatus) error {
@@ -117,13 +158,14 @@ func (s CDStageService) setFailedFields(action edpv1alpha1.ActionType, message s
 	}
 }
 
-func createStageConfig(name string) (*string, error) {
+func createStageConfig(name string, ps string) (*string, error) {
 	var cdPipelineBuffer bytes.Buffer
 
 	jenkinsName := map[string]interface{}{
 		"name":               name,
 		"gitServerCrVersion": "v2",
 		"isOpenshift":        ph.IsOpenshift(),
+		"pipelineStages":     ps,
 	}
 
 	tmpl, err := template.New("cd-pipeline.tmpl").ParseFiles("/usr/local/bin/pipelines/cd-pipeline.tmpl")
@@ -177,7 +219,7 @@ func (s CDStageService) setupPlatform(edpName string, cdPipelineName string, sta
 	return s.createRoleBinding(edpName, projectName, namespace)
 }
 
-func (s CDStageService) setupJenkins(namespace string, stageName string, cdPipelineName string) error {
+func (s CDStageService) setupJenkins(namespace string, stageName string, cdPipelineName string, ps string) error {
 	pipelineFolderName := cdPipelineName + "-cd-pipeline"
 	jenkinsUrl := fmt.Sprintf("http://jenkins.%s:8080", namespace)
 	jenkinsToken, jenkinsUsername, err := helper.GetJenkinsCreds(s.Platform, s.Client, namespace)
@@ -190,7 +232,7 @@ func (s CDStageService) setupJenkins(namespace string, stageName string, cdPipel
 		return err
 	}
 
-	stageConfig, err := createStageConfig(stageName)
+	stageConfig, err := createStageConfig(stageName, ps)
 	if err != nil {
 		return err
 	}

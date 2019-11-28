@@ -14,12 +14,12 @@ type StageSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
 	// Add custom validation using kubebuilder tags: https://book.kubebuilder.io/beyond_basics/generating_crd.html
-	Name         string        `json:"name"`
-	CdPipeline   string        `json:"cdPipeline"`
-	Description  string        `json:"description"`
-	TriggerType  string        `json:"triggerType"`
-	Order        int           `json:"order"`
-	QualityGates []QualityGate `json:"qualityGates"`
+	Name           string          `json:"name"`
+	CdPipeline     string          `json:"cdPipeline"`
+	Description    string          `json:"description"`
+	TriggerType    string          `json:"triggerType"`
+	Order          int             `json:"order"`
+	QualityGates   []QualityGate   `json:"qualityGates"`
 }
 
 type QualityGate struct {
