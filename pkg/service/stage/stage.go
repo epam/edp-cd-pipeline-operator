@@ -3,7 +3,6 @@ package stage
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
 	edpv1alpha1 "github.com/epmd-edp/cd-pipeline-operator/v2/pkg/apis/edp/v1alpha1"
 	jenkinsClient "github.com/epmd-edp/cd-pipeline-operator/v2/pkg/jenkins"
@@ -72,7 +71,8 @@ func (s CDStageService) CreateStage() error {
 	if err != nil {
 		return errors.Wrap(err, "error has been occurred in cd_stage status update")
 	}
-	ps, err := s.createStageJSON(*cr)
+
+	ps, err := s.Platform.CreateStageJSON(*cr)
 	if err != nil {
 		return err
 	}
@@ -94,41 +94,6 @@ func (s CDStageService) CreateStage() error {
 
 	reqLog.Info("Stage has been created")
 	return nil
-}
-
-type pipelineStage struct {
-	Name string `json:"name"`
-	StepName string `json:"step_name"`
-}
-
-func (s CDStageService) createStageJSON(cr edpv1alpha1.Stage) (string, error) {
-	j := []pipelineStage{
-		{
-			Name: "Init",
-			StepName: "Init",
-		},
-		{
-			Name: "Deploy",
-			StepName: "Deploy",
-		},
-	}
-
-	for _, ps := range cr.Spec.QualityGates {
-		i := pipelineStage{
-			Name: ps.QualityGateType,
-			StepName: ps.StepName,
-		}
-
-		j = append(j, i)
-	}
-	j = append(j, pipelineStage{Name: "Promote-images", StepName: "Promote-images"})
-
-	o, err := json.Marshal(j)
-	if err != nil {
-		return "", err
-	}
-
-	return string(o), err
 }
 
 func (s CDStageService) updateStatus(status edpv1alpha1.StageStatus) error {
