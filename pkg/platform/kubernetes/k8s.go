@@ -2,7 +2,10 @@ package kubernetes
 
 import (
 	"crypto/rand"
+	"encoding/json"
 	"fmt"
+	edpv1alpha1 "github.com/epmd-edp/cd-pipeline-operator/v2/pkg/apis/edp/v1alpha1"
+	"github.com/epmd-edp/cd-pipeline-operator/v2/pkg/platform/helper"
 	"github.com/pkg/errors"
 	coreV1 "k8s.io/api/core/v1"
 	rbacV1 "k8s.io/api/rbac/v1"
@@ -97,4 +100,30 @@ func (service K8SService) GetConfigMapData(namespace string, name string) (map[s
 		return nil, errors.Wrapf(err, "Couldn't get ConfigMap %v object", configMap.Name)
 	}
 	return configMap.Data, nil
+}
+
+func (service K8SService) CreateStageJSON(cr edpv1alpha1.Stage) (string, error) {
+	j := []helper.PipelineStage{
+		{
+			Name:     "deploy-helm",
+			StepName: "deploy-helm",
+		},
+	}
+
+	for _, ps := range cr.Spec.QualityGates {
+		i := helper.PipelineStage{
+			Name:     ps.QualityGateType,
+			StepName: ps.StepName,
+		}
+
+		j = append(j, i)
+	}
+	j = append(j, helper.PipelineStage{Name: "promote-images-ecr", StepName: "promote-images-ecr"})
+
+	o, err := json.Marshal(j)
+	if err != nil {
+		return "", err
+	}
+
+	return string(o), err
 }
