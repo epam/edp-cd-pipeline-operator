@@ -7,7 +7,6 @@ import (
 	edpv1alpha1 "github.com/epmd-edp/cd-pipeline-operator/v2/pkg/apis/edp/v1alpha1"
 	jenkinsClient "github.com/epmd-edp/cd-pipeline-operator/v2/pkg/jenkins"
 	"github.com/epmd-edp/cd-pipeline-operator/v2/pkg/platform"
-	ph "github.com/epmd-edp/cd-pipeline-operator/v2/pkg/platform/helper"
 	"github.com/epmd-edp/cd-pipeline-operator/v2/pkg/service/helper"
 	"github.com/pkg/errors"
 	rbacV1 "k8s.io/api/rbac/v1"
@@ -129,7 +128,6 @@ func createStageConfig(name string, ps string) (*string, error) {
 	jenkinsName := map[string]interface{}{
 		"name":               name,
 		"gitServerCrVersion": "v2",
-		"isOpenshift":        ph.IsOpenshift(),
 		"pipelineStages":     ps,
 	}
 
