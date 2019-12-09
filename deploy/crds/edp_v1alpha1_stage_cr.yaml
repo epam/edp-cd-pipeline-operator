@@ -10,6 +10,11 @@ spec:
   triggerType: "is-changed"
   order: 1
   jenkinsStep: "build"
+  source:
+    type: "library"
+    library:
+      name: "lib-name"
+      branch: "branch-name"
 status:
   status: "initialized"
   lastTimeUpdated: 0001-01-01T00:00:00Z
