@@ -35,12 +35,38 @@
            </parameterDefinitions>
         </hudson.model.ParametersDefinitionProperty>
     </properties>
+    {{ if eq .source.type "library" }}
+    <definition class="org.jenkinsci.plugins.workflow.cps.CpsScmFlowDefinition" plugin="workflow-cps@2.74">
+        <scm class="hudson.plugins.git.GitSCM" plugin="git@3.12.1">
+          <configVersion>2</configVersion>
+          <userRemoteConfigs>
+            <hudson.plugins.git.UserRemoteConfig>
+              <url>{{ .source.library.url }}</url>
+              <credentialsId>{{ .source.library.credentials }}</credentialsId>
+            </hudson.plugins.git.UserRemoteConfig>
+          </userRemoteConfigs>
+          <branches>
+            <hudson.plugins.git.BranchSpec>
+              <name>{{ .source.library.branch }}</name>
+            </hudson.plugins.git.BranchSpec>
+          </branches>
+          <doGenerateSubmoduleConfigurations>false</doGenerateSubmoduleConfigurations>
+          <gitTool>Default</gitTool>
+          <extensions/>
+        </scm>
+        <scriptPath>Jenkinsfile</scriptPath>
+        <lightweight>false</lightweight>
+    </definition>
+    {{ else }}
     <definition class="org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition" plugin="workflow-cps@2.54">
-        <script>@Library([&apos;edp-library-stages&apos;, &apos;edp-library-pipelines&apos;]) _
-            Deploy()
+        <script>
+@Library([&apos;edp-library-stages&apos;, &apos;edp-library-pipelines&apos;])
+
+Deploy()
         </script>
         <sandbox>true</sandbox>
     </definition>
+    {{ end }}
     <triggers/>
     <disabled>false</disabled>
 </flow-definition>

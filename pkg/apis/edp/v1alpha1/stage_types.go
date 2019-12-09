@@ -23,23 +23,27 @@ type StageSpec struct {
 	Source       Source        `json:"source" valid:"Required"`
 }
 
+// QualityGate
+// +k8s:openapi-gen=true
+type QualityGate struct {
+	QualityGateType string  `json:"qualityGateType" valid:"Required"`
+	StepName        string  `json:"stepName" valid:"Required;Match(/^[A-z0-9-._]/)"`
+	AutotestName    *string `json:"autotestName"`
+	BranchName      *string `json:"branchName"`
+}
+
+// Source
 // +k8s:openapi-gen=true
 type Source struct {
 	Type    string  `json:"type"`
 	Library Library `json:"library,omitempty"`
 }
 
+// Library
 // +k8s:openapi-gen=true
 type Library struct {
 	Name   string `json:"name,omitempty"`
 	Branch string `json:"branch,omitempty"`
-}
-
-type QualityGate struct {
-	QualityGateType string  `json:"qualityGateType" valid:"Required"`
-	StepName        string  `json:"stepName" valid:"Required;Match(/^[A-z0-9-._]/)"`
-	AutotestName    *string `json:"autotestName"`
-	BranchName      *string `json:"branchName"`
 }
 
 // StageStatus defines the observed state of Stage

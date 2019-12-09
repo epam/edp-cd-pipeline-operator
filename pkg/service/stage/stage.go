@@ -8,8 +8,10 @@ import (
 	jenkinsClient "github.com/epmd-edp/cd-pipeline-operator/v2/pkg/jenkins"
 	"github.com/epmd-edp/cd-pipeline-operator/v2/pkg/platform"
 	"github.com/epmd-edp/cd-pipeline-operator/v2/pkg/service/helper"
+	codebaseClient "github.com/epmd-edp/codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/pkg/errors"
 	rbacV1 "k8s.io/api/rbac/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 	"text/template"
@@ -71,12 +73,12 @@ func (s CDStageService) CreateStage() error {
 		return errors.Wrap(err, "error has been occurred in cd_stage status update")
 	}
 
-	ps, err := s.Platform.CreateStageJSON(*cr)
+	pipeStg, err := s.Platform.CreateStageJSON(*cr)
 	if err != nil {
 		return err
 	}
 
-	err = s.setupJenkins(cr.Namespace, cr.Spec.Name, cr.Spec.CdPipeline, ps)
+	err = s.setupJenkins(cr, pipeStg)
 	if err != nil {
 		s.setFailedFields(edpv1alpha1.CreateJenkinsPipeline, err.Error())
 		return errors.Wrap(err, "failed to setup Jenkins")
@@ -122,13 +124,69 @@ func (s CDStageService) setFailedFields(action edpv1alpha1.ActionType, message s
 	}
 }
 
-func createStageConfig(name string, ps string) (*string, error) {
+func (s CDStageService) getLibraryParams(libName string, ns string) (*codebaseClient.Codebase, error) {
+	nsn := types.NamespacedName{
+		Namespace: ns,
+		Name:      libName,
+	}
+
+	cb := &codebaseClient.Codebase{}
+	err := s.Client.Get(context.TODO(), nsn, cb)
+	if err != nil {
+		return nil, err
+	}
+	return cb, nil
+}
+
+func (s CDStageService) getGitServerParams(gsName string, ns string) (*codebaseClient.GitServer, error) {
+	nsn := types.NamespacedName{
+		Namespace: ns,
+		Name:      gsName,
+	}
+
+	gs := &codebaseClient.GitServer{}
+	err := s.Client.Get(context.TODO(), nsn, gs)
+	if err != nil {
+		return nil, err
+	}
+	return gs, nil
+}
+
+func (s CDStageService) getPipeSrcParams(stage *edpv1alpha1.Stage, pipeSrc map[string]interface{}) map[string]interface{} {
+	if cb, err := s.getLibraryParams(stage.Spec.Source.Library.Name, stage.Namespace); err != nil {
+		log.Error(err, "Couldn't retrieve parameters for pipeline's library, default source type will be used", "Library name", stage.Spec.Source.Library.Name)
+	} else {
+		if gs, err := s.getGitServerParams(cb.Spec.GitServer, stage.Namespace); err != nil {
+			log.Error(err, "Couldn't retrieve parameters for git server, default source type will be used", "Git server", cb.Spec.GitServer)
+		} else {
+			pipeSrc["type"] = "library"
+			pipeSrc["library"] = map[string]string{
+				"url":         fmt.Sprintf("ssh://%v@%v:%v/%v", gs.Spec.GitUser, gs.Spec.GitHost, gs.Spec.SshPort, stage.Spec.Source.Library.Name),
+				"credentials": gs.Spec.NameSshKeySecret,
+				"branch":      stage.Spec.Source.Library.Branch,
+			}
+		}
+	}
+	return pipeSrc
+}
+
+func (s CDStageService) createStageConfig(stage *edpv1alpha1.Stage, ps string) (*string, error) {
 	var cdPipelineBuffer bytes.Buffer
 
-	jenkinsName := map[string]interface{}{
-		"name":               name,
+	pipeSrc := map[string]interface{}{
+		"type":    "default",
+		"library": map[string]string{},
+	}
+
+	if stage.Spec.Source.Type == "library" {
+		pipeSrc = s.getPipeSrcParams(stage, pipeSrc)
+	}
+
+	pipelineStruct := map[string]interface{}{
+		"name":               stage.Spec.Name,
 		"gitServerCrVersion": "v2",
 		"pipelineStages":     ps,
+		"source":             pipeSrc,
 	}
 
 	tmpl, err := template.New("cd-pipeline.tmpl").ParseFiles("/usr/local/bin/pipelines/cd-pipeline.tmpl")
@@ -136,7 +194,7 @@ func createStageConfig(name string, ps string) (*string, error) {
 		return nil, err
 	}
 
-	if err := tmpl.Execute(&cdPipelineBuffer, jenkinsName); err != nil {
+	if err := tmpl.Execute(&cdPipelineBuffer, pipelineStruct); err != nil {
 		return nil, err
 	}
 
@@ -182,10 +240,10 @@ func (s CDStageService) setupPlatform(edpName string, cdPipelineName string, sta
 	return s.createRoleBinding(edpName, projectName, namespace)
 }
 
-func (s CDStageService) setupJenkins(namespace string, stageName string, cdPipelineName string, ps string) error {
-	pipelineFolderName := cdPipelineName + "-cd-pipeline"
-	jenkinsUrl := fmt.Sprintf("http://jenkins.%s:8080", namespace)
-	jenkinsToken, jenkinsUsername, err := helper.GetJenkinsCreds(s.Platform, s.Client, namespace)
+func (s CDStageService) setupJenkins(stage *edpv1alpha1.Stage, pipeStg string) error {
+	pipelineFolderName := stage.Spec.CdPipeline + "-cd-pipeline"
+	jenkinsUrl := fmt.Sprintf("http://jenkins.%s:8080", stage.Namespace)
+	jenkinsToken, jenkinsUsername, err := helper.GetJenkinsCreds(s.Platform, s.Client, stage.Namespace)
 	if err != nil {
 		return err
 	}
@@ -195,10 +253,10 @@ func (s CDStageService) setupJenkins(namespace string, stageName string, cdPipel
 		return err
 	}
 
-	stageConfig, err := createStageConfig(stageName, ps)
+	stageConfig, err := s.createStageConfig(stage, pipeStg)
 	if err != nil {
 		return err
 	}
 
-	return jenkins.CreateJob(stageName, pipelineFolderName, *stageConfig)
+	return jenkins.CreateJob(stage.Spec.Name, pipelineFolderName, *stageConfig)
 }
