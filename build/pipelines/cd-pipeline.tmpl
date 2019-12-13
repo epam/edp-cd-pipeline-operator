@@ -59,8 +59,7 @@
     </definition>
     {{ else }}
     <definition class="org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition" plugin="workflow-cps@2.54">
-        <script>
-@Library([&apos;edp-library-stages&apos;, &apos;edp-library-pipelines&apos;])
+        <script>@Library([&apos;edp-library-stages&apos;, &apos;edp-library-pipelines&apos;]) _
 
 Deploy()
         </script>
