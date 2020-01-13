@@ -162,7 +162,7 @@ func (s CDStageService) getPipeSrcParams(stage *edpv1alpha1.Stage, pipeSrc map[s
 			pipeSrc["type"] = "library"
 			pipeSrc["library"] = map[string]string{
 				"url": fmt.Sprintf("ssh://%v@%v:%v%v", gs.Spec.GitUser, gs.Spec.GitHost, gs.Spec.SshPort,
-					getPathToRepository(string(cb.Spec.Strategy), stage.Spec.Source.Library.Name, *cb.Spec.GitUrlPath)),
+					getPathToRepository(string(cb.Spec.Strategy), stage.Spec.Source.Library.Name, cb.Spec.GitUrlPath)),
 				"credentials": gs.Spec.NameSshKeySecret,
 				"branch":      stage.Spec.Source.Library.Branch,
 			}
@@ -171,9 +171,9 @@ func (s CDStageService) getPipeSrcParams(stage *edpv1alpha1.Stage, pipeSrc map[s
 	return pipeSrc
 }
 
-func getPathToRepository(strategy, name, url string) string {
+func getPathToRepository(strategy, name string, url *string) string {
 	if strategy == "import" {
-		return url
+		return *url
 	}
 	return "/" + name
 }
