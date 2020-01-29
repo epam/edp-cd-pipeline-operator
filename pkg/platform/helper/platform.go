@@ -15,8 +15,3 @@ func GetPlatformTypeEnv() string {
 	}
 	return PlatformOpenshift
 }
-
-type PipelineStage struct {
-	Name     string `json:"name"`
-	StepName string `json:"step_name"`
-}

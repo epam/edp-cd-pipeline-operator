@@ -1,7 +1,6 @@
 package platform
 
 import (
-	edpv1alpha1 "github.com/epmd-edp/cd-pipeline-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epmd-edp/cd-pipeline-operator/v2/pkg/platform/helper"
 	"github.com/epmd-edp/cd-pipeline-operator/v2/pkg/platform/kubernetes"
 	"github.com/epmd-edp/cd-pipeline-operator/v2/pkg/platform/openshift"
@@ -13,11 +12,8 @@ import (
 
 // PlatformService interface
 type PlatformService interface {
-	CreateProject(projectName string, projectDescription string) error
 	CreateRoleBinding(edpName string, namespace string, roleRef rbacV1.RoleRef, subjects []rbacV1.Subject) error
 	GetSecretData(namespace string, name string) (map[string][]byte, error)
-	GetConfigMapData(namespace string, name string) (map[string]string, error)
-	CreateStageJSON(cr edpv1alpha1.Stage) (string, error)
 }
 
 // NewPlatformService returns platform service interface implementation

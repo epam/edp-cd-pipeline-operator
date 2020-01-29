@@ -4,10 +4,9 @@ go 1.12
 
 require (
 	github.com/bndr/gojenkins v0.2.1-0.20181125150310-de43c03cf849
-	github.com/epmd-edp/codebase-operator/v2 v2.2.0-83
-	github.com/epmd-edp/jenkins-operator/v2 v2.1.0-61
+	github.com/epmd-edp/codebase-operator/v2 v2.3.0-88
+	github.com/epmd-edp/jenkins-operator/v2 v2.3.0-130.0.20200130180740-456dfd955ec4
 	github.com/go-openapi/spec v0.19.3
-	github.com/openshift/api v3.9.0+incompatible
 	github.com/openshift/client-go v3.9.0+incompatible
 	github.com/operator-framework/operator-sdk v0.0.0-20190530173525-d6f9cdf2f52e
 	github.com/pkg/errors v0.8.1
@@ -17,5 +16,4 @@ require (
 	k8s.io/client-go v0.0.0-20190228174230-b40b2a5939e4
 	k8s.io/kube-openapi v0.0.0-20181109181836-c59034cc13d5
 	sigs.k8s.io/controller-runtime v0.1.12
-	sigs.k8s.io/testing_frameworks v0.1.2 // indirect
 )

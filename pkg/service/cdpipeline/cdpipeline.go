@@ -7,6 +7,7 @@ import (
 	jenkinsClient "github.com/epmd-edp/cd-pipeline-operator/v2/pkg/jenkins"
 	"github.com/epmd-edp/cd-pipeline-operator/v2/pkg/platform"
 	"github.com/epmd-edp/cd-pipeline-operator/v2/pkg/service/helper"
+	"github.com/epmd-edp/cd-pipeline-operator/v2/pkg/util/consts"
 	"github.com/pkg/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
@@ -14,13 +15,6 @@ import (
 )
 
 var log = logf.Log.WithName("cd_pipeline_service")
-
-const (
-	StatusInit       = "initialized"
-	StatusFailed     = "failed"
-	StatusFinished   = "created"
-	StatusInProgress = "in progress"
-)
 
 type CDPipelineService struct {
 	Resource *edpv1alpha1.CDPipeline
@@ -33,12 +27,12 @@ func (s CDPipelineService) CreateCDPipeline() error {
 	reqLog := log.WithValues("CD pipeline name", cr.Spec.Name, "namespace", cr.Namespace)
 	reqLog.Info("Start creating CD Pipeline...")
 
-	if cr.Status.Status != StatusInit {
+	if cr.Status.Status != consts.InitStatus {
 		reqLog.Info("CD Pipeline is not in init status. Skipped")
 		return nil
 	}
 	pipelineStatus := edpv1alpha1.CDPipelineStatus{
-		Status:          StatusInProgress,
+		Status:          consts.InProgressStatus,
 		Available:       false,
 		LastTimeUpdated: time.Now(),
 		Result:          edpv1alpha1.Success,
@@ -67,7 +61,7 @@ func (s CDPipelineService) CreateCDPipeline() error {
 		return errors.Wrap(err, "failed to create folder in Jenkins")
 	}
 	cr.Status = edpv1alpha1.CDPipelineStatus{
-		Status:          StatusFinished,
+		Status:          consts.FinishedStatus,
 		Available:       true,
 		LastTimeUpdated: time.Now(),
 		Username:        "system",
@@ -95,7 +89,7 @@ func (s CDPipelineService) updateStatus(status edpv1alpha1.CDPipelineStatus) err
 
 func (s CDPipelineService) setFailedFields(action edpv1alpha1.ActionType, message string) {
 	s.Resource.Status = edpv1alpha1.CDPipelineStatus{
-		Status:          StatusFailed,
+		Status:          consts.FailedStatus,
 		Available:       false,
 		LastTimeUpdated: time.Now(),
 		Username:        "system",

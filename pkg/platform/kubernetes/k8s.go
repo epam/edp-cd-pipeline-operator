@@ -2,12 +2,8 @@ package kubernetes
 
 import (
 	"crypto/rand"
-	"encoding/json"
 	"fmt"
-	edpv1alpha1 "github.com/epmd-edp/cd-pipeline-operator/v2/pkg/apis/edp/v1alpha1"
-	"github.com/epmd-edp/cd-pipeline-operator/v2/pkg/platform/helper"
 	"github.com/pkg/errors"
-	coreV1 "k8s.io/api/core/v1"
 	rbacV1 "k8s.io/api/rbac/v1"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -43,20 +39,6 @@ func New(config *rest.Config) (*K8SService, error) {
 		rbacClient}, nil
 }
 
-// CreateProject creates Kubernetes namespace
-func (service K8SService) CreateProject(projectName string, projectDescription string) error {
-	log.Info("Start creating project...", "project name", projectName)
-	_, err := service.coreClient.Namespaces().Create(
-		&coreV1.Namespace{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: projectName,
-			},
-		},
-	)
-
-	return err
-}
-
 // CreateRoleBinding creates RoleBinding
 func (service K8SService) CreateRoleBinding(edpName string, namespace string, roleRef rbacV1.RoleRef, subjects []rbacV1.Subject) error {
 	log.Info("Start creating role binding", "edp name", edpName, "namespace", namespace, "role name", roleRef)
@@ -87,43 +69,4 @@ func (service K8SService) GetSecretData(namespace string, name string) (map[stri
 		return nil, err
 	}
 	return secret.Data, nil
-}
-
-// GetConfigMapData return data field of ConfigMap
-func (service K8SService) GetConfigMapData(namespace string, name string) (map[string]string, error) {
-	log.Info("Start retrieving config map data", "config map name", name, "namespace", namespace)
-	configMap, err := service.coreClient.ConfigMaps(namespace).Get(name, metav1.GetOptions{})
-	if err != nil {
-		if k8sErrors.IsNotFound(err) {
-			return nil, errors.Wrapf(err, "Config map %v in namespace %v not found", name, namespace)
-		}
-		return nil, errors.Wrapf(err, "Couldn't get ConfigMap %v object", configMap.Name)
-	}
-	return configMap.Data, nil
-}
-
-func (service K8SService) CreateStageJSON(cr edpv1alpha1.Stage) (string, error) {
-	j := []helper.PipelineStage{
-		{
-			Name:     "deploy-helm",
-			StepName: "deploy-helm",
-		},
-	}
-
-	for _, ps := range cr.Spec.QualityGates {
-		i := helper.PipelineStage{
-			Name:     ps.QualityGateType,
-			StepName: ps.StepName,
-		}
-
-		j = append(j, i)
-	}
-	j = append(j, helper.PipelineStage{Name: "promote-images-ecr", StepName: "promote-images-ecr"})
-
-	o, err := json.Marshal(j)
-	if err != nil {
-		return "", err
-	}
-
-	return string(o), err
 }
