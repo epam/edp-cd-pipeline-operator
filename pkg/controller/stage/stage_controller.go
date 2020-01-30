@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/epmd-edp/cd-pipeline-operator/v2/pkg/util/consts"
+	"github.com/epmd-edp/cd-pipeline-operator/v2/pkg/util/finalizer"
 	"github.com/pkg/errors"
 	"io/ioutil"
 	"k8s.io/apimachinery/pkg/types"
@@ -24,8 +25,9 @@ import (
 )
 
 var (
-	_   reconcile.Reconciler = &ReconcileStage{}
-	log                      = logf.Log.WithName("stage_controller")
+	_                               reconcile.Reconciler = &ReconcileStage{}
+	log                                                  = logf.Log.WithName("stage_controller")
+	ForegroundDeletionFinalizerName                      = "foregroundDeletion"
 )
 
 // Add creates a new Stage Controller and adds it to the Manager. The Manager will set fields on the Controller
@@ -70,6 +72,10 @@ func (r *ReconcileStage) Reconcile(request reconcile.Request) (reconcile.Result,
 		if k8sErrors.IsNotFound(err) {
 			return reconcile.Result{}, nil
 		}
+		return reconcile.Result{}, err
+	}
+
+	if err := r.tryToAddFinalizer(i); err != nil {
 		return reconcile.Result{}, err
 	}
 
@@ -147,4 +153,14 @@ func (r *ReconcileStage) getCdPipeline(name, namespace string) (*edpv1alpha1.CDP
 		return nil, err
 	}
 	return i, nil
+}
+
+func (r ReconcileStage) tryToAddFinalizer(c *edpv1alpha1.Stage) error {
+	if !finalizer.ContainsString(c.ObjectMeta.Finalizers, ForegroundDeletionFinalizerName) {
+		c.ObjectMeta.Finalizers = append(c.ObjectMeta.Finalizers, ForegroundDeletionFinalizerName)
+		if err := r.client.Update(context.TODO(), c); err != nil {
+			return err
+		}
+	}
+	return nil
 }
