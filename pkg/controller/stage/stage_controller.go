@@ -97,7 +97,7 @@ func (r *ReconcileStage) Reconcile(request reconcile.Request) (reconcile.Result,
 }
 
 func (r *ReconcileStage) createJenkinsJob(s edpv1alpha1.Stage) error {
-	n := fmt.Sprintf("%v-%v", s.Name, "jenkins-job")
+	n := fmt.Sprintf("%v-%v", s.Spec.Name, "jenkins-job")
 	log.V(2).Info("start creating JenkinsJob CR", "name", n)
 
 	b, err := ioutil.ReadFile("/usr/local/bin/pipelines/cd-pipeline.tmpl")
