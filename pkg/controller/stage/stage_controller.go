@@ -92,12 +92,34 @@ func (r *ReconcileStage) Reconcile(request reconcile.Request) (reconcile.Result,
 	if err := r.createJenkinsJob(*i); err != nil {
 		return reconcile.Result{}, errors.Wrap(err, "failed to create JenkinsJob CR")
 	}
+
+	if err := r.setFinishStatus(i); err != nil {
+		return reconcile.Result{}, err
+	}
 	rl.V(2).Info("reconciling Stage has been finished")
 	return reconcile.Result{}, nil
 }
 
+func (r *ReconcileStage) setFinishStatus(s *edpv1alpha1.Stage) error {
+	s.Status = edpv1alpha1.StageStatus{
+		Status:          consts.FinishedStatus,
+		Available:       true,
+		LastTimeUpdated: time.Now(),
+		Username:        "system",
+		Action:          edpv1alpha1.AcceptCDStageRegistration,
+		Result:          edpv1alpha1.Success,
+		Value:           "active",
+	}
+	if err := r.client.Status().Update(context.TODO(), s); err != nil {
+		if err := r.client.Update(context.TODO(), s); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (r *ReconcileStage) createJenkinsJob(s edpv1alpha1.Stage) error {
-	n := fmt.Sprintf("%v-%v", s.Spec.Name, "jenkins-job")
+	n := fmt.Sprintf("%v-%v", s.Name, "jenkins-job")
 	log.V(2).Info("start creating JenkinsJob CR", "name", n)
 
 	b, err := ioutil.ReadFile("/usr/local/bin/pipelines/cd-pipeline.tmpl")
