@@ -10,6 +10,8 @@ import (
 	"io/ioutil"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/controller-runtime/pkg/event"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"time"
 
 	edpv1alpha1 "github.com/epmd-edp/cd-pipeline-operator/v2/pkg/apis/edp/v1alpha1"
@@ -17,6 +19,7 @@ import (
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"reflect"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -51,8 +54,19 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		return err
 	}
 
+	pred := predicate.Funcs{
+		UpdateFunc: func(e event.UpdateEvent) bool {
+			oo := e.ObjectOld.(*edpv1alpha1.Stage)
+			no := e.ObjectNew.(*edpv1alpha1.Stage)
+			if !reflect.DeepEqual(oo.Spec, no.Spec) {
+				return true
+			}
+			return false
+		},
+	}
+
 	// Watch for changes to primary resource Stage
-	err = c.Watch(&source.Kind{Type: &edpv1alpha1.Stage{}}, &handler.EnqueueRequestForObject{})
+	err = c.Watch(&source.Kind{Type: &edpv1alpha1.Stage{}}, &handler.EnqueueRequestForObject{}, pred)
 	if err != nil {
 		return err
 	}
@@ -168,7 +182,7 @@ func (r *ReconcileStage) createJenkinsJob(s edpv1alpha1.Stage) error {
 		},
 	}
 	if err := r.client.Create(context.TODO(), jj); err != nil {
-		return errors.Wrapf(err, "couldn't create jenkins job %v", "name")
+		return errors.Wrapf(err, "couldn't create jenkins job %v", "name", jj.Name)
 	}
 	log.Info("JenkinsJob has been created", "name", n)
 	return nil

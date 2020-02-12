@@ -3,19 +3,23 @@ package cdpipeline
 import (
 	"context"
 	edpv1alpha1 "github.com/epmd-edp/cd-pipeline-operator/v2/pkg/apis/edp/v1alpha1"
-	"github.com/epmd-edp/cd-pipeline-operator/v2/pkg/platform"
-	"github.com/epmd-edp/cd-pipeline-operator/v2/pkg/platform/helper"
-	"github.com/epmd-edp/cd-pipeline-operator/v2/pkg/service/cdpipeline"
+	"github.com/epmd-edp/cd-pipeline-operator/v2/pkg/util/consts"
+	jenv1alpha1 "github.com/epmd-edp/jenkins-operator/v2/pkg/apis/v2/v1alpha1"
 	"github.com/pkg/errors"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"reflect"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
+	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 	"sigs.k8s.io/controller-runtime/pkg/source"
+	"time"
 )
 
 var (
@@ -42,8 +46,19 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		return err
 	}
 
+	pred := predicate.Funcs{
+		UpdateFunc: func(e event.UpdateEvent) bool {
+			oo := e.ObjectOld.(*edpv1alpha1.CDPipeline)
+			no := e.ObjectNew.(*edpv1alpha1.CDPipeline)
+			if !reflect.DeepEqual(oo.Spec, no.Spec) {
+				return true
+			}
+			return false
+		},
+	}
+
 	// Watch for changes to primary resource CDPipeline
-	err = c.Watch(&source.Kind{Type: &edpv1alpha1.CDPipeline{}}, &handler.EnqueueRequestForObject{})
+	err = c.Watch(&source.Kind{Type: &edpv1alpha1.CDPipeline{}}, &handler.EnqueueRequestForObject{}, pred)
 	if err != nil {
 		return err
 	}
@@ -59,52 +74,63 @@ type ReconcileCDPipeline struct {
 	scheme *runtime.Scheme
 }
 
-// Reconcile reads that state of the cluster for a CDPipeline object and makes changes based on the state read
-// and what is in the CDPipeline.Spec
-// Note:
-// The Controller will requeue the Request to be processed again if the returned error is non-nil or
-// Result.Requeue is true, otherwise upon completion it will remove the work from the queue.
 func (r *ReconcileCDPipeline) Reconcile(request reconcile.Request) (reconcile.Result, error) {
-	reqLog := log.WithValues("Request.Namespace", request.Namespace, "Request.Name", request.Name)
-	reqLog.Info("Reconciling CDPipeline")
-	// Fetch the CDPipeline instance
-	instance := &edpv1alpha1.CDPipeline{}
-	err := r.client.Get(context.TODO(), request.NamespacedName, instance)
-	if err != nil {
+	rlog := log.WithValues("Request.Namespace", request.Namespace, "Request.Name", request.Name)
+	rlog.V(2).Info("Reconciling CDPipeline")
+
+	i := &edpv1alpha1.CDPipeline{}
+	if err := r.client.Get(context.TODO(), request.NamespacedName, i); err != nil {
 		if k8sErrors.IsNotFound(err) {
-			// Request object not found, could have been deleted after reconcile request.
-			// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
-			// Return and don't requeue
 			return reconcile.Result{}, nil
 		}
-		// Error reading the object - requeue the request.
 		return reconcile.Result{}, err
 	}
-	reqLog.Info("Successful fetching of CR", "CDPipeline", *instance)
 
-	defer r.updateStatus(instance)
-
-	p, err := platform.NewPlatformService(helper.GetPlatformTypeEnv())
-	if err != nil {
-		return reconcile.Result{}, errors.Wrap(err, "Failed to create Platform service")
-	}
-	pipelineService := cdpipeline.CDPipelineService{
-		Resource: instance,
-		Client:   r.client,
-		Platform: p,
-	}
-	err = pipelineService.CreateCDPipeline()
-	if err != nil {
-		return reconcile.Result{}, errors.Wrap(err, "Failed to create CD Pipeline")
+	if err := r.createJenkinsFolder(*i); err != nil {
+		return reconcile.Result{}, err
 	}
 
-	reqLog.Info("Reconciling of CD Pipeline has been finished")
+	if err := r.setFinishStatus(i); err != nil {
+		return reconcile.Result{}, err
+	}
+	rlog.V(2).Info("Reconciling of CD Pipeline has been finished")
 	return reconcile.Result{}, nil
 }
 
-func (r *ReconcileCDPipeline) updateStatus(instance *edpv1alpha1.CDPipeline) {
-	err := r.client.Status().Update(context.TODO(), instance)
-	if err != nil {
-		_ = r.client.Update(context.TODO(), instance)
+func (r *ReconcileCDPipeline) setFinishStatus(p *edpv1alpha1.CDPipeline) error {
+	p.Status = edpv1alpha1.CDPipelineStatus{
+		Status:          consts.FinishedStatus,
+		Available:       true,
+		LastTimeUpdated: time.Now(),
+		Username:        "system",
+		Action:          edpv1alpha1.SetupInitialStructureForCDPipeline,
+		Result:          edpv1alpha1.Success,
+		Value:           "active",
 	}
+
+	if err := r.client.Status().Update(context.TODO(), p); err != nil {
+		if err := r.client.Update(context.TODO(), p); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (r *ReconcileCDPipeline) createJenkinsFolder(p edpv1alpha1.CDPipeline) error {
+	log.V(2).Info("start creating JenkinsFolder CR", "name", p.Name)
+	jf := &jenv1alpha1.JenkinsFolder{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "v2.edp.epam.com/v1alpha1",
+			Kind:       "JenkinsFolder",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      p.Name,
+			Namespace: p.Namespace,
+		},
+	}
+	if err := r.client.Create(context.TODO(), jf); err != nil {
+		return errors.Wrapf(err, "couldn't create jenkins folder %v", "name", jf.Name)
+	}
+	log.Info("JenkinsFolder CR has been created", "name", jf.Name)
+	return nil
 }
