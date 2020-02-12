@@ -1,7 +1,8 @@
 package consts
 
 const (
-	StageKind = "Stage"
+	StageKind      = "Stage"
+	CDPipelineKind = "CDPipeline"
 
 	InProgressStatus = "in progress"
 	InitStatus       = "initialized"

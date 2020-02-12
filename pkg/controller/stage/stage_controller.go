@@ -3,11 +3,13 @@ package stage
 import (
 	"context"
 	"fmt"
+	"github.com/epmd-edp/cd-pipeline-operator/v2/pkg/controller/helper"
 	"github.com/epmd-edp/cd-pipeline-operator/v2/pkg/util/consts"
 	"github.com/epmd-edp/cd-pipeline-operator/v2/pkg/util/finalizer"
 	"github.com/pkg/errors"
 	"io/ioutil"
 	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"time"
 
 	edpv1alpha1 "github.com/epmd-edp/cd-pipeline-operator/v2/pkg/apis/edp/v1alpha1"
@@ -27,7 +29,7 @@ import (
 var (
 	_                               reconcile.Reconciler = &ReconcileStage{}
 	log                                                  = logf.Log.WithName("stage_controller")
-	ForegroundDeletionFinalizerName                      = "foregroundDeletion"
+	foregroundDeletionFinalizerName                      = "foregroundDeletion"
 )
 
 // Add creates a new Stage Controller and adds it to the Manager. The Manager will set fields on the Controller
@@ -75,18 +77,12 @@ func (r *ReconcileStage) Reconcile(request reconcile.Request) (reconcile.Result,
 		return reconcile.Result{}, err
 	}
 
+	if err := r.setCDPipelineOwnerRef(i); err != nil {
+		return reconcile.Result{RequeueAfter: 5 * time.Second}, err
+	}
+
 	if err := r.tryToAddFinalizer(i); err != nil {
 		return reconcile.Result{}, err
-	}
-
-	p, err := r.getCdPipeline(i.Spec.CdPipeline, i.Namespace)
-	if err != nil {
-		return reconcile.Result{}, errors.Wrapf(err, "failed to get CD Pipeline %v", i.Spec.CdPipeline)
-	}
-
-	if !p.Status.Available {
-		rl.V(2).Info("CD pipeline is not ready yet", "name", p.Name)
-		return reconcile.Result{RequeueAfter: 10 * time.Second}, nil
 	}
 
 	if err := r.createJenkinsJob(*i); err != nil {
@@ -98,6 +94,24 @@ func (r *ReconcileStage) Reconcile(request reconcile.Request) (reconcile.Result,
 	}
 	rl.V(2).Info("reconciling Stage has been finished")
 	return reconcile.Result{}, nil
+}
+
+func (r *ReconcileStage) setCDPipelineOwnerRef(s *edpv1alpha1.Stage) error {
+	if ow := helper.GetOwnerReference(consts.CDPipelineKind, s.GetOwnerReferences()); ow != nil {
+		log.V(2).Info("CD Pipeline owner ref already exists", "name", ow.Name)
+		return nil
+	}
+	p, err := r.getCdPipeline(s.Spec.CdPipeline, s.Namespace)
+	if err != nil {
+		return errors.Wrapf(err, "couldn't get CD Pipeline %v from cluster", s.Spec.CdPipeline)
+	}
+	if err := controllerutil.SetControllerReference(p, s, r.scheme); err != nil {
+		return errors.Wrapf(err, "couldn't set CD Pipeline %v owner ref", s.Spec.CdPipeline)
+	}
+	if err := r.client.Update(context.TODO(), s); err != nil {
+		return errors.Wrapf(err, "an error has been occurred while updating stage's owner %v", s.Name)
+	}
+	return nil
 }
 
 func (r *ReconcileStage) setFinishStatus(s *edpv1alpha1.Stage) error {
@@ -178,8 +192,8 @@ func (r *ReconcileStage) getCdPipeline(name, namespace string) (*edpv1alpha1.CDP
 }
 
 func (r ReconcileStage) tryToAddFinalizer(c *edpv1alpha1.Stage) error {
-	if !finalizer.ContainsString(c.ObjectMeta.Finalizers, ForegroundDeletionFinalizerName) {
-		c.ObjectMeta.Finalizers = append(c.ObjectMeta.Finalizers, ForegroundDeletionFinalizerName)
+	if !finalizer.ContainsString(c.ObjectMeta.Finalizers, foregroundDeletionFinalizerName) {
+		c.ObjectMeta.Finalizers = append(c.ObjectMeta.Finalizers, foregroundDeletionFinalizerName)
 		if err := r.client.Update(context.TODO(), c); err != nil {
 			return err
 		}
