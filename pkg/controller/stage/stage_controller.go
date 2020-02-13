@@ -2,7 +2,6 @@ package stage
 
 import (
 	"context"
-	"fmt"
 	"github.com/epmd-edp/cd-pipeline-operator/v2/pkg/controller/helper"
 	"github.com/epmd-edp/cd-pipeline-operator/v2/pkg/util/consts"
 	"github.com/epmd-edp/cd-pipeline-operator/v2/pkg/util/finalizer"
@@ -147,8 +146,7 @@ func (r *ReconcileStage) setFinishStatus(s *edpv1alpha1.Stage) error {
 }
 
 func (r *ReconcileStage) createJenkinsJob(s edpv1alpha1.Stage) error {
-	n := fmt.Sprintf("%v-%v", s.Name, "jenkins-job")
-	log.V(2).Info("start creating JenkinsJob CR", "name", n)
+	log.V(2).Info("start creating JenkinsJob CR", "name", s.Name)
 
 	b, err := ioutil.ReadFile("/usr/local/bin/pipelines/cd-pipeline.tmpl")
 	if err != nil {
@@ -161,7 +159,7 @@ func (r *ReconcileStage) createJenkinsJob(s edpv1alpha1.Stage) error {
 			Kind:       "JenkinsJob",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      n,
+			Name:      s.Name,
 			Namespace: s.Namespace,
 			OwnerReferences: []metav1.OwnerReference{
 				{
@@ -174,7 +172,8 @@ func (r *ReconcileStage) createJenkinsJob(s edpv1alpha1.Stage) error {
 			},
 		},
 		Spec: jenv1alpha1.JenkinsJobSpec{
-			StageName: &s.Name,
+			StageName:     &s.Name,
+			JenkinsFolder: &s.Spec.CdPipeline,
 			Job: jenv1alpha1.Job{
 				Name:   s.Spec.Name,
 				Config: string(b),
@@ -184,7 +183,7 @@ func (r *ReconcileStage) createJenkinsJob(s edpv1alpha1.Stage) error {
 	if err := r.client.Create(context.TODO(), jj); err != nil {
 		return errors.Wrapf(err, "couldn't create jenkins job %v", "name", jj.Name)
 	}
-	log.Info("JenkinsJob has been created", "name", n)
+	log.Info("JenkinsJob has been created", "name", s.Name)
 	return nil
 }
 
