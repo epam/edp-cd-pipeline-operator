@@ -161,15 +161,6 @@ func (r *ReconcileStage) createJenkinsJob(s edpv1alpha1.Stage) error {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      s.Name,
 			Namespace: s.Namespace,
-			OwnerReferences: []metav1.OwnerReference{
-				{
-					APIVersion:         "v2.edp.epam.com/v1alpha1",
-					Kind:               consts.StageKind,
-					Name:               s.Name,
-					UID:                s.UID,
-					BlockOwnerDeletion: newTrue(),
-				},
-			},
 		},
 		Spec: jenv1alpha1.JenkinsJobSpec{
 			StageName:     &s.Name,
