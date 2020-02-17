@@ -1,0 +1,121 @@
+@startuml
+
+skinparam class {
+    BackgroundColor #white
+	BackgroundColor<<wip>> LightGoldenRodYellow
+	BackgroundColor<<tbd>> Khaki
+}
+
+package com.epam.edp.cd {
+  class CdPipeline {
+    -- metadata --
+        String name
+    -- spec --
+        String name
+        []String --codebaseBranch--
+        []String inputDockerStreams
+        []String thirdPartyServices
+        []String applicationsToPromote
+    -- status --
+        Boolean available
+        Date lastTimeUpdated
+        String status
+        String username
+        ActionType action
+        Result result
+        String detailedMessage
+        String value
+  }
+
+  CdPipeline "1" -l-* "1..*" Stage : cdPipeline
+
+  class Stage {
+    -- metadata --
+        String name
+    -- spec --
+        String name
+        String cdPipeline
+        String description
+        String triggerType
+        Integer order
+        []QualityGate qualityGates
+        Source  Source
+    -- status --
+        Boolean available
+        Date lastTimeUpdated
+        String status
+        String username
+        ActionType action
+        Result result
+        String detailedMessage
+        String value
+  }
+
+  Stage "1" --* "1..*" QualityGate : internal structure
+  class QualityGate  {
+        String qualityGateType
+        String stepName
+        String autotestName
+        String branchName
+        <color red>String command2Run</color>
+        <color red>String command2CheckQualityGate</color>
+  }
+  QualityGate --> QualityGateType : qualityGateType
+  enum QualityGateType {
+        MANUAL
+        AUTOTESTS
+  }
+
+  Stage --> Source : internal structure
+  class Source {
+        String type
+        Library library
+  }
+  Source --> SourceType : type
+  enum SourceType {
+        DEFAULT
+        CUSTOM
+  }
+  Source --> Library : internal structure
+  class Library {
+        String name
+        String branch
+  }
+
+  Stage --> Stage : <color red>owner ref next stage</color>
+
+  enum TriggerType {
+    MANUAL
+    NEW_ARTIFACT
+  }
+  Stage --> TriggerType : triggerType
+
+  class CdStageDeploy <<tbd>> {
+    -- metadata --
+    -- spec --
+      CdPipelineStage stage
+      CodebaseArtifact: artifacts
+    -- status --
+  }
+  CdStageDeploy -u--> Stage :owner ref
+}
+
+class CodebaseImageStream <<wip>>
+
+JenkinsFolder <-- CdPipeline : "creates"
+ThirdPartyService "0..*" o- "0..*" CdPipeline : thirdPartyServices
+Codebase "1..*" o--- "1..*" CdPipeline : applicationsToPromote
+CodebaseImageStream "1..*" o--- "1..*" CdPipeline : inputDockerStreams
+CodebaseBranch "0..1" o--- "1..*" QualityGate : autotestName+branchName
+CodebaseBranch "1" o--- "1..*" Library : name+branch
+JenkinsJob "1" <-- "1" Stage : creates
+CodebaseImageStream "1..*" <-- "1" Stage : creates output stream
+
+legend
+|<back:LightGoldenRodYellow>    </back>| Work In Progress |
+|<back:LightGreen>    </back>| Implemented |
+|<back:Khaki>    </back>| TBD |
+endlegend
+
+
+@enduml
