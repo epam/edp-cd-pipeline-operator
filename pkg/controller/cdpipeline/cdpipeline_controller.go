@@ -2,6 +2,7 @@ package cdpipeline
 
 import (
 	"context"
+	"fmt"
 	edpv1alpha1 "github.com/epmd-edp/cd-pipeline-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epmd-edp/cd-pipeline-operator/v2/pkg/util/consts"
 	jenv1alpha1 "github.com/epmd-edp/jenkins-operator/v2/pkg/apis/v2/v1alpha1"
@@ -117,20 +118,21 @@ func (r *ReconcileCDPipeline) setFinishStatus(p *edpv1alpha1.CDPipeline) error {
 }
 
 func (r *ReconcileCDPipeline) createJenkinsFolder(p edpv1alpha1.CDPipeline) error {
-	log.V(2).Info("start creating JenkinsFolder CR", "name", p.Name)
+	jfn := fmt.Sprintf("%v-%v", p.Name, "cd-pipeline")
+	log.V(2).Info("start creating JenkinsFolder CR", "name", jfn)
 	jf := &jenv1alpha1.JenkinsFolder{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v2.edp.epam.com/v1alpha1",
 			Kind:       "JenkinsFolder",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      p.Name,
+			Name:      jfn,
 			Namespace: p.Namespace,
 		},
 	}
 	if err := r.client.Create(context.TODO(), jf); err != nil {
-		return errors.Wrapf(err, "couldn't create jenkins folder %v", "name", jf.Name)
+		return errors.Wrapf(err, "couldn't create jenkins folder %v", "name", jfn)
 	}
-	log.Info("JenkinsFolder CR has been created", "name", jf.Name)
+	log.Info("JenkinsFolder CR has been created", "name", jfn)
 	return nil
 }
