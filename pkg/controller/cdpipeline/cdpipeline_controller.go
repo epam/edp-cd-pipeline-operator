@@ -8,6 +8,7 @@ import (
 	jenv1alpha1 "github.com/epmd-edp/jenkins-operator/v2/pkg/apis/v2/v1alpha1"
 	"github.com/pkg/errors"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"reflect"
@@ -131,6 +132,10 @@ func (r *ReconcileCDPipeline) createJenkinsFolder(p edpv1alpha1.CDPipeline) erro
 		},
 	}
 	if err := r.client.Create(context.TODO(), jf); err != nil {
+		if k8serrors.IsAlreadyExists(err) {
+			log.V(2).Info("jenkins folder cr already exists", "name", jfn)
+			return nil
+		}
 		return errors.Wrapf(err, "couldn't create jenkins folder %v", "name", jfn)
 	}
 	log.Info("JenkinsFolder CR has been created", "name", jfn)
