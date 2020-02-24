@@ -9,7 +9,6 @@ spec:
   qualityGate: "manual"
   triggerType: "is-changed"
   order: 1
-  jenkinsStep: "build"
   source:
     type: "library"
     library:
