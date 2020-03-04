@@ -9,6 +9,7 @@ import (
 	"github.com/epmd-edp/cd-pipeline-operator/v2/pkg/platform"
 	"github.com/epmd-edp/cd-pipeline-operator/v2/pkg/service/helper"
 	codebaseClient "github.com/epmd-edp/codebase-operator/v2/pkg/apis/edp/v1alpha1"
+	jenkinsApi "github.com/epmd-edp/jenkins-operator/v2/pkg/apis/v2/v1alpha1"
 	"github.com/pkg/errors"
 	rbacV1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -248,9 +249,38 @@ func (s CDStageService) setupPlatform(edpName string, cdPipelineName string, sta
 	return s.createRoleBinding(edpName, projectName, namespace)
 }
 
+func GetJenkinsUrl(jenkins jenkinsApi.Jenkins, namespace string) string {
+	basePath := ""
+	if len(jenkins.Spec.BasePath) > 0 {
+		basePath = fmt.Sprintf("/%v", jenkins.Spec.BasePath)
+	}
+	return fmt.Sprintf("http://jenkins.%s:8080%v", namespace, basePath)
+}
+
+func GetJenkins(k8sClient client.Client, namespace string) (*jenkinsApi.Jenkins, error) {
+	options := client.ListOptions{Namespace: namespace}
+	jenkinsList := &jenkinsApi.JenkinsList{}
+
+	err := k8sClient.List(context.TODO(), &options, jenkinsList)
+	if err != nil {
+		return nil, errors.Wrapf(err, "Unable to get Jenkins CRs in namespace %v", namespace)
+	}
+
+	if len(jenkinsList.Items) == 0 {
+		return nil, fmt.Errorf("jenkins installation is not found in namespace %v", namespace)
+	}
+
+	return &jenkinsList.Items[0], nil
+}
+
 func (s CDStageService) setupJenkins(stage *edpv1alpha1.Stage, pipeStg string) error {
 	pipelineFolderName := stage.Spec.CdPipeline + "-cd-pipeline"
-	jenkinsUrl := fmt.Sprintf("http://jenkins.%s:8080", stage.Namespace)
+	jen, err := GetJenkins(s.Client, stage.Namespace)
+	if err != nil {
+		return errors.Wrap(err, "error in getting Jenkins CR")
+	}
+
+	jenkinsUrl := GetJenkinsUrl(*jen, stage.Namespace)
 	jenkinsToken, jenkinsUsername, err := helper.GetJenkinsCreds(s.Platform, s.Client, stage.Namespace)
 	if err != nil {
 		return err

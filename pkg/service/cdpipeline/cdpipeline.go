@@ -7,6 +7,7 @@ import (
 	jenkinsClient "github.com/epmd-edp/cd-pipeline-operator/v2/pkg/jenkins"
 	"github.com/epmd-edp/cd-pipeline-operator/v2/pkg/platform"
 	"github.com/epmd-edp/cd-pipeline-operator/v2/pkg/service/helper"
+	jenkinsApi "github.com/epmd-edp/jenkins-operator/v2/pkg/apis/v2/v1alpha1"
 	"github.com/pkg/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
@@ -26,6 +27,30 @@ type CDPipelineService struct {
 	Resource *edpv1alpha1.CDPipeline
 	Client   client.Client
 	Platform platform.PlatformService
+}
+
+func GetJenkinsUrl(jenkins jenkinsApi.Jenkins, namespace string) string {
+	basePath := ""
+	if len(jenkins.Spec.BasePath) > 0 {
+		basePath = fmt.Sprintf("/%v", jenkins.Spec.BasePath)
+	}
+	return fmt.Sprintf("http://jenkins.%s:8080%v", namespace, basePath)
+}
+
+func GetJenkins(k8sClient client.Client, namespace string) (*jenkinsApi.Jenkins, error) {
+	options := client.ListOptions{Namespace: namespace}
+	jenkinsList := &jenkinsApi.JenkinsList{}
+
+	err := k8sClient.List(context.TODO(), &options, jenkinsList)
+	if err != nil {
+		return nil, errors.Wrapf(err, "Unable to get Jenkins CRs in namespace %v", namespace)
+	}
+
+	if len(jenkinsList.Items) == 0 {
+		return nil, fmt.Errorf("jenkins installation is not found in namespace %v", namespace)
+	}
+
+	return &jenkinsList.Items[0], nil
 }
 
 func (s CDPipelineService) CreateCDPipeline() error {
@@ -50,7 +75,13 @@ func (s CDPipelineService) CreateCDPipeline() error {
 	if err != nil {
 		return errors.Wrap(err, "error has been occurred in cd_pipeline status update")
 	}
-	jenkinsUrl := fmt.Sprintf("http://jenkins.%s:8080", cr.Namespace)
+
+	jen, err := GetJenkins(s.Client, cr.Namespace)
+	if err != nil {
+		return errors.Wrap(err, "error in getting Jenkins CR")
+	}
+
+	jenkinsUrl := GetJenkinsUrl(*jen, cr.Namespace)
 	jenkinsToken, jenkinsUsername, err := helper.GetJenkinsCreds(s.Platform, s.Client, cr.Namespace)
 	if err != nil {
 		s.setFailedFields(edpv1alpha1.JenkinsConfiguration, err.Error())

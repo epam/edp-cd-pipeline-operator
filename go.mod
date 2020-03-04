@@ -5,7 +5,7 @@ go 1.12
 require (
 	github.com/bndr/gojenkins v0.2.1-0.20181125150310-de43c03cf849
 	github.com/epmd-edp/codebase-operator/v2 v2.2.0-83
-	github.com/epmd-edp/jenkins-operator/v2 v2.1.0-61
+	github.com/epmd-edp/jenkins-operator/v2 v2.2.1-131.0.20200302103622-f60cf5cf627e
 	github.com/go-openapi/spec v0.19.3
 	github.com/openshift/api v3.9.0+incompatible
 	github.com/openshift/client-go v3.9.0+incompatible
