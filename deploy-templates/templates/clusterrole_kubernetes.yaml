@@ -1,0 +1,34 @@
+{{- if eq .Values.platform "kubernetes" -}}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  annotations:
+    openshift.io/description: Role for cd-pipeline-operator-edp service account
+    openshift.io/reconcile-protect: "false"
+  name: {{ .Values.name }}-{{ .Values.namespace }}-clusterrole
+rules:
+- apiGroups:
+    - '*'
+  attributeRestrictions: null
+  resources:
+    - cdpipelines
+    - cdpipelines/finalizers
+    - cdpipelines/status
+    - jenkinsfolders
+    - jenkinsfolders/finalizers
+    - jenkinsfolders/status
+    - jenkinsjobs
+    - jenkinsjobs/finalizers
+    - jenkinsjobs/status
+    - codebases
+    - codebases/finalizers
+    - codebases/status
+    - codebasebranches
+    - codebasebranches/finalizers
+    - codebasebranches/status
+    - stages
+    - stages/finalizers
+    - stages/status
+  verbs:
+    - '*'
+{{ end }}
