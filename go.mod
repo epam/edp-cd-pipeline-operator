@@ -7,7 +7,7 @@ replace github.com/openshift/api => github.com/openshift/api v0.0.0-201808011710
 require (
 	github.com/bndr/gojenkins v0.2.1-0.20181125150310-de43c03cf849
 	github.com/epmd-edp/codebase-operator/v2 v2.3.0-88
-	github.com/epmd-edp/jenkins-operator/v2 v2.3.0-130.0.20200213115806-646ef85ab062
+	github.com/epmd-edp/jenkins-operator/v2 v2.3.0-130.0.20200416062406-16c330e09a19
 	github.com/go-openapi/spec v0.19.3
 	github.com/openshift/client-go v3.9.0+incompatible
 	github.com/operator-framework/operator-sdk v0.0.0-20190530173525-d6f9cdf2f52e
