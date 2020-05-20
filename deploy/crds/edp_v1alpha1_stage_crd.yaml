@@ -23,11 +23,16 @@ spec:
         metadata:
           type: object
         spec:
+          properties:
+            jobProvisioning:
+              type: string
           type: object
+          required:
+            - jobProvisioning
         status:
           type: object
   version: v1alpha1
   versions:
-  - name: v1alpha1
-    served: true
-    storage: true
+    - name: v1alpha1
+      served: true
+      storage: true

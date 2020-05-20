@@ -8,6 +8,7 @@ spec:
   description: "SIT environment for dedicated team"
   qualityGate: "manual"
   triggerType: "is-changed"
+  jobProvisioning: "default"
   order: 1
   source:
     type: "library"
