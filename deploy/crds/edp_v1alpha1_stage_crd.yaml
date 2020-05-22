@@ -27,8 +27,6 @@ spec:
             jobProvisioning:
               type: string
           type: object
-          required:
-            - jobProvisioning
         status:
           type: object
   version: v1alpha1
