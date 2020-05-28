@@ -3,8 +3,10 @@ package jenkins
 import (
 	"fmt"
 	"github.com/bndr/gojenkins"
+	"github.com/pkg/errors"
 	"net/http"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
+	"time"
 )
 
 var log = logf.Log.WithName("jenkins")
@@ -44,6 +46,77 @@ func (jenkins Jenkins) CreateFolder(name string) (*gojenkins.Folder, error) {
 	}
 	reqLog.Info("Folder in Jenkins for job has been created")
 	return folder, nil
+}
+
+func (jenkins Jenkins) TriggerJobProvision(jpn string, jpc map[string]string) error {
+	log.V(2).Info("start triggering job provisioner", "provisioner name", jpn)
+
+	if _, err := jenkins.client.BuildJob(jpn, jpc); err != nil {
+		return errors.Wrapf(err, "couldn't trigger %v job", jpn)
+	}
+	log.Info("provision job has been triggered", "provisioner name", jpn)
+	return nil
+}
+
+func (jenkins Jenkins) GetJobStatus(name string, delay time.Duration, retryCount int) (string, error) {
+	time.Sleep(delay)
+	for i := 0; i < retryCount; i++ {
+		isQueued, err := jenkins.IsJobQueued(name)
+		isRunning, err := jenkins.IsJobRunning(name)
+		if err != nil {
+			job, err := jenkins.getJob(name)
+			if job.Raw.Color == "notbuilt" {
+				log.Info("Job didn't start yet", "name", name, "delay", delay, "attempts lasts", retryCount-i)
+				time.Sleep(delay)
+				continue
+			}
+
+			if err != nil {
+				return "", err
+			}
+		}
+		if *isRunning || *isQueued {
+			log.Info("Job is running", "name", name, "delay", delay, "attempts lasts", retryCount-i)
+			time.Sleep(delay)
+		} else {
+			job, err := jenkins.getJob(name)
+			if err != nil {
+				return "", err
+			}
+
+			return job.Raw.Color, nil
+		}
+	}
+
+	return "", errors.Errorf("Job %v has not been finished after specified delay", name)
+}
+
+func (jenkins Jenkins) IsJobQueued(name string) (*bool, error) {
+	job, err := jenkins.getJob(name)
+	if err != nil {
+		return nil, err
+	}
+
+	isQueued, err := job.IsQueued()
+	if err != nil {
+		return nil, err
+	}
+
+	return &isQueued, nil
+}
+
+func (jenkins Jenkins) IsJobRunning(name string) (*bool, error) {
+	job, err := jenkins.getJob(name)
+	if err != nil {
+		return nil, err
+	}
+
+	isRunning, err := job.IsRunning()
+	if err != nil {
+		return nil, err
+	}
+
+	return &isRunning, nil
 }
 
 func (jenkins Jenkins) CreateJob(name string, folder string, jobConfig string) error {
