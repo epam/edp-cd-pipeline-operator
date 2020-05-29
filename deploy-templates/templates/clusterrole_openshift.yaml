@@ -29,6 +29,9 @@ rules:
     - stages
     - stages/finalizers
     - stages/status
+    - gitservers
+    - gitservers/status
+    - gitservers/finalizers
   verbs:
     - '*'
 {{ end }}
