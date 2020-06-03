@@ -3,6 +3,8 @@ package stage
 import (
 	"context"
 	"fmt"
+	"time"
+
 	edpv1alpha1 "github.com/epmd-edp/cd-pipeline-operator/v2/pkg/apis/edp/v1alpha1"
 	jenkinsClient "github.com/epmd-edp/cd-pipeline-operator/v2/pkg/jenkins"
 	"github.com/epmd-edp/cd-pipeline-operator/v2/pkg/platform"
@@ -14,7 +16,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
-	"time"
 )
 
 var log = logf.Log.WithName("cd_stage_service")
@@ -290,7 +291,7 @@ func (s CDStageService) setupJenkins(stage *edpv1alpha1.Stage) error {
 		return err
 	}
 
-	jpn := fmt.Sprintf("job-provisions/job/cd/%v", stage.Spec.JobProvisioning)
+	jpn := fmt.Sprintf("job-provisions/job/cd/job/%v", stage.Spec.JobProvisioning)
 	err = jenkins.TriggerJobProvision(jpn, stageConfig)
 	if err != nil {
 		s.setFailedFields(edpv1alpha1.JenkinsConfiguration, err.Error())
