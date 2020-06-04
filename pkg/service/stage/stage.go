@@ -165,7 +165,7 @@ func (s CDStageService) createStageConfig(stage *edpv1alpha1.Stage) (map[string]
 	source := stage.Spec.Source
 	jpm := map[string]string{
 		"PIPELINE_NAME":         stage.Spec.CdPipeline,
-		"STAGE_NAME":            stage.Name,
+		"STAGE_NAME":            stage.Spec.Name,
 		"QG_STAGES":             strStage,
 		"GIT_SERVER_CR_VERSION": "v2",
 		"SOURCE_TYPE":           source.Type,
