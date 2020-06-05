@@ -189,7 +189,7 @@ func (r ReconcileStage) createJenkinsJobConfig(s edpv1alpha1.Stage) ([]byte, err
 	source := s.Spec.Source
 	jpm := map[string]string{
 		"PIPELINE_NAME":         s.Spec.CdPipeline,
-		"STAGE_NAME":            s.Name,
+		"STAGE_NAME":            s.Spec.Name,
 		"QG_STAGES":             strStage,
 		"GIT_SERVER_CR_VERSION": "v2",
 		"SOURCE_TYPE":           source.Type,
