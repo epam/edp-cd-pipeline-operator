@@ -1,6 +1,6 @@
 module github.com/epmd-edp/cd-pipeline-operator/v2
 
-go 1.12
+go 1.14
 
 replace github.com/openshift/api => github.com/openshift/api v0.0.0-20180801171038-322a19404e37
 
