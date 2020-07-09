@@ -1,7 +1,8 @@
+global:
+  edpName: ""
+  platform: "openshift"
+
 name: cd-pipeline-operator
-namespace: ""
-platform: "openshift"
-dnsWildcard: ""
 image:
   name: epamedp/cd-pipeline-operator
   version: v2.4.0
