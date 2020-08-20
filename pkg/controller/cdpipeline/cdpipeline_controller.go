@@ -136,7 +136,7 @@ func (r *ReconcileCDPipeline) createJenkinsFolder(p edpv1alpha1.CDPipeline) erro
 			log.V(2).Info("jenkins folder cr already exists", "name", jfn)
 			return nil
 		}
-		return errors.Wrapf(err, "couldn't create jenkins folder %v", "name", jfn)
+		return errors.Wrapf(err, "couldn't create jenkins folder %v", jfn)
 	}
 	log.Info("JenkinsFolder CR has been created", "name", jfn)
 	return nil

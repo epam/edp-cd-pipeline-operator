@@ -172,7 +172,7 @@ func (r *ReconcileStage) createJenkinsJob(s edpv1alpha1.Stage) error {
 		},
 	}
 	if err := r.client.Create(context.TODO(), jj); err != nil {
-		return errors.Wrapf(err, "couldn't create jenkins job %v", "name", jj.Name)
+		return errors.Wrapf(err, "couldn't create jenkins job %v", jj.Name)
 	}
 	log.Info("JenkinsJob has been created", "name", s.Name)
 	return nil
