@@ -1,8 +1,8 @@
 global:
-  edpName: ""
+  edpName: "edp"
   platform: "openshift"
 
 name: cd-pipeline-operator
 image:
   name: epamedp/cd-pipeline-operator
-  version: v2.4.0
+  version: v2.5.0
