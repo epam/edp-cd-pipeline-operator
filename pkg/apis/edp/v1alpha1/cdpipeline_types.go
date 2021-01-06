@@ -25,15 +25,9 @@ type ActionType string
 type Result string
 
 const (
-	AcceptCDPipelineRegistration       ActionType = "accept_cd_pipeline_registration"
 	AcceptCDStageRegistration          ActionType = "accept_cd_stage_registration"
-	JenkinsConfiguration               ActionType = "jenkins_configuration"
-	FetchingUserSettingsConfigMap      ActionType = "fetching_user_settings_config_map"
-	PlatformProjectCreation            ActionType = "platform_project_creation"
 	SetupInitialStructureForCDPipeline ActionType = "setup_initial_structure"
-	SetupDeploymentTemplates           ActionType = "setup_deployment_templates"
-	CreateJenkinsDirectory             ActionType = "create_jenkins_directory"
-	CreateJenkinsPipeline              ActionType = "create_jenkins_pipeline"
+	AcceptJenkinsJob                              = "accept_jenkins_job"
 
 	Success Result = "success"
 	Error   Result = "error"

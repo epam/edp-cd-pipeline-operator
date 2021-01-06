@@ -35,6 +35,7 @@ var (
 	_                               reconcile.Reconciler = &ReconcileStage{}
 	log                                                  = logf.Log.WithName("stage_controller")
 	foregroundDeletionFinalizerName                      = "foregroundDeletion"
+	acceptJenkinsJob                                     = "accept_jenkins_job"
 )
 
 // Add creates a new Stage Controller and adds it to the Manager. The Manager will set fields on the Controller
@@ -169,6 +170,9 @@ func (r *ReconcileStage) createJenkinsJob(s edpv1alpha1.Stage) error {
 				Name:   fmt.Sprintf("job-provisions/job/cd/job/%v", s.Spec.JobProvisioning),
 				Config: string(jc),
 			},
+		},
+		Status: jenv1alpha1.JenkinsJobStatus{
+			Action: edpv1alpha1.AcceptJenkinsJob,
 		},
 	}
 	if err := r.client.Create(context.TODO(), jj); err != nil {
