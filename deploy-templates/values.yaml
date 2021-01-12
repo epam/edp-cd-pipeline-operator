@@ -5,7 +5,8 @@ global:
 name: cd-pipeline-operator
 image:
   name: epamedp/cd-pipeline-operator
-  version: v2.4.0
+  # if not defined then .Chart.AppVersion is used
+  version:
 
 resources:
   limits:
