@@ -3,6 +3,10 @@ global:
   platform: "openshift"
 
 name: cd-pipeline-operator
+annotations: {}
+nodeSelector: {}
+tolerations: []
+affinity:
 image:
   name: epamedp/cd-pipeline-operator
   # if not defined then .Chart.AppVersion is used
