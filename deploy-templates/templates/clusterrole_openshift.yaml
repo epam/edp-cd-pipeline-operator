@@ -30,6 +30,12 @@ rules:
     - gitservers
     - gitservers/status
     - gitservers/finalizers
+    - edpcomponents
+    - edpcomponents/finalizers
+    - edpcomponents/status
+    - codebaseimagestreams
+    - codebaseimagestreams/status
+    - codebaseimagestreams/finalizers
   verbs:
     - '*'
 {{ end }}
