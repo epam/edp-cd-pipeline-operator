@@ -6,8 +6,9 @@ replace github.com/openshift/api => github.com/openshift/api v0.0.0-201808011710
 
 require (
 	github.com/bndr/gojenkins v0.2.1-0.20181125150310-de43c03cf849
-	github.com/epmd-edp/codebase-operator/v2 v2.3.0-88
-	github.com/epmd-edp/jenkins-operator/v2 v2.3.0-130.0.20200213115806-646ef85ab062
+	github.com/epam/edp-codebase-operator/v2 v2.3.0-95.0.20210224132445-f851d06a3eab
+	github.com/epmd-edp/edp-component-operator v0.1.1-0.20200827122548-e87429a916e0
+	github.com/epmd-edp/jenkins-operator/v2 v2.3.0-130.0.20200525102742-f56cd8641faa
 	github.com/go-openapi/spec v0.19.3
 	github.com/operator-framework/operator-sdk v0.0.0-20190530173525-d6f9cdf2f52e
 	github.com/pkg/errors v0.8.1
@@ -16,5 +17,4 @@ require (
 	k8s.io/client-go v0.0.0-20190228174230-b40b2a5939e4
 	k8s.io/kube-openapi v0.0.0-20181109181836-c59034cc13d5
 	sigs.k8s.io/controller-runtime v0.1.12
-	github.com/epmd-edp/edp-component-operator v0.1.1-0.20200827122548-e87429a916e0
 )

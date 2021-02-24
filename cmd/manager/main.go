@@ -7,9 +7,9 @@ import (
 	"os"
 	"runtime"
 
+	codebaseApis "github.com/epam/edp-codebase-operator/v2/pkg/apis"
 	"github.com/epmd-edp/cd-pipeline-operator/v2/pkg/apis"
 	"github.com/epmd-edp/cd-pipeline-operator/v2/pkg/controller"
-	codebaseApis "github.com/epmd-edp/codebase-operator/v2/pkg/apis"
 	jenkinsApis "github.com/epmd-edp/jenkins-operator/v2/pkg/apis"
 
 	"github.com/operator-framework/operator-sdk/pkg/k8sutil"

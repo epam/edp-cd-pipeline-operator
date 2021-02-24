@@ -3,10 +3,10 @@ package put_codebase_image_stream
 import (
 	"context"
 	"fmt"
+	v1alphaCodebase "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epmd-edp/cd-pipeline-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epmd-edp/cd-pipeline-operator/v2/pkg/controller/stage/chain/handler"
 	"github.com/epmd-edp/cd-pipeline-operator/v2/pkg/controller/stage/chain/util"
-	v1alphaCodebase "github.com/epmd-edp/codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	v1alphaEdpComponent "github.com/epmd-edp/edp-component-operator/pkg/apis/v1/v1alpha1"
 	"github.com/pkg/errors"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -42,7 +42,7 @@ func (h PutCodebaseImageStream) ServeRequest(stage *v1alpha1.Stage) error {
 	for _, name := range pipe.Spec.ApplicationsToPromote {
 		cisName := fmt.Sprintf("%v-%v-%v-verified", pipe.Name, stage.Spec.Name, name)
 		image := fmt.Sprintf("%v/%v", registryComponent.Spec.Url, cisName)
-		if err := h.createCodebaseImageStreamIfNotExists(cisName, image, stage.Namespace); err != nil {
+		if err := h.createCodebaseImageStreamIfNotExists(cisName, image, name, stage.Namespace); err != nil {
 			return errors.Wrapf(err, "couldn't create %v codebase image stream", cisName)
 		}
 	}
@@ -62,7 +62,7 @@ func (h PutCodebaseImageStream) getDockerRegistryEdpComponent(namespace string) 
 	return ec, nil
 }
 
-func (h PutCodebaseImageStream) createCodebaseImageStreamIfNotExists(name, imageName, namespace string) error {
+func (h PutCodebaseImageStream) createCodebaseImageStreamIfNotExists(name, imageName, codebaseName, namespace string) error {
 	cis := &v1alphaCodebase.CodebaseImageStream{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v2.edp.epam.com/v1alpha1",
@@ -73,6 +73,7 @@ func (h PutCodebaseImageStream) createCodebaseImageStreamIfNotExists(name, image
 			Namespace: namespace,
 		},
 		Spec: v1alphaCodebase.CodebaseImageStreamSpec{
+			Codebase:  codebaseName,
 			ImageName: imageName,
 		},
 	}
