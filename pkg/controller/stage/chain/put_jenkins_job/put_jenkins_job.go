@@ -21,6 +21,8 @@ type PutJenkinsJob struct {
 	Client client.Client
 }
 
+const autoDeployTriggerType = "Auto"
+
 var log = logf.Log.WithName("put_jenkins_job_chain")
 
 func (h PutJenkinsJob) ServeRequest(stage *v1alpha1.Stage) error {
@@ -98,6 +100,11 @@ func (h PutJenkinsJob) createJenkinsJobConfig(stage v1alpha1.Stage) ([]byte, err
 			jpm["SOURCE_TYPE"] = "default"
 		}
 	}
+
+	if stage.Spec.TriggerType == autoDeployTriggerType {
+		jpm["AUTODEPLOY"] = "true"
+	}
+
 	jc, err := json.Marshal(jpm)
 	if err != nil {
 		return nil, errors.Wrapf(err, "Can't marshal parameters %v into json string", jpm)
