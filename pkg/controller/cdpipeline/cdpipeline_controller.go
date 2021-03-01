@@ -5,6 +5,7 @@ import (
 	"fmt"
 	edpv1alpha1 "github.com/epmd-edp/cd-pipeline-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epmd-edp/cd-pipeline-operator/v2/pkg/util/consts"
+	"github.com/epmd-edp/cd-pipeline-operator/v2/pkg/util/finalizer"
 	jenv1alpha1 "github.com/epmd-edp/jenkins-operator/v2/pkg/apis/v2/v1alpha1"
 	"github.com/pkg/errors"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
@@ -25,8 +26,9 @@ import (
 )
 
 var (
-	_   reconcile.Reconciler = &ReconcileCDPipeline{}
-	log                      = logf.Log.WithName("cd_pipeline_controller")
+	_                               reconcile.Reconciler = &ReconcileCDPipeline{}
+	log                                                  = logf.Log.WithName("cd_pipeline_controller")
+	foregroundDeletionFinalizerName                      = "foregroundDeletion"
 )
 
 // Add creates a new CDPipeline Controller and adds it to the Manager. The Manager will set fields on the Controller
@@ -88,6 +90,10 @@ func (r *ReconcileCDPipeline) Reconcile(request reconcile.Request) (reconcile.Re
 		return reconcile.Result{}, err
 	}
 
+	if err := r.addFinalizer(i); err != nil {
+		return reconcile.Result{}, err
+	}
+
 	if err := r.createJenkinsFolder(*i); err != nil {
 		return reconcile.Result{}, err
 	}
@@ -97,6 +103,19 @@ func (r *ReconcileCDPipeline) Reconcile(request reconcile.Request) (reconcile.Re
 	}
 	rlog.V(2).Info("Reconciling of CD Pipeline has been finished")
 	return reconcile.Result{}, nil
+}
+
+func (r *ReconcileCDPipeline) addFinalizer(pipeline *edpv1alpha1.CDPipeline) error {
+	if !pipeline.GetDeletionTimestamp().IsZero() {
+		return nil
+	}
+	if !finalizer.ContainsString(pipeline.ObjectMeta.Finalizers, foregroundDeletionFinalizerName) {
+		pipeline.ObjectMeta.Finalizers = append(pipeline.ObjectMeta.Finalizers, foregroundDeletionFinalizerName)
+	}
+	if err := r.client.Update(context.TODO(), pipeline); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (r *ReconcileCDPipeline) setFinishStatus(p *edpv1alpha1.CDPipeline) error {

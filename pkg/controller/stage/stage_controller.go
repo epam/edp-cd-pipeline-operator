@@ -2,6 +2,7 @@ package stage
 
 import (
 	"context"
+	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 	"github.com/epmd-edp/cd-pipeline-operator/v2/pkg/controller/stage/chain/factory"
 	"github.com/epmd-edp/cd-pipeline-operator/v2/pkg/util/cluster"
 	"github.com/epmd-edp/edp-component-operator/pkg/apis/v1/v1alpha1"
@@ -34,6 +35,7 @@ var (
 	_                               reconcile.Reconciler = &ReconcileStage{}
 	log                                                  = logf.Log.WithName("stage_controller")
 	foregroundDeletionFinalizerName                      = "foregroundDeletion"
+	envLabelDeletionFinalizer                            = "envLabelDeletion"
 )
 
 // Add creates a new Stage Controller and adds it to the Manager. The Manager will set fields on the Controller
@@ -73,6 +75,9 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 			if !reflect.DeepEqual(oo.Spec, no.Spec) {
 				return true
 			}
+			if no.DeletionTimestamp != nil {
+				return true
+			}
 			return false
 		},
 	}
@@ -107,8 +112,16 @@ func (r *ReconcileStage) Reconcile(request reconcile.Request) (reconcile.Result,
 		return reconcile.Result{RequeueAfter: 5 * time.Second}, err
 	}
 
-	if err := r.tryToAddFinalizer(i); err != nil {
+	if err := r.addFinalizers(i); err != nil {
 		return reconcile.Result{}, err
+	}
+
+	result, err := r.tryToDeleteEnvLabel(i)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+	if result != nil {
+		return *result, nil
 	}
 
 	if err := factory.CreateDefChain(r.client, i.Spec.TriggerType).ServeRequest(i); err != nil {
@@ -158,12 +171,37 @@ func (r *ReconcileStage) setFinishStatus(s *edpv1alpha1.Stage) error {
 	return nil
 }
 
-func (r ReconcileStage) tryToAddFinalizer(c *edpv1alpha1.Stage) error {
-	if !finalizer.ContainsString(c.ObjectMeta.Finalizers, foregroundDeletionFinalizerName) {
-		c.ObjectMeta.Finalizers = append(c.ObjectMeta.Finalizers, foregroundDeletionFinalizerName)
-		if err := r.client.Update(context.TODO(), c); err != nil {
-			return err
-		}
+func (r ReconcileStage) addFinalizers(s *edpv1alpha1.Stage) error {
+	if !s.GetDeletionTimestamp().IsZero() {
+		return nil
+	}
+
+	if !finalizer.ContainsString(s.ObjectMeta.Finalizers, foregroundDeletionFinalizerName) {
+		s.ObjectMeta.Finalizers = append(s.ObjectMeta.Finalizers, foregroundDeletionFinalizerName)
+	}
+	if s.Spec.TriggerType == consts.AutoDeployTriggerType &&
+		!finalizer.ContainsString(s.ObjectMeta.Finalizers, envLabelDeletionFinalizer) {
+		s.ObjectMeta.Finalizers = append(s.ObjectMeta.Finalizers, envLabelDeletionFinalizer)
+	}
+	if err := r.client.Update(context.TODO(), s); err != nil {
+		return err
 	}
 	return nil
+}
+
+func (r ReconcileStage) tryToDeleteEnvLabel(s *edpv1alpha1.Stage) (*reconcile.Result, error) {
+	if s.GetDeletionTimestamp().IsZero() ||
+		!finalizer.ContainsString(s.ObjectMeta.Finalizers, envLabelDeletionFinalizer) {
+		return nil, nil
+	}
+
+	if err := factory.CreateDeleteChain(r.client).ServeRequest(s); err != nil {
+		return &reconcile.Result{}, err
+	}
+
+	s.ObjectMeta.Finalizers = util.RemoveString(s.ObjectMeta.Finalizers, envLabelDeletionFinalizer)
+	if err := r.client.Update(context.TODO(), s); err != nil {
+		return &reconcile.Result{}, err
+	}
+	return &reconcile.Result{}, nil
 }
