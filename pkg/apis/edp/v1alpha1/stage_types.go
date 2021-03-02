@@ -80,6 +80,10 @@ type Stage struct {
 	Status StageStatus `json:"status,omitempty"`
 }
 
+func (in Stage) IsFirst() bool {
+	return in.Spec.Order == 0
+}
+
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // StageList contains a list of Stage

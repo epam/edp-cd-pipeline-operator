@@ -4,13 +4,14 @@ import (
 	"context"
 	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 	"github.com/epmd-edp/cd-pipeline-operator/v2/pkg/controller/stage/chain/factory"
+	edpError "github.com/epmd-edp/cd-pipeline-operator/v2/pkg/error"
 	"github.com/epmd-edp/cd-pipeline-operator/v2/pkg/util/cluster"
 	"github.com/epmd-edp/edp-component-operator/pkg/apis/v1/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"time"
-
 	"reflect"
+	"time"
 
 	edpv1alpha1 "github.com/epmd-edp/cd-pipeline-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epmd-edp/cd-pipeline-operator/v2/pkg/controller/helper"
@@ -18,7 +19,6 @@ import (
 	"github.com/epmd-edp/cd-pipeline-operator/v2/pkg/util/finalizer"
 	"github.com/pkg/errors"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -31,6 +31,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
+const specCdPipelineIndex = "spec.cdPipeline"
+
 var (
 	_                               reconcile.Reconciler = &ReconcileStage{}
 	log                                                  = logf.Log.WithName("stage_controller")
@@ -41,7 +43,18 @@ var (
 // Add creates a new Stage Controller and adds it to the Manager. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
 func Add(mgr manager.Manager) error {
+	addIndex(mgr)
 	return add(mgr, newReconciler(mgr))
+}
+
+func addIndex(mgr manager.Manager) {
+	cache := mgr.GetCache()
+	indexFunc := func(obj runtime.Object) []string {
+		return []string{obj.(*edpv1alpha1.Stage).Spec.CdPipeline}
+	}
+	if err := cache.IndexField(&edpv1alpha1.Stage{}, specCdPipelineIndex, indexFunc); err != nil {
+		panic(err)
+	}
 }
 
 // newReconciler returns a new reconcile.Reconciler
@@ -121,7 +134,13 @@ func (r *ReconcileStage) Reconcile(request reconcile.Request) (reconcile.Result,
 	}
 
 	if err := factory.CreateDefChain(r.client, i.Spec.TriggerType).ServeRequest(i); err != nil {
-		return reconcile.Result{RequeueAfter: 15 * time.Second}, err
+		switch errors.Cause(err).(type) {
+		case edpError.CISNotFound:
+			log.Error(err, "cis wasn't found. reconcile again...")
+			return reconcile.Result{RequeueAfter: 15 * time.Second}, nil
+		default:
+			return reconcile.Result{RequeueAfter: 15 * time.Second}, err
+		}
 	}
 
 	if err := r.setFinishStatus(i); err != nil {
