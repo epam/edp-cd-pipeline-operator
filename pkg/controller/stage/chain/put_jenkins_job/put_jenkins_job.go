@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	codebasev1alpha1 "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
+	"github.com/epam/edp-codebase-operator/v2/pkg/util"
 	"github.com/epmd-edp/cd-pipeline-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epmd-edp/cd-pipeline-operator/v2/pkg/controller/stage/chain/handler"
 	jenv1alpha1 "github.com/epmd-edp/jenkins-operator/v2/pkg/apis/v2/v1alpha1"
@@ -14,6 +15,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
+	"strings"
 )
 
 type PutJenkinsJob struct {
@@ -21,7 +23,15 @@ type PutJenkinsJob struct {
 	Client client.Client
 }
 
-const autoDeployTriggerType = "Auto"
+type qualityGate struct {
+	Name     string `json:"name"`
+	StepName string `json:"step_name"`
+}
+
+const (
+	autoDeployTriggerType   = "Auto"
+	qualityGateAutotestType = "autotests"
+)
 
 var log = logf.Log.WithName("put_jenkins_job_chain")
 
@@ -73,18 +83,16 @@ func (h PutJenkinsJob) tryToCreateJenkinsJob(stage v1alpha1.Stage) error {
 }
 
 func (h PutJenkinsJob) createJenkinsJobConfig(stage v1alpha1.Stage) ([]byte, error) {
-	var strStage string
-	for i, qg := range stage.Spec.QualityGates {
-		if i >= 1 {
-			strStage = fmt.Sprintf("%v,", strStage)
-		}
-		strStage = fmt.Sprintf("%v{\"name\":\"%v\", \"step_name\":\"%v\"}", strStage, qg.QualityGateType, qg.StepName)
+	qgStages, err := getQualityGateStages(stage.Spec.QualityGates)
+	if err != nil {
+		return nil, errors.Wrap(err, "couldn't parse quality gate stages")
 	}
+
 	source := stage.Spec.Source
 	jpm := map[string]string{
 		"PIPELINE_NAME":         stage.Spec.CdPipeline,
 		"STAGE_NAME":            stage.Spec.Name,
-		"QG_STAGES":             strStage,
+		"QG_STAGES":             *qgStages,
 		"GIT_SERVER_CR_VERSION": "v2",
 		"SOURCE_TYPE":           source.Type,
 	}
@@ -110,6 +118,72 @@ func (h PutJenkinsJob) createJenkinsJobConfig(stage v1alpha1.Stage) ([]byte, err
 		return nil, errors.Wrapf(err, "Can't marshal parameters %v into json string", jpm)
 	}
 	return jc, nil
+}
+
+func getQualityGateStages(qualityGates []v1alpha1.QualityGate) (*string, error) {
+	if qualityGates == nil || len(qualityGates) == 0 {
+		return nil, nil
+	}
+
+	var stages []interface{}
+	isPreviousStageAutotest := false
+	for _, qg := range qualityGates {
+		if qg.QualityGateType == qualityGateAutotestType {
+			handleAutotestStage(qg, isPreviousStageAutotest, &stages)
+			isPreviousStageAutotest = true
+			continue
+		}
+		handleManualStage(qg, &stages)
+		isPreviousStageAutotest = false
+	}
+	return getStagesInJson(stages)
+}
+
+func getStagesInJson(stages []interface{}) (*string, error) {
+	jsonStages, err := json.Marshal(stages)
+	if err != nil {
+		return nil, err
+	}
+	return util.GetStringP(modifyQualityGateStagesJson(string(jsonStages))), nil
+}
+
+func modifyQualityGateStagesJson(qgStages string) string {
+	qgStages = strings.TrimPrefix(qgStages, "[")
+	qgStages = strings.TrimSuffix(qgStages, "]")
+	return qgStages
+}
+
+func handleAutotestStage(qg v1alpha1.QualityGate, isPreviousStageAutotest bool, result *[]interface{}) {
+	if isPreviousStageAutotest {
+		handlePreviousAutotestStage(qg, result)
+		return
+	}
+	*result = append(*result, qualityGate{
+		Name:     qg.QualityGateType,
+		StepName: qg.StepName,
+	})
+}
+
+func handlePreviousAutotestStage(qg v1alpha1.QualityGate, result *[]interface{}) {
+	switch old := (*result)[len(*result)-1].(type) {
+	case []qualityGate:
+		(*result)[len(*result)-1] = append((*result)[len(*result)-1].([]qualityGate), qualityGate{
+			Name:     qg.QualityGateType,
+			StepName: qg.StepName,
+		})
+	case qualityGate:
+		(*result)[len(*result)-1] = []qualityGate{old, {
+			Name:     qg.QualityGateType,
+			StepName: qg.StepName,
+		}}
+	}
+}
+
+func handleManualStage(qg v1alpha1.QualityGate, result *[]interface{}) {
+	*result = append(*result, qualityGate{
+		Name:     qg.QualityGateType,
+		StepName: qg.StepName,
+	})
 }
 
 func (h PutJenkinsJob) setLibraryParams(stage v1alpha1.Stage) (map[string]string, error) {
