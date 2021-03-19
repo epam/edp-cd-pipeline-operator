@@ -41,7 +41,7 @@ func (h PutCodebaseImageStream) ServeRequest(stage *v1alpha1.Stage) error {
 
 	for _, name := range pipe.Spec.ApplicationsToPromote {
 		cisName := fmt.Sprintf("%v-%v-%v-verified", pipe.Name, stage.Spec.Name, name)
-		image := fmt.Sprintf("%v/%v", registryComponent.Spec.Url, cisName)
+		image := fmt.Sprintf("%v/%v", registryComponent.Spec.Url, stage.Namespace)
 		if err := h.createCodebaseImageStreamIfNotExists(cisName, image, name, stage.Namespace); err != nil {
 			return errors.Wrapf(err, "couldn't create %v codebase image stream", cisName)
 		}
