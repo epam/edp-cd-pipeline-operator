@@ -2,89 +2,131 @@ package main
 
 import (
 	"flag"
-	"github.com/operator-framework/operator-sdk/pkg/log/zap"
-	"github.com/spf13/pflag"
+	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1alpha1"
+	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/controller/cdpipeline"
+	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/controller/stage"
+	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/cluster"
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
+	edpCompApi "github.com/epam/edp-component-operator/pkg/apis/v1/v1alpha1"
+	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1alpha1"
+	"k8s.io/apimachinery/pkg/api/meta"
+	"k8s.io/client-go/rest"
 	"os"
-	"runtime"
+	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
+	// to ensure that exec-entrypoint and run can make use of them.
+	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
-	codebaseApis "github.com/epam/edp-codebase-operator/v2/pkg/apis"
-	"github.com/epmd-edp/cd-pipeline-operator/v2/pkg/apis"
-	"github.com/epmd-edp/cd-pipeline-operator/v2/pkg/controller"
-	jenkinsApis "github.com/epmd-edp/jenkins-operator/v2/pkg/apis"
-
-	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
-	sdkVersion "github.com/operator-framework/operator-sdk/version"
-	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
-	"sigs.k8s.io/controller-runtime/pkg/client/config"
-	"sigs.k8s.io/controller-runtime/pkg/manager"
-	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
-	"sigs.k8s.io/controller-runtime/pkg/runtime/signals"
+	"k8s.io/apimachinery/pkg/runtime"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/healthz"
+	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+	//+kubebuilder:scaffold:imports
+	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 )
 
-var log = logf.Log.WithName("cmd")
+var (
+	scheme   = runtime.NewScheme()
+	setupLog = ctrl.Log.WithName("setup")
+)
 
-func printVersion() {
-	log.Info("Printing versions...", "Go Version", runtime.Version(),
-		"Go OS", runtime.GOOS, "Go Arch", runtime.GOARCH, "Version of operator-sdk", sdkVersion.Version)
+const cdPipelineOperatorLock = "edp-cd-pipeline-operator-lock"
+
+func init() {
+	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
+
+	utilruntime.Must(cdPipeApi.AddToScheme(scheme))
+
+	utilruntime.Must(codebaseApi.AddToScheme(scheme))
+
+	utilruntime.Must(edpCompApi.AddToScheme(scheme))
+
+	utilruntime.Must(jenkinsApi.AddToScheme(scheme))
 }
 
 func main() {
-	pflag.CommandLine.AddFlagSet(zap.FlagSet())
-	pflag.CommandLine.AddGoFlagSet(flag.CommandLine)
-	pflag.Parse()
-	logf.SetLogger(zap.Logger())
+	var (
+		metricsAddr          string
+		enableLeaderElection bool
+		probeAddr            string
+	)
 
-	printVersion()
+	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
+	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
+	flag.BoolVar(&enableLeaderElection, "leader-elect", cluster.RunningInCluster(),
+		"Enable leader election for controller manager. "+
+			"Enabling this will ensure there is only one active controller manager.")
 
-	namespace, err := k8sutil.GetWatchNamespace()
+	mode, err := cluster.GetDebugMode()
 	if err != nil {
-		log.Error(err, "Failed to get watch namespace")
+		setupLog.Error(err, "unable to get debug mode value")
 		os.Exit(1)
 	}
 
-	// Get a config to talk to the apiserver
-	cfg, err := config.GetConfig()
+	opts := zap.Options{
+		Development: mode,
+	}
+	opts.BindFlags(flag.CommandLine)
+	flag.Parse()
+
+	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
+
+	ns, err := cluster.GetWatchNamespace()
 	if err != nil {
-		log.Error(err, "")
+		setupLog.Error(err, "unable to get watch namespace")
 		os.Exit(1)
 	}
 
-	// Create a new Cmd to provide shared dependencies and start components
-	mgr, err := manager.New(cfg, manager.Options{Namespace: namespace})
+	cfg := ctrl.GetConfigOrDie()
+	mgr, err := ctrl.NewManager(cfg, ctrl.Options{
+		Scheme:                 scheme,
+		MetricsBindAddress:     metricsAddr,
+		HealthProbeBindAddress: probeAddr,
+		Port:                   9443,
+		LeaderElection:         enableLeaderElection,
+		LeaderElectionID:       cdPipelineOperatorLock,
+		MapperProvider: func(c *rest.Config) (meta.RESTMapper, error) {
+			return apiutil.NewDynamicRESTMapper(cfg)
+		},
+		Namespace: ns,
+	})
 	if err != nil {
-		log.Error(err, "")
+		setupLog.Error(err, "unable to start manager")
 		os.Exit(1)
 	}
 
-	log.Info("Registering Components...")
+	ctrlLog := ctrl.Log.WithName("controllers")
 
-	// Setup Scheme for all resources
-	if err := apis.AddToScheme(mgr.GetScheme()); err != nil {
-		log.Error(err, "")
+	cdPipeCtrl := cdpipeline.NewReconcileCDPipeline(mgr.GetClient(), mgr.GetScheme(), ctrlLog)
+	if err := cdPipeCtrl.SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "cd-pipeline")
 		os.Exit(1)
 	}
 
-	if err := jenkinsApis.AddToScheme(mgr.GetScheme()); err != nil {
-		log.Error(err, "")
+	cdStageCtrl := stage.NewReconcileStage(mgr.GetClient(), mgr.GetScheme(), ctrlLog)
+	if err := cdStageCtrl.AddIndex(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "cd-stage")
+		os.Exit(1)
+	}
+	if err := cdStageCtrl.SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "cd-stage")
 		os.Exit(1)
 	}
 
-	if err := codebaseApis.AddToScheme(mgr.GetScheme()); err != nil {
-		log.Error(err, "")
+	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
+		setupLog.Error(err, "unable to set up health check")
 		os.Exit(1)
 	}
 
-	// Setup all Controllers
-	if err := controller.AddToManager(mgr); err != nil {
-		log.Error(err, "")
+	if err := mgr.AddReadyzCheck("readyz", healthz.Ping); err != nil {
+		setupLog.Error(err, "unable to set up ready check")
 		os.Exit(1)
 	}
 
-	log.Info("Starting the Cmd...")
-
-	// Start the Cmd
-	if err := mgr.Start(signals.SetupSignalHandler()); err != nil {
-		log.Error(err, "Manager exited non-zero")
+	setupLog.Info("starting manager")
+	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
+		setupLog.Error(err, "problem running manager")
 		os.Exit(1)
 	}
 }

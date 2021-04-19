@@ -3,17 +3,17 @@ package put_codebase_image_stream
 import (
 	"context"
 	"fmt"
-	v1alphaCodebase "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
-	"github.com/epmd-edp/cd-pipeline-operator/v2/pkg/apis/edp/v1alpha1"
-	"github.com/epmd-edp/cd-pipeline-operator/v2/pkg/controller/stage/chain/handler"
-	"github.com/epmd-edp/cd-pipeline-operator/v2/pkg/controller/stage/chain/util"
-	v1alphaEdpComponent "github.com/epmd-edp/edp-component-operator/pkg/apis/v1/v1alpha1"
+	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1alpha1"
+	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/controller/stage/chain/handler"
+	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/controller/stage/chain/util"
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
+	v1alphaEdpComponent "github.com/epam/edp-component-operator/pkg/apis/v1/v1alpha1"
 	"github.com/pkg/errors"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
 
 type PutCodebaseImageStream struct {
@@ -23,7 +23,7 @@ type PutCodebaseImageStream struct {
 
 const dockerRegistryName = "docker-registry"
 
-var log = logf.Log.WithName("put_codebase_image_stream_chain")
+var log = ctrl.Log.WithName("put_codebase_image_stream_chain")
 
 func (h PutCodebaseImageStream) ServeRequest(stage *v1alpha1.Stage) error {
 	vLog := log.WithValues("stage name", stage.Name)
@@ -63,7 +63,7 @@ func (h PutCodebaseImageStream) getDockerRegistryEdpComponent(namespace string) 
 }
 
 func (h PutCodebaseImageStream) createCodebaseImageStreamIfNotExists(name, imageName, codebaseName, namespace string) error {
-	cis := &v1alphaCodebase.CodebaseImageStream{
+	cis := &codebaseApi.CodebaseImageStream{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v2.edp.epam.com/v1alpha1",
 			Kind:       "CodebaseImageStream",
@@ -72,7 +72,7 @@ func (h PutCodebaseImageStream) createCodebaseImageStreamIfNotExists(name, image
 			Name:      name,
 			Namespace: namespace,
 		},
-		Spec: v1alphaCodebase.CodebaseImageStreamSpec{
+		Spec: codebaseApi.CodebaseImageStreamSpec{
 			Codebase:  codebaseName,
 			ImageName: imageName,
 		},

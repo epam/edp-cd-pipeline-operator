@@ -3,14 +3,14 @@ package deleteenvironmentlabelfromcodebaseimagestreams
 import (
 	"context"
 	"fmt"
-	"github.com/epmd-edp/cd-pipeline-operator/v2/pkg/apis/edp/v1alpha1"
-	"github.com/epmd-edp/cd-pipeline-operator/v2/pkg/controller/stage/chain/handler"
-	"github.com/epmd-edp/cd-pipeline-operator/v2/pkg/controller/stage/chain/util"
-	"github.com/epmd-edp/cd-pipeline-operator/v2/pkg/util/cluster"
+	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1alpha1"
+	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/controller/stage/chain/handler"
+	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/controller/stage/chain/util"
+	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/cluster"
 	"github.com/pkg/errors"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
 
 type DeleteEnvironmentLabelFromCodebaseImageStreams struct {
@@ -18,7 +18,7 @@ type DeleteEnvironmentLabelFromCodebaseImageStreams struct {
 	Client client.Client
 }
 
-var log = logf.Log.WithName("delete_environment_label_from_codebase_image_streams_chain")
+var log = ctrl.Log.WithName("delete_environment_label_from_codebase_image_streams_chain")
 
 func (h DeleteEnvironmentLabelFromCodebaseImageStreams) ServeRequest(stage *v1alpha1.Stage) error {
 	vLog := log.WithValues("stage name", stage.Name)
