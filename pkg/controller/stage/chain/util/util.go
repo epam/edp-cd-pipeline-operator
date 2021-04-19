@@ -1,10 +1,10 @@
 package util
 
 import (
-	"github.com/epmd-edp/cd-pipeline-operator/v2/pkg/apis/edp/v1alpha1"
-	"github.com/epmd-edp/cd-pipeline-operator/v2/pkg/controller/helper"
-	"github.com/epmd-edp/cd-pipeline-operator/v2/pkg/util/cluster"
-	"github.com/epmd-edp/cd-pipeline-operator/v2/pkg/util/consts"
+	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1alpha1"
+	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/controller/helper"
+	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/cluster"
+	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/consts"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 

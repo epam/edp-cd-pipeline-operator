@@ -1,43 +1,44 @@
 package put_jenkins_job
 
 import (
-	"github.com/epam/edp-codebase-operator/v2/pkg/util"
-	"github.com/epmd-edp/cd-pipeline-operator/v2/pkg/apis/edp/v1alpha1"
+	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1alpha1"
+	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/common"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
 func TestGetQualityGateStagesMethod_ShouldReturnParsedStagesScenarioFirst(t *testing.T) {
+
 	qualityGates := []v1alpha1.QualityGate{
 		{
 			QualityGateType: "autotests",
 			StepName:        "aut1",
-			AutotestName:    util.GetStringP("aut1"),
-			BranchName:      util.GetStringP("master"),
+			AutotestName:    common.GetStringP("aut1"),
+			BranchName:      common.GetStringP("master"),
 		},
 		{
 			QualityGateType: "autotests",
 			StepName:        "aut2",
-			AutotestName:    util.GetStringP("aut2"),
-			BranchName:      util.GetStringP("master"),
+			AutotestName:    common.GetStringP("aut2"),
+			BranchName:      common.GetStringP("master"),
 		},
 		{
 			QualityGateType: "autotests",
 			StepName:        "aut3",
-			AutotestName:    util.GetStringP("aut3"),
-			BranchName:      util.GetStringP("master"),
+			AutotestName:    common.GetStringP("aut3"),
+			BranchName:      common.GetStringP("master"),
 		},
 		{
 			QualityGateType: "autotests",
 			StepName:        "aut4",
-			AutotestName:    util.GetStringP("aut4"),
-			BranchName:      util.GetStringP("master"),
+			AutotestName:    common.GetStringP("aut4"),
+			BranchName:      common.GetStringP("master"),
 		},
 		{
 			QualityGateType: "manual",
 			StepName:        "man1",
-			AutotestName:    util.GetStringP("man1"),
-			BranchName:      util.GetStringP("master"),
+			AutotestName:    common.GetStringP("man1"),
+			BranchName:      common.GetStringP("master"),
 		},
 	}
 	stages, err := getQualityGateStages(qualityGates)
@@ -52,32 +53,32 @@ func TestGetQualityGateStagesMethod_ShouldReturnParsedStagesScenarioSecond(t *te
 		{
 			QualityGateType: "autotests",
 			StepName:        "aut1",
-			AutotestName:    util.GetStringP("aut1"),
-			BranchName:      util.GetStringP("master"),
+			AutotestName:    common.GetStringP("aut1"),
+			BranchName:      common.GetStringP("master"),
 		},
 		{
 			QualityGateType: "autotests",
 			StepName:        "aut3",
-			AutotestName:    util.GetStringP("aut3"),
-			BranchName:      util.GetStringP("master"),
+			AutotestName:    common.GetStringP("aut3"),
+			BranchName:      common.GetStringP("master"),
 		},
 		{
 			QualityGateType: "autotests",
 			StepName:        "aut4",
-			AutotestName:    util.GetStringP("aut4"),
-			BranchName:      util.GetStringP("master"),
+			AutotestName:    common.GetStringP("aut4"),
+			BranchName:      common.GetStringP("master"),
 		},
 		{
 			QualityGateType: "manual",
 			StepName:        "man1",
-			AutotestName:    util.GetStringP("man1"),
-			BranchName:      util.GetStringP("master"),
+			AutotestName:    common.GetStringP("man1"),
+			BranchName:      common.GetStringP("master"),
 		},
 		{
 			QualityGateType: "autotests",
 			StepName:        "aut2",
-			AutotestName:    util.GetStringP("aut2"),
-			BranchName:      util.GetStringP("master"),
+			AutotestName:    common.GetStringP("aut2"),
+			BranchName:      common.GetStringP("master"),
 		},
 	}
 	stages, err := getQualityGateStages(qualityGates)

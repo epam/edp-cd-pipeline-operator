@@ -4,17 +4,17 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	codebasev1alpha1 "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
-	"github.com/epam/edp-codebase-operator/v2/pkg/util"
-	"github.com/epmd-edp/cd-pipeline-operator/v2/pkg/apis/edp/v1alpha1"
-	"github.com/epmd-edp/cd-pipeline-operator/v2/pkg/controller/stage/chain/handler"
-	jenv1alpha1 "github.com/epmd-edp/jenkins-operator/v2/pkg/apis/v2/v1alpha1"
+	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1alpha1"
+	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/controller/stage/chain/handler"
+	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/common"
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
+	jenv1alpha1 "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1alpha1"
 	"github.com/pkg/errors"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 	"strings"
 )
 
@@ -33,7 +33,7 @@ const (
 	qualityGateAutotestType = "autotests"
 )
 
-var log = logf.Log.WithName("put_jenkins_job_chain")
+var log = ctrl.Log.WithName("put_jenkins_job_chain")
 
 func (h PutJenkinsJob) ServeRequest(stage *v1alpha1.Stage) error {
 	vLog := log.WithValues("stage name", stage.Name)
@@ -144,7 +144,7 @@ func getStagesInJson(stages []interface{}) (*string, error) {
 	if err != nil {
 		return nil, err
 	}
-	return util.GetStringP(modifyQualityGateStagesJson(string(jsonStages))), nil
+	return common.GetStringP(modifyQualityGateStagesJson(string(jsonStages))), nil
 }
 
 func modifyQualityGateStagesJson(qgStages string) string {
@@ -208,24 +208,24 @@ func (h PutJenkinsJob) setLibraryParams(stage v1alpha1.Stage) (map[string]string
 	}, nil
 }
 
-func (h PutJenkinsJob) getLibraryParams(name, ns string) (*codebasev1alpha1.Codebase, error) {
+func (h PutJenkinsJob) getLibraryParams(name, ns string) (*codebaseApi.Codebase, error) {
 	nsn := types.NamespacedName{
 		Namespace: ns,
 		Name:      name,
 	}
-	i := &codebasev1alpha1.Codebase{}
+	i := &codebaseApi.Codebase{}
 	if err := h.Client.Get(context.TODO(), nsn, i); err != nil {
 		return nil, err
 	}
 	return i, nil
 }
 
-func (h PutJenkinsJob) getGitServerParams(name string, ns string) (*codebasev1alpha1.GitServer, error) {
+func (h PutJenkinsJob) getGitServerParams(name string, ns string) (*codebaseApi.GitServer, error) {
 	nsn := types.NamespacedName{
 		Namespace: ns,
 		Name:      name,
 	}
-	i := &codebasev1alpha1.GitServer{}
+	i := &codebaseApi.GitServer{}
 	if err := h.Client.Get(context.TODO(), nsn, i); err != nil {
 		return nil, err
 	}
