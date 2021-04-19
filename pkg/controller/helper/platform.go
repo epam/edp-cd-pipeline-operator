@@ -2,10 +2,10 @@ package helper
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
+	ctrl "sigs.k8s.io/controller-runtime"
 )
 
-var log = logf.Log.WithName("platform_util")
+var log = ctrl.Log.WithName("platform_util")
 
 func GetOwnerReference(ownerKind string, ors []metav1.OwnerReference) *metav1.OwnerReference {
 	log.V(2).Info("finding owner", "kind", ownerKind)

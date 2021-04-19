@@ -1,20 +1,24 @@
-module github.com/epmd-edp/cd-pipeline-operator/v2
+module github.com/epam/edp-cd-pipeline-operator/v2
 
 go 1.14
 
-replace github.com/openshift/api => github.com/openshift/api v0.0.0-20180801171038-322a19404e37
+replace (
+	github.com/openshift/api => github.com/openshift/api v0.0.0-20210416130433-86964261530c
+	github.com/openshift/client-go => github.com/openshift/client-go v0.0.0-20210112165513-ebc401615f47
+	k8s.io/api => k8s.io/api v0.20.7-rc.0
+)
 
 require (
 	github.com/bndr/gojenkins v0.2.1-0.20181125150310-de43c03cf849
-	github.com/epam/edp-codebase-operator/v2 v2.3.0-95.0.20210224132445-f851d06a3eab
-	github.com/epmd-edp/edp-component-operator v0.1.1-0.20200827122548-e87429a916e0
-	github.com/epmd-edp/jenkins-operator/v2 v2.3.0-130.0.20200525102742-f56cd8641faa
-	github.com/go-openapi/spec v0.19.3
-	github.com/operator-framework/operator-sdk v0.0.0-20190530173525-d6f9cdf2f52e
-	github.com/pkg/errors v0.8.1
-	github.com/spf13/pflag v1.0.3
-	k8s.io/apimachinery v0.0.0-20190221213512-86fb29eff628
-	k8s.io/client-go v0.0.0-20190228174230-b40b2a5939e4
-	k8s.io/kube-openapi v0.0.0-20181109181836-c59034cc13d5
-	sigs.k8s.io/controller-runtime v0.1.12
+	github.com/epam/edp-codebase-operator/v2 v2.3.0-95.0.20210420132935-d94e26c595a4
+	github.com/epam/edp-component-operator v0.1.1-0.20210413101042-1d8f823f27cc
+	github.com/epam/edp-jenkins-operator/v2 v2.3.0-130.0.20210420133042-9e08549fc961
+	github.com/go-logr/logr v0.4.0
+	github.com/go-openapi/spec v0.19.5
+	github.com/pkg/errors v0.9.1
+	github.com/stretchr/testify v1.6.1
+	k8s.io/apimachinery v0.21.0-rc.0
+	k8s.io/client-go v0.20.2
+	k8s.io/kube-openapi v0.0.0-20210305001622-591a79e4bda7
+	sigs.k8s.io/controller-runtime v0.8.3
 )

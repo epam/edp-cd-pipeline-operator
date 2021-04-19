@@ -3,17 +3,18 @@ package put_environment_label_to_codebase_image_streams
 import (
 	"context"
 	"fmt"
-	v1alphaCodebase "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
-	"github.com/epmd-edp/cd-pipeline-operator/v2/pkg/apis/edp/v1alpha1"
-	"github.com/epmd-edp/cd-pipeline-operator/v2/pkg/controller/stage/chain/handler"
-	"github.com/epmd-edp/cd-pipeline-operator/v2/pkg/controller/stage/chain/util"
-	edpError "github.com/epmd-edp/cd-pipeline-operator/v2/pkg/error"
-	"github.com/epmd-edp/cd-pipeline-operator/v2/pkg/util/cluster"
-	"github.com/epmd-edp/cd-pipeline-operator/v2/pkg/util/finalizer"
+	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1alpha1"
+	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/controller/stage/chain/handler"
+	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/controller/stage/chain/util"
+	edpError "github.com/epam/edp-cd-pipeline-operator/v2/pkg/error"
+	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/cluster"
+	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/finalizer"
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/pkg/errors"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/fields"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
 
 type PutEnvironmentLabelToCodebaseImageStreams struct {
@@ -21,7 +22,7 @@ type PutEnvironmentLabelToCodebaseImageStreams struct {
 	Client client.Client
 }
 
-var log = logf.Log.WithName("put_environment_label_to_codebase_image_streams_chain")
+var log = ctrl.Log.WithName("put_environment_label_to_codebase_image_streams_chain")
 
 func (h PutEnvironmentLabelToCodebaseImageStreams) ServeRequest(stage *v1alpha1.Stage) error {
 	vLog := log.WithValues("stage name", stage.Name)
@@ -69,7 +70,7 @@ func (h PutEnvironmentLabelToCodebaseImageStreams) ServeRequest(stage *v1alpha1.
 	return nil
 }
 
-func (h PutEnvironmentLabelToCodebaseImageStreams) updateLabel(cis *v1alphaCodebase.CodebaseImageStream, pipeName, stageName string) error {
+func (h PutEnvironmentLabelToCodebaseImageStreams) updateLabel(cis *codebaseApi.CodebaseImageStream, pipeName, stageName string) error {
 	setLabel(&cis.ObjectMeta, pipeName, stageName)
 
 	if err := h.Client.Update(context.TODO(), cis); err != nil {
@@ -82,15 +83,18 @@ func (h PutEnvironmentLabelToCodebaseImageStreams) updateLabel(cis *v1alphaCodeb
 }
 
 func (h PutEnvironmentLabelToCodebaseImageStreams) findPreviousStage(currentOrder int, pipelineName, ns string) (*v1alpha1.Stage, error) {
-	options := client.ListOptions{
-		Namespace: ns,
+	s, err := fields.ParseSelector(fmt.Sprintf("spec.cdPipeline=%v", pipelineName))
+	if err != nil {
+		return nil, errors.Wrap(err, "couldn't parse fieldSelector")
 	}
-	if err := options.SetFieldSelector(fmt.Sprintf("spec.cdPipeline=%v", pipelineName)); err != nil {
-		return nil, errors.Wrap(err, "couldn't set fieldSelector")
+
+	options := client.ListOptions{
+		Namespace:     ns,
+		FieldSelector: s,
 	}
 
 	var stages v1alpha1.StageList
-	if err := h.Client.List(context.TODO(), &options, &stages); err != nil {
+	if err := h.Client.List(context.TODO(), &stages, &options); err != nil {
 		return nil, errors.Wrap(err, "couldn't list cd stages")
 	}
 
