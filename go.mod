@@ -16,7 +16,7 @@ require (
 	github.com/epam/edp-codebase-operator/v2 v2.3.0-95.0.20210420120140-adde639a1368
 	github.com/bndr/gojenkins v0.2.1-0.20181125150310-de43c03cf849
 	github.com/epam/edp-component-operator v0.1.1-0.20210413101042-1d8f823f27cc
-	github.com/epam/edp-jenkins-operator/v2 v2.3.0-130.0.20210420115929-136974b231dc
+	github.com/epam/edp-jenkins-operator/v2 v2.3.0-130.0.20210420123052-c87ca00c62d4
 	github.com/go-logr/logr v0.4.0
 	github.com/go-openapi/spec v0.19.5
 	github.com/pkg/errors v0.9.1
