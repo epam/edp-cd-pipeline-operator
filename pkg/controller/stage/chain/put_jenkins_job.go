@@ -1,4 +1,4 @@
-package put_jenkins_job
+package chain
 
 import (
 	"context"
@@ -9,18 +9,19 @@ import (
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/common"
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	jenv1alpha1 "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1alpha1"
+	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"strings"
 )
 
 type PutJenkinsJob struct {
-	Next   handler.CdStageHandler
-	Client client.Client
+	next   handler.CdStageHandler
+	client client.Client
+	log    logr.Logger
 }
 
 type qualityGate struct {
@@ -33,20 +34,18 @@ const (
 	qualityGateAutotestType = "autotests"
 )
 
-var log = ctrl.Log.WithName("put_jenkins_job_chain")
-
 func (h PutJenkinsJob) ServeRequest(stage *v1alpha1.Stage) error {
-	vLog := log.WithValues("stage name", stage.Name)
-	vLog.Info("start creating jenkins job cr.")
+	log := h.log.WithValues("stage name", stage.Name)
+	log.Info("start creating jenkins job cr.")
 	if err := h.tryToCreateJenkinsJob(*stage); err != nil {
 		return errors.Wrapf(err, "failed to create %v JenkinsJob CR", stage.Name)
 	}
-	vLog.Info("jenkins job cr has been created")
-	return handler.NextServeOrNil(h.Next, stage)
+	log.Info("jenkins job cr has been created")
+	return nextServeOrNil(h.next, stage)
 }
 
 func (h PutJenkinsJob) tryToCreateJenkinsJob(stage v1alpha1.Stage) error {
-	log.Info("start creating JenkinsJob CR", "name", stage.Name)
+	h.log.Info("start creating JenkinsJob CR", "name", stage.Name)
 
 	jc, _ := h.createJenkinsJobConfig(stage)
 
@@ -71,14 +70,14 @@ func (h PutJenkinsJob) tryToCreateJenkinsJob(stage v1alpha1.Stage) error {
 			Action: v1alpha1.AcceptJenkinsJob,
 		},
 	}
-	if err := h.Client.Create(context.TODO(), jj); err != nil {
+	if err := h.client.Create(context.TODO(), jj); err != nil {
 		if k8serrors.IsAlreadyExists(err) {
-			log.Info("jenkins job already exists. skip creating...", "name", stage.Name)
+			h.log.Info("jenkins job already exists. skip creating...", "name", stage.Name)
 			return nil
 		}
 		return errors.Wrapf(err, "couldn't create jenkins job %v", jj.Name)
 	}
-	log.Info("JenkinsJob has been created", "name", stage.Name)
+	h.log.Info("JenkinsJob has been created", "name", stage.Name)
 	return nil
 }
 
@@ -189,13 +188,13 @@ func handleManualStage(qg v1alpha1.QualityGate, result *[]interface{}) {
 func (h PutJenkinsJob) setLibraryParams(stage v1alpha1.Stage) (map[string]string, error) {
 	cb, err := h.getLibraryParams(stage.Spec.Source.Library.Name, stage.Namespace)
 	if err != nil {
-		log.Error(err, "couldn't retrieve parameters for pipeline's library, default source type will be used",
+		h.log.Error(err, "couldn't retrieve parameters for pipeline's library, default source type will be used",
 			"Library name", stage.Spec.Source.Library.Name)
 		return nil, err
 	}
 	gs, err := h.getGitServerParams(cb.Spec.GitServer, stage.Namespace)
 	if err != nil {
-		log.Error(err, "couldn't retrieve parameters for git server, default source type will be used",
+		h.log.Error(err, "couldn't retrieve parameters for git server, default source type will be used",
 			"Git server", cb.Spec.GitServer)
 		return nil, err
 	}
@@ -214,7 +213,7 @@ func (h PutJenkinsJob) getLibraryParams(name, ns string) (*codebaseApi.Codebase,
 		Name:      name,
 	}
 	i := &codebaseApi.Codebase{}
-	if err := h.Client.Get(context.TODO(), nsn, i); err != nil {
+	if err := h.client.Get(context.TODO(), nsn, i); err != nil {
 		return nil, err
 	}
 	return i, nil
@@ -226,7 +225,7 @@ func (h PutJenkinsJob) getGitServerParams(name string, ns string) (*codebaseApi.
 		Name:      name,
 	}
 	i := &codebaseApi.GitServer{}
-	if err := h.Client.Get(context.TODO(), nsn, i); err != nil {
+	if err := h.client.Get(context.TODO(), nsn, i); err != nil {
 		return nil, err
 	}
 	return i, nil

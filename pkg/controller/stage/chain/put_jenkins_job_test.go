@@ -1,4 +1,4 @@
-package put_jenkins_job
+package chain
 
 import (
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1alpha1"

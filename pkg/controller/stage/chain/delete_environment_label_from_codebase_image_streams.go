@@ -1,4 +1,4 @@
-package deleteenvironmentlabelfromcodebaseimagestreams
+package chain
 
 import (
 	"context"
@@ -7,24 +7,23 @@ import (
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/controller/stage/chain/handler"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/controller/stage/chain/util"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/cluster"
+	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type DeleteEnvironmentLabelFromCodebaseImageStreams struct {
-	Next   handler.CdStageHandler
-	Client client.Client
+	next   handler.CdStageHandler
+	client client.Client
+	log    logr.Logger
 }
 
-var log = ctrl.Log.WithName("delete_environment_label_from_codebase_image_streams_chain")
-
 func (h DeleteEnvironmentLabelFromCodebaseImageStreams) ServeRequest(stage *v1alpha1.Stage) error {
-	vLog := log.WithValues("stage name", stage.Name)
-	vLog.Info("start deleting environment labels from codebase image stream resources.")
+	log := h.log.WithValues("stage name", stage.Name)
+	log.Info("start deleting environment labels from codebase image stream resources.")
 
-	pipe, err := util.GetCdPipeline(h.Client, stage)
+	pipe, err := util.GetCdPipeline(h.client, stage)
 	if err != nil {
 		return errors.Wrapf(err, "couldn't get %v cd pipeline", stage.Spec.CdPipeline)
 	}
@@ -33,8 +32,8 @@ func (h DeleteEnvironmentLabelFromCodebaseImageStreams) ServeRequest(stage *v1al
 		return errors.Wrap(err, "couldn't set environment status")
 	}
 
-	vLog.Info("environment labels have been deleted from codebase image stream resources.")
-	return nil
+	log.Info("environment labels have been deleted from codebase image stream resources.")
+	return nextServeOrNil(h.next, stage)
 }
 
 func (h DeleteEnvironmentLabelFromCodebaseImageStreams) deleteEnvironmentLabel(streams []string, pipelineName, stageName, namespace string) error {
@@ -43,7 +42,7 @@ func (h DeleteEnvironmentLabelFromCodebaseImageStreams) deleteEnvironmentLabel(s
 	}
 
 	for _, name := range streams {
-		stream, err := cluster.GetCodebaseImageStream(h.Client, name, namespace)
+		stream, err := cluster.GetCodebaseImageStream(h.client, name, namespace)
 		if err != nil {
 			return errors.Wrapf(err, "couldn't get %v codebase image stream", name)
 		}
@@ -51,10 +50,10 @@ func (h DeleteEnvironmentLabelFromCodebaseImageStreams) deleteEnvironmentLabel(s
 		label := fmt.Sprintf("%v/%v", pipelineName, stageName)
 		deleteLabel(&stream.ObjectMeta, label)
 
-		if err := h.Client.Update(context.TODO(), stream); err != nil {
+		if err := h.client.Update(context.TODO(), stream); err != nil {
 			return errors.Wrapf(err, "couldn't update %v codebase image stream", stream)
 		}
-		log.Info("label has been deleted from codebase image stream", "label", label, "stream", name)
+		h.log.Info("label has been deleted from codebase image stream", "label", label, "stream", name)
 	}
 
 	return nil

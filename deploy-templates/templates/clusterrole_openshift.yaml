@@ -47,4 +47,18 @@ rules:
     - get
     - list
     - update
+- apiGroups:
+    - 'apps'
+  resources:
+    - deployments
+  verbs:
+    - get
+    - list
+- apiGroups:
+    - '*'
+  resources:
+    - deploymentconfigs
+  verbs:
+    - get
+    - list
 {{ end }}
