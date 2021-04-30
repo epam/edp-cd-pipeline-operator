@@ -2,7 +2,7 @@ package stage
 
 import (
 	"context"
-	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/controller/stage/chain/factory"
+	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/controller/stage/chain"
 	edpError "github.com/epam/edp-cd-pipeline-operator/v2/pkg/error"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/cluster"
 	"github.com/go-logr/logr"
@@ -66,16 +66,6 @@ func (r *ReconcileStage) SetupWithManager(mgr ctrl.Manager) error {
 }
 
 func (r *ReconcileStage) AddIndex(mgr manager.Manager) error {
-	log := r.log.WithValues("field name", specCdPipelineIndex)
-	log.Info("adding index for field")
-	cache := mgr.GetCache()
-	indexFunc := func(obj client.Object) []string {
-		return []string{obj.(*cdPipeApi.Stage).Spec.CdPipeline}
-	}
-	if err := cache.IndexField(context.TODO(), &cdPipeApi.Stage{}, specCdPipelineIndex, indexFunc); err != nil {
-		return err
-	}
-	log.Info("index is added")
 	return nil
 }
 
@@ -103,7 +93,7 @@ func (r *ReconcileStage) Reconcile(ctx context.Context, request reconcile.Reques
 		return reconcile.Result{RequeueAfter: 5 * time.Second}, err
 	}
 
-	if err := factory.CreateDefChain(r.client, i.Spec.TriggerType).ServeRequest(i); err != nil {
+	if err := chain.CreateDefChain(r.client, i.Spec.TriggerType).ServeRequest(i); err != nil {
 		switch errors.Cause(err).(type) {
 		case edpError.CISNotFound:
 			log.Error(err, "cis wasn't found. reconcile again...")
@@ -138,7 +128,7 @@ func (r *ReconcileStage) tryToDeleteCDStage(ctx context.Context, stage *cdPipeAp
 		return nil, nil
 	}
 
-	if err := factory.CreateDeleteChain(r.client).ServeRequest(stage); err != nil {
+	if err := chain.CreateDeleteChain(r.client).ServeRequest(stage); err != nil {
 		return &reconcile.Result{}, err
 	}
 

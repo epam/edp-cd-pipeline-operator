@@ -5,5 +5,7 @@ const (
 
 	FinishedStatus = "created"
 
+	FailedStatus = "failed"
+
 	AutoDeployTriggerType = "Auto"
 )

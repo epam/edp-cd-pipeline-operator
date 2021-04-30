@@ -1,4 +1,4 @@
-package put_environment_label_to_codebase_image_streams
+package chain
 
 import (
 	"context"
@@ -10,25 +10,24 @@ import (
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/cluster"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/finalizer"
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
+	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type PutEnvironmentLabelToCodebaseImageStreams struct {
-	Next   handler.CdStageHandler
-	Client client.Client
+	next   handler.CdStageHandler
+	client client.Client
+	log    logr.Logger
 }
 
-var log = ctrl.Log.WithName("put_environment_label_to_codebase_image_streams_chain")
-
 func (h PutEnvironmentLabelToCodebaseImageStreams) ServeRequest(stage *v1alpha1.Stage) error {
-	vLog := log.WithValues("stage name", stage.Name)
-	vLog.Info("start creating environment labels in codebase image stream resources.")
+	log := h.log.WithValues("stage name", stage.Name)
+	log.Info("start creating environment labels in codebase image stream resources.")
 
-	pipe, err := util.GetCdPipeline(h.Client, stage)
+	pipe, err := util.GetCdPipeline(h.client, stage)
 	if err != nil {
 		return errors.Wrapf(err, "couldn't get %v cd pipeline", stage.Spec.CdPipeline)
 	}
@@ -38,7 +37,7 @@ func (h PutEnvironmentLabelToCodebaseImageStreams) ServeRequest(stage *v1alpha1.
 	}
 
 	for _, name := range pipe.Spec.InputDockerStreams {
-		stream, err := cluster.GetCodebaseImageStream(h.Client, name, stage.Namespace)
+		stream, err := cluster.GetCodebaseImageStream(h.client, name, stage.Namespace)
 		if err != nil {
 			return errors.Wrapf(err, "couldn't get %v codebase image stream", name)
 		}
@@ -56,7 +55,7 @@ func (h PutEnvironmentLabelToCodebaseImageStreams) ServeRequest(stage *v1alpha1.
 		}
 
 		cisName := fmt.Sprintf("%v-%v-%v-verified", pipe.Name, previousStage.Spec.Name, stream.Spec.Codebase)
-		verifiedStream, err := cluster.GetCodebaseImageStream(h.Client, cisName, stage.Namespace)
+		verifiedStream, err := cluster.GetCodebaseImageStream(h.client, cisName, stage.Namespace)
 		if err != nil {
 			return edpError.CISNotFound(fmt.Sprintf("couldn't get %v codebase image stream", name))
 		}
@@ -66,18 +65,18 @@ func (h PutEnvironmentLabelToCodebaseImageStreams) ServeRequest(stage *v1alpha1.
 		}
 	}
 
-	vLog.Info("environment labels have been added to codebase image stream resources.")
+	log.Info("environment labels have been added to codebase image stream resources.")
 	return nil
 }
 
 func (h PutEnvironmentLabelToCodebaseImageStreams) updateLabel(cis *codebaseApi.CodebaseImageStream, pipeName, stageName string) error {
 	setLabel(&cis.ObjectMeta, pipeName, stageName)
 
-	if err := h.Client.Update(context.TODO(), cis); err != nil {
+	if err := h.client.Update(context.TODO(), cis); err != nil {
 		return errors.Wrapf(err, "couldn't update %v codebase image stream", cis.Name)
 	}
 
-	log.Info("label has been added to codebase image stream",
+	h.log.Info("label has been added to codebase image stream",
 		"label", fmt.Sprintf("%v/%v", pipeName, stageName), "stream", cis.Name)
 	return nil
 }
@@ -94,13 +93,13 @@ func (h PutEnvironmentLabelToCodebaseImageStreams) findPreviousStage(currentOrde
 	}
 
 	var stages v1alpha1.StageList
-	if err := h.Client.List(context.TODO(), &stages, &options); err != nil {
+	if err := h.client.List(context.TODO(), &stages, &options); err != nil {
 		return nil, errors.Wrap(err, "couldn't list cd stages")
 	}
 
 	for _, s := range stages.Items {
 		if s.Spec.Order == currentOrder-1 {
-			log.Info("previous stage has been found", "name", s.Name)
+			h.log.Info("previous stage has been found", "name", s.Name)
 			return &s, nil
 		}
 	}
