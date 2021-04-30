@@ -2,6 +2,8 @@
 apiVersion: authorization.openshift.io/v1
 kind: ClusterRoleBinding
 metadata:
+  labels:
+    {{- include "cd-pipeline-operator.labels" . | nindent 4 }}
   name: edp-{{ .Values.name }}-{{ .Values.global.edpName }}-kiosk-edit
 roleRef:
   name: kiosk-edit
