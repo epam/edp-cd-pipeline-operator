@@ -30,8 +30,9 @@ type qualityGate struct {
 }
 
 const (
-	autoDeployTriggerType   = "Auto"
-	qualityGateAutotestType = "autotests"
+	autoDeployTriggerType    = "Auto"
+	qualityGateAutotestType  = "autotests"
+	defaultAutoTriggerPeriod = 60
 )
 
 func (h PutJenkinsJob) ServeRequest(stage *v1alpha1.Stage) error {
@@ -62,8 +63,9 @@ func (h PutJenkinsJob) tryToCreateJenkinsJob(stage v1alpha1.Stage) error {
 			StageName:     &stage.Name,
 			JenkinsFolder: &stage.Spec.CdPipeline,
 			Job: jenv1alpha1.Job{
-				Name:   fmt.Sprintf("job-provisions/job/cd/job/%v", stage.Spec.JobProvisioning),
-				Config: string(jc),
+				Name:              fmt.Sprintf("job-provisions/job/cd/job/%v", stage.Spec.JobProvisioning),
+				Config:            string(jc),
+				AutoTriggerPeriod: common.GetInt32P(defaultAutoTriggerPeriod),
 			},
 		},
 		Status: jenv1alpha1.JenkinsJobStatus{

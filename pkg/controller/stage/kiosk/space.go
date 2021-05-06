@@ -68,7 +68,7 @@ func (s Space) Delete(name string) error {
 			Name: name,
 		},
 	}, &client.DeleteOptions{
-		GracePeriodSeconds: common.Int64Ptr(0),
+		GracePeriodSeconds: common.GetInt64P(0),
 	}); err != nil {
 		return err
 	}

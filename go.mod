@@ -16,7 +16,7 @@ require (
 	github.com/bndr/gojenkins v0.2.1-0.20181125150310-de43c03cf849
 	github.com/epam/edp-codebase-operator/v2 v2.3.0-95.0.20210426125026-571bd859bdf0
 	github.com/epam/edp-component-operator v0.1.1-0.20210427065236-c7dce7f4ea2b
-	github.com/epam/edp-jenkins-operator/v2 v2.3.0-130.0.20210426124415-1871a8ff05c7
+	github.com/epam/edp-jenkins-operator/v2 v2.3.0-130.0.20210506123148-5202a61d3a6c
 	github.com/go-logr/logr v0.4.0
 	github.com/go-openapi/spec v0.19.5
 	github.com/loft-sh/kiosk v0.2.4
@@ -26,6 +26,5 @@ require (
 	k8s.io/apimachinery v0.21.0-rc.0
 	k8s.io/client-go v0.20.2
 	k8s.io/kube-openapi v0.0.0-20210305001622-591a79e4bda7
-	k8s.io/kubernetes v1.13.0
 	sigs.k8s.io/controller-runtime v0.8.3
 )
