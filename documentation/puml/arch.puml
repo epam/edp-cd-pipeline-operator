@@ -12,7 +12,7 @@ package com.epam.edp.cd {
         String name
     -- spec --
         String name
-        []String --codebaseBranch--
+        []String codebaseBranch
         []String inputDockerStreams
         []String thirdPartyServices
         []String applicationsToPromote
@@ -40,6 +40,7 @@ package com.epam.edp.cd {
         Integer order
         []QualityGate qualityGates
         Source  Source
+        String jobProvisioning
     -- status --
         Boolean available
         Date lastTimeUpdated
@@ -57,9 +58,8 @@ package com.epam.edp.cd {
         String stepName
         String autotestName
         String branchName
-        <color red>String command2Run</color>
-        <color red>String command2CheckQualityGate</color>
   }
+
   QualityGate --> QualityGateType : qualityGateType
   enum QualityGateType {
         MANUAL
@@ -89,16 +89,6 @@ package com.epam.edp.cd {
     NEW_ARTIFACT
   }
   Stage --> TriggerType : triggerType
-
-  class CdStageDeploy <<tbd>> {
-    -- metadata --
-    -- spec --
-      CdPipelineStage stage
-      CodebaseArtifact: artifacts
-    -- status --
-  }
-  CdStageDeploy -u--> Stage :owner ref
-}
 
 class CodebaseImageStream <<wip>>
 
