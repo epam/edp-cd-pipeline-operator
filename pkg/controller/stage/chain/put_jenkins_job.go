@@ -110,9 +110,7 @@ func (h PutJenkinsJob) createJenkinsJobConfig(stage v1alpha1.Stage) ([]byte, err
 		}
 	}
 
-	if stage.Spec.TriggerType == autoDeployTriggerType {
-		jpm["AUTODEPLOY"] = "true"
-	}
+	jpm["AUTODEPLOY"] = getAutoDeployStatus(stage.Spec.TriggerType)
 
 	jc, err := json.Marshal(jpm)
 	if err != nil {
@@ -238,4 +236,11 @@ func getPathToRepository(strategy, name string, url *string) string {
 		return *url
 	}
 	return "/" + name
+}
+
+func getAutoDeployStatus(tt string) string {
+	if tt == autoDeployTriggerType {
+		return "true"
+	}
+	return "false"
 }
