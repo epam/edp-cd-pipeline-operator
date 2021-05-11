@@ -14,7 +14,7 @@ package com.epam.edp.cd {
         String name
         []String codebaseBranch
         []String inputDockerStreams
-        []String thirdPartyServices
+        []String services
         []String applicationsToPromote
     -- status --
         Boolean available
@@ -86,20 +86,154 @@ package com.epam.edp.cd {
 
   enum TriggerType {
     MANUAL
-    NEW_ARTIFACT
+    AUTO
   }
   Stage --> TriggerType : triggerType
 
-class CodebaseImageStream <<wip>>
+  class Codebase {
+    -- metadata --
+        String name
+    -- spec --
+        String lang
+        String description
+        String framework
+        String buildTool
+        Strategy strategy
+        Repository repository
+        Route route
+        String testReportFramework
+        String type
+        String gitServer
+        String gitUrlPath
+        String jenkinsSlave
+        String jobProvisioning
+        String deploymentScript
+        Versioning versioning
+        String jiraServer
+        String commitMessagePattern
+        String ticketNamePattern
+        String ciTool
+        Perf  perf
+        String defaultBranch
+        String jiraIssueMetadataPayload
+        Bool emptyProject
+    -- status --
+        ActionType action
+        Boolean available
+        String detailedMessage
+        Integer failureCount
+        Date lastTimeUpdated
+        Result result
+        String status
+        String username
+        String value
+  }
+
+  class CodebaseBranch {
+    -- metadata --
+        String name
+    -- spec --
+        String branchName
+        String codebaseName
+        Boolean release
+    -- status --
+        ActionType action
+        Integer build
+        String detailedMessage
+        Integer failureCount
+        Date lastTimeUpdated
+        Result result
+        String status
+        String username
+        String value
+  }
+
+  class JenkinsFolder {
+    -- metadata --
+        String name
+    -- spec --
+        String ownerName
+        String codebaseName
+        []String job
+        String config
+    -- status --
+        String status
+        Boolean available
+        Date lastTimeUpdated
+        Integer jenkinsJobProvisionBuildNumber
+  }
+
+  class JenkinsJob {
+    -- metadata --
+        String name
+    -- spec --
+        String jenkinsFolder
+        String stageName
+        []String job
+        String config
+        Integer autoTriggerPeriod
+    -- status --
+        Result result
+        String status
+        Date lastTimeUpdated
+        Integer jenkinsJobProvisionBuildNumber
+        Boolean available
+        String detailedMessage
+        ActionType action
+        String username
+        String value
+  }
+
+  class Service {
+    -- metadata --
+        String name
+    -- spec --
+        String description
+        String icon
+        String url
+        String version
+  }
+
+  class CDStageDeploy {
+    -- metadata --
+        String name
+    -- spec --
+        String pipeline
+        String stage
+        []String tags
+        String codebase
+        String tag
+  }
+
+  class CDStageJenkinsDeployment {
+    -- metadata --
+        String name
+    -- spec --
+        String job
+        []String tags
+        String codebase
+        String tag
+  }
+
+class CodebaseImageStream {
+    -- metadata --
+        String name
+    -- spec --
+        String codebase
+        String imageName
+        String tags
+  }
 
 JenkinsFolder <-- CdPipeline : "creates"
-ThirdPartyService "0..*" o- "0..*" CdPipeline : thirdPartyServices
+Service "0..*" o- "0..*" CdPipeline : Services
 Codebase "1..*" o--- "1..*" CdPipeline : applicationsToPromote
 CodebaseImageStream "1..*" o--- "1..*" CdPipeline : inputDockerStreams
 CodebaseBranch "0..1" o--- "1..*" QualityGate : autotestName+branchName
 CodebaseBranch "1" o--- "1..*" Library : name+branch
 JenkinsJob "1" <-- "1" Stage : creates
 CodebaseImageStream "1..*" <-- "1" Stage : creates output stream
+CDStageDeploy "1..*" <-- "1" Stage : creates
+CDStageJenkinsDeployment "1..*" <-- "1" CDStageDeploy : creates
 
 legend
 |<back:LightGoldenRodYellow>    </back>| Work In Progress |
