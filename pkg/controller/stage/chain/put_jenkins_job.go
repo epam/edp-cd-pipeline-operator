@@ -38,6 +38,9 @@ const (
 func (h PutJenkinsJob) ServeRequest(stage *v1alpha1.Stage) error {
 	log := h.log.WithValues("stage name", stage.Name)
 	log.Info("start creating jenkins job cr.")
+	if err := h.tryToUpdateJenkinsJobConfig(*stage); err != nil {
+		return errors.Wrapf(err, "failed to update %v JenkinsJob CR config", stage.Name)
+	}
 	if err := h.tryToCreateJenkinsJob(*stage); err != nil {
 		return errors.Wrapf(err, "failed to create %v JenkinsJob CR", stage.Name)
 	}
@@ -80,6 +83,24 @@ func (h PutJenkinsJob) tryToCreateJenkinsJob(stage v1alpha1.Stage) error {
 		return errors.Wrapf(err, "couldn't create jenkins job %v", jj.Name)
 	}
 	h.log.Info("JenkinsJob has been created", "name", stage.Name)
+	return nil
+}
+
+func (h PutJenkinsJob) tryToUpdateJenkinsJobConfig(stage v1alpha1.Stage) error {
+	jenkinsJob, err := h.getJenkinsJob(stage.Name, stage.Namespace)
+	if k8serrors.IsNotFound(err) {
+		h.log.Info("jenkins job does not exists. skip updating...", "name", stage.Name)
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	jc, _ := h.createJenkinsJobConfig(stage)
+	jenkinsJob.Spec.Job.Config = string(jc)
+	if err := h.client.Update(context.TODO(), jenkinsJob); err != nil {
+		return err
+	}
+	h.log.Info("JenkinsJob config has been updated...", "name", stage.Name)
 	return nil
 }
 
@@ -243,4 +264,16 @@ func getAutoDeployStatus(tt string) string {
 		return "true"
 	}
 	return "false"
+}
+
+func (h PutJenkinsJob) getJenkinsJob(name, namespace string) (*jenv1alpha1.JenkinsJob, error) {
+	nsn := types.NamespacedName{
+		Name:      name,
+		Namespace: namespace,
+	}
+	jj := &jenv1alpha1.JenkinsJob{}
+	if err := h.client.Get(context.TODO(), nsn, jj); err != nil {
+		return nil, err
+	}
+	return jj, nil
 }
