@@ -19,12 +19,20 @@ spec:
                   type: string
                 codebaseBranch:
                   type: array
+                  items:
+                    type: string
                 inputDockerStreams:
                   type: array
+                  items:
+                    type: string
                 thirdPartyServices:
                   type: array
+                  items:
+                    type: string
                 applicationsToPromote:
                   type: array
+                  items:
+                    type: string
                 deploymentType:
                   type: string
               required:
