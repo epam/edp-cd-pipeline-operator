@@ -1,9 +1,38 @@
-apiVersion: apiextensions.k8s.io/v1beta1
+apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   name: cdpipelines.v2.edp.epam.com
 spec:
   group: v2.edp.epam.com
+  versions:
+    - name: v1alpha1
+      served: true
+      storage: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            spec:
+              type: object
+              properties:
+                name:
+                  type: string
+                codebaseBranch:
+                  type: array
+                inputDockerStreams:
+                  type: array
+                thirdPartyServices:
+                  type: array
+                applicationsToPromote:
+                  type: array
+                deploymentType:
+                  type: string
+              required:
+                - name
+                - deploymentType
+  conversion:
+    strategy: None
+  scope: Namespaced
   names:
     kind: CDPipeline
     listKind: CDPipelineList
@@ -11,18 +40,3 @@ spec:
     singular: cdpipeline
     shortNames:
       - cdp
-  scope: Namespaced
-  validation:
-    openAPIV3Schema:
-      properties:
-        apiVersion:
-          type: string
-        kind:
-          type: string
-        metadata:
-          type: object
-        spec:
-          type: object
-        status:
-          type: object
-  version: v1alpha1
