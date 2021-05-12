@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/controller/stage/chain/handler"
+	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/controller/stage/chain/util"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/common"
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	jenv1alpha1 "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1alpha1"
@@ -33,6 +34,8 @@ const (
 	autoDeployTriggerType    = "Auto"
 	qualityGateAutotestType  = "autotests"
 	defaultAutoTriggerPeriod = 60
+	apiVersion               = "v2.edp.epam.com/v1alpha1"
+	jenkinsJobKind           = "JenkinsJob"
 )
 
 func (h PutJenkinsJob) ServeRequest(stage *v1alpha1.Stage) error {
@@ -51,12 +54,15 @@ func (h PutJenkinsJob) ServeRequest(stage *v1alpha1.Stage) error {
 func (h PutJenkinsJob) tryToCreateJenkinsJob(stage v1alpha1.Stage) error {
 	h.log.Info("start creating JenkinsJob CR", "name", stage.Name)
 
-	jc, _ := h.createJenkinsJobConfig(stage)
+	jc, err := h.createJenkinsJobConfig(stage)
+	if err != nil {
+		return err
+	}
 
 	jj := &jenv1alpha1.JenkinsJob{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: "v2.edp.epam.com/v1alpha1",
-			Kind:       "JenkinsJob",
+			APIVersion: apiVersion,
+			Kind:       jenkinsJobKind,
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      stage.Name,
@@ -95,7 +101,11 @@ func (h PutJenkinsJob) tryToUpdateJenkinsJobConfig(stage v1alpha1.Stage) error {
 	if err != nil {
 		return err
 	}
-	jc, _ := h.createJenkinsJobConfig(stage)
+	jc, err := h.createJenkinsJobConfig(stage)
+	if err != nil {
+		return err
+	}
+
 	jenkinsJob.Spec.Job.Config = string(jc)
 	if err := h.client.Update(context.TODO(), jenkinsJob); err != nil {
 		return err
@@ -110,16 +120,22 @@ func (h PutJenkinsJob) createJenkinsJobConfig(stage v1alpha1.Stage) ([]byte, err
 		return nil, errors.Wrap(err, "couldn't parse quality gate stages")
 	}
 
-	source := stage.Spec.Source
+	dt, err := h.getDeploymentType(&stage)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get deploymentType value")
+	}
+
 	jpm := map[string]string{
 		"PIPELINE_NAME":         stage.Spec.CdPipeline,
 		"STAGE_NAME":            stage.Spec.Name,
 		"QG_STAGES":             *qgStages,
 		"GIT_SERVER_CR_VERSION": "v2",
-		"SOURCE_TYPE":           source.Type,
+		"SOURCE_TYPE":           stage.Spec.Source.Type,
+		"AUTODEPLOY":            getAutoDeployStatus(stage.Spec.TriggerType),
+		"DEPLOYMENT_TYPE":       *dt,
 	}
 
-	if source.Type == "library" {
+	if stage.Spec.Source.Type == "library" {
 		library, err := h.setLibraryParams(stage)
 		if err == nil {
 			jpm["LIBRARY_URL"] = library["url"]
@@ -131,13 +147,19 @@ func (h PutJenkinsJob) createJenkinsJobConfig(stage v1alpha1.Stage) ([]byte, err
 		}
 	}
 
-	jpm["AUTODEPLOY"] = getAutoDeployStatus(stage.Spec.TriggerType)
-
 	jc, err := json.Marshal(jpm)
 	if err != nil {
 		return nil, errors.Wrapf(err, "Can't marshal parameters %v into json string", jpm)
 	}
 	return jc, nil
+}
+
+func (h PutJenkinsJob) getDeploymentType(stage *v1alpha1.Stage) (*string, error) {
+	p, err := util.GetCdPipeline(h.client, stage)
+	if err != nil {
+		return nil, err
+	}
+	return common.GetStringP(p.Spec.DeploymentType), nil
 }
 
 func getQualityGateStages(qualityGates []v1alpha1.QualityGate) (*string, error) {
