@@ -66,6 +66,11 @@ func (r *ReconcileStage) SetupWithManager(mgr ctrl.Manager) error {
 }
 
 func (r *ReconcileStage) AddIndex(mgr manager.Manager) error {
+	if err := mgr.GetCache().IndexField(context.TODO(), &cdPipeApi.Stage{}, specCdPipelineIndex, func(obj client.Object) []string {
+		return []string{obj.(*cdPipeApi.Stage).Spec.CdPipeline}
+	}); err != nil {
+		return errors.Wrapf(err, "unable to add %v index", specCdPipelineIndex)
+	}
 	return nil
 }
 
