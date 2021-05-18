@@ -70,8 +70,10 @@ func deleteLabel(meta *v1.ObjectMeta, label string) {
 }
 
 func setAnnotation(meta *v1.ObjectMeta, val string) {
-	envs := meta.GetAnnotations()[lastDeletedEnvsAnnotationKey]
-	meta.Annotations[lastDeletedEnvsAnnotationKey] = buildAnnotationValue(envs, val)
+	if meta.Annotations == nil {
+		meta.SetAnnotations(map[string]string{})
+	}
+	meta.Annotations[lastDeletedEnvsAnnotationKey] = buildAnnotationValue(meta.GetAnnotations()[lastDeletedEnvsAnnotationKey], val)
 }
 
 func buildAnnotationValue(envs, val string) string {
