@@ -25,10 +25,6 @@ spec:
                   type: array
                   items:
                     type: string
-                thirdPartyServices:
-                  type: array
-                  items:
-                    type: string
                 applicationsToPromote:
                   type: array
                   items:

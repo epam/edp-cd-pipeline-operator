@@ -14,7 +14,7 @@ replace (
 
 require (
 	github.com/bndr/gojenkins v0.2.1-0.20181125150310-de43c03cf849
-	github.com/epam/edp-codebase-operator/v2 v2.3.0-95.0.20210426125026-571bd859bdf0
+	github.com/epam/edp-codebase-operator/v2 v2.3.0-95.0.20210531100750-614060915d79
 	github.com/epam/edp-component-operator v0.1.1-0.20210427065236-c7dce7f4ea2b
 	github.com/epam/edp-jenkins-operator/v2 v2.3.0-130.0.20210506123148-5202a61d3a6c
 	github.com/go-logr/logr v0.4.0

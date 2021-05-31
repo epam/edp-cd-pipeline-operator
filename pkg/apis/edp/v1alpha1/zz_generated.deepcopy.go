@@ -98,11 +98,6 @@ func (in *CDPipelineSpec) DeepCopyInto(out *CDPipelineSpec) {
 		*out = make([]string, len(*in))
 		copy(*out, *in)
 	}
-	if in.ThirdPartyServices != nil {
-		in, out := &in.ThirdPartyServices, &out.ThirdPartyServices
-		*out = make([]string, len(*in))
-		copy(*out, *in)
-	}
 	if in.ApplicationsToPromote != nil {
 		in, out := &in.ApplicationsToPromote, &out.ApplicationsToPromote
 		*out = make([]string, len(*in))
