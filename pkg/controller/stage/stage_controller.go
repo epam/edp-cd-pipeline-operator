@@ -21,7 +21,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/event"
-	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -63,15 +62,6 @@ func (r *ReconcileStage) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&cdPipeApi.Stage{}, builder.WithPredicates(p)).
 		Complete(r)
-}
-
-func (r *ReconcileStage) AddIndex(mgr manager.Manager) error {
-	if err := mgr.GetCache().IndexField(context.TODO(), &cdPipeApi.Stage{}, specCdPipelineIndex, func(obj client.Object) []string {
-		return []string{obj.(*cdPipeApi.Stage).Spec.CdPipeline}
-	}); err != nil {
-		return errors.Wrapf(err, "unable to add %v index", specCdPipelineIndex)
-	}
-	return nil
 }
 
 func (r *ReconcileStage) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {

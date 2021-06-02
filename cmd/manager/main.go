@@ -114,12 +114,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	cdStageCtrl := stage.NewReconcileStage(cl, mgr.GetScheme(), ctrlLog)
-	if err := cdStageCtrl.AddIndex(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "cd-stage")
-		os.Exit(1)
-	}
-	if err := cdStageCtrl.SetupWithManager(mgr); err != nil {
+	if err := stage.NewReconcileStage(cl, mgr.GetScheme(), ctrlLog).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "cd-stage")
 		os.Exit(1)
 	}

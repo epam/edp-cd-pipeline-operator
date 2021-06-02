@@ -3,7 +3,7 @@ package chain
 import (
 	"context"
 	"fmt"
-	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1alpha1"
+	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/controller/stage/chain/handler"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/controller/stage/chain/util"
 	edpError "github.com/epam/edp-cd-pipeline-operator/v2/pkg/error"
@@ -13,7 +13,6 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/fields"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -23,7 +22,7 @@ type PutEnvironmentLabelToCodebaseImageStreams struct {
 	log    logr.Logger
 }
 
-func (h PutEnvironmentLabelToCodebaseImageStreams) ServeRequest(stage *v1alpha1.Stage) error {
+func (h PutEnvironmentLabelToCodebaseImageStreams) ServeRequest(stage *cdPipeApi.Stage) error {
 	log := h.log.WithValues("stage name", stage.Name)
 	log.Info("start creating environment labels in codebase image stream resources.")
 
@@ -81,23 +80,13 @@ func (h PutEnvironmentLabelToCodebaseImageStreams) updateLabel(cis *codebaseApi.
 	return nil
 }
 
-func (h PutEnvironmentLabelToCodebaseImageStreams) findPreviousStage(currentOrder int, pipelineName, ns string) (*v1alpha1.Stage, error) {
-	s, err := fields.ParseSelector(fmt.Sprintf("spec.cdPipeline=%v", pipelineName))
+func (h PutEnvironmentLabelToCodebaseImageStreams) findPreviousStage(currentOrder int, pipelineName, ns string) (*cdPipeApi.Stage, error) {
+	stages, err := h.findStagesRelatedToPipeline(pipelineName, ns)
 	if err != nil {
-		return nil, errors.Wrap(err, "couldn't parse fieldSelector")
+		return nil, err
 	}
 
-	options := client.ListOptions{
-		Namespace:     ns,
-		FieldSelector: s,
-	}
-
-	var stages v1alpha1.StageList
-	if err := h.client.List(context.TODO(), &stages, &options); err != nil {
-		return nil, errors.Wrap(err, "couldn't list cd stages")
-	}
-
-	for _, s := range stages.Items {
+	for _, s := range stages {
 		if s.Spec.Order == currentOrder-1 {
 			h.log.Info("previous stage has been found", "name", s.Name)
 			return &s, nil
@@ -111,4 +100,26 @@ func setLabel(meta *v1.ObjectMeta, pipelineName, stageName string) {
 		meta.Labels = make(map[string]string)
 	}
 	meta.Labels[fmt.Sprintf("%v/%v", pipelineName, stageName)] = ""
+}
+
+func (h PutEnvironmentLabelToCodebaseImageStreams) findStagesRelatedToPipeline(cdPipeName, namespace string) ([]cdPipeApi.Stage, error) {
+	var stages cdPipeApi.StageList
+	if err := h.client.List(context.TODO(), &stages, &client.ListOptions{
+		Namespace: namespace,
+	}); err != nil {
+		return nil, errors.Wrap(err, "couldn't list cd stages")
+	}
+
+	var res []cdPipeApi.Stage
+	for _, v := range stages.Items {
+		if v.Spec.CdPipeline == cdPipeName {
+			res = append(res, v)
+		}
+	}
+
+	if res == nil {
+		return nil, fmt.Errorf("no one stage were found by cd pipeline name %v", cdPipeName)
+	}
+
+	return res, nil
 }
