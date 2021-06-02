@@ -26,6 +26,7 @@ spec:
                   items:
                     type: string
                 applicationsToPromote:
+                  nullable: true
                   type: array
                   items:
                     type: string
