@@ -6,6 +6,7 @@ import (
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/controller/stage/chain/handler"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/controller/stage/chain/util"
+	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/cluster"
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	v1alphaEdpComponent "github.com/epam/edp-component-operator/pkg/apis/v1/v1alpha1"
 	"github.com/go-logr/logr"
@@ -38,13 +39,19 @@ func (h PutCodebaseImageStream) ServeRequest(stage *v1alpha1.Stage) error {
 		return errors.Wrapf(err, "couldn't get %v EDP component", dockerRegistryName)
 	}
 
-	for _, name := range pipe.Spec.ApplicationsToPromote {
-		cisName := fmt.Sprintf("%v-%v-%v-verified", pipe.Name, stage.Spec.Name, name)
+	for _, stream := range pipe.Spec.InputDockerStreams {
+		stream, err := cluster.GetCodebaseImageStream(h.client, stream, stage.Namespace)
+		if err != nil {
+			return errors.Wrapf(err, "unable to get %v codebase image stream", stream.Name)
+		}
+
+		cisName := fmt.Sprintf("%v-%v-%v-verified", pipe.Name, stage.Spec.Name, stream.Spec.Codebase)
 		image := fmt.Sprintf("%v/%v", registryComponent.Spec.Url, stage.Namespace)
-		if err := h.createCodebaseImageStreamIfNotExists(cisName, image, name, stage.Namespace); err != nil {
+		if err := h.createCodebaseImageStreamIfNotExists(cisName, image, stream.Spec.Codebase, stage.Namespace); err != nil {
 			return errors.Wrapf(err, "couldn't create %v codebase image stream", cisName)
 		}
 	}
+
 	log.Info("codebase image stream have been created.")
 	return nextServeOrNil(h.next, stage)
 }

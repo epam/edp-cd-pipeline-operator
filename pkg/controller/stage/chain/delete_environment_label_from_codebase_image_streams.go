@@ -26,12 +26,7 @@ func (h DeleteEnvironmentLabelFromCodebaseImageStreams) ServeRequest(stage *v1al
 	log := h.log.WithValues("stage name", stage.Name)
 	log.Info("start deleting environment labels from codebase image stream resources.")
 
-	pipe, err := util.GetCdPipeline(h.client, stage)
-	if err != nil {
-		return errors.Wrapf(err, "couldn't get %v cd pipeline", stage.Spec.CdPipeline)
-	}
-
-	if err := h.deleteEnvironmentLabel(pipe.Spec.InputDockerStreams, pipe.Spec.Name, stage.Spec.Name, stage.Namespace); err != nil {
+	if err := h.deleteEnvironmentLabel(stage); err != nil {
 		return errors.Wrap(err, "couldn't set environment status")
 	}
 
@@ -39,18 +34,36 @@ func (h DeleteEnvironmentLabelFromCodebaseImageStreams) ServeRequest(stage *v1al
 	return nextServeOrNil(h.next, stage)
 }
 
-func (h DeleteEnvironmentLabelFromCodebaseImageStreams) deleteEnvironmentLabel(streams []string, pipelineName, stageName, namespace string) error {
-	if len(streams) == 0 {
-		return fmt.Errorf("pipeline %v doesn't contain codebase image streams", pipelineName)
+func (h DeleteEnvironmentLabelFromCodebaseImageStreams) deleteEnvironmentLabel(stage *v1alpha1.Stage) error {
+	pipe, err := util.GetCdPipeline(h.client, stage)
+	if err != nil {
+		return errors.Wrapf(err, "couldn't get %v cd pipeline", stage.Spec.CdPipeline)
 	}
 
-	for _, name := range streams {
-		stream, err := cluster.GetCodebaseImageStream(h.client, name, namespace)
+	if len(pipe.Spec.InputDockerStreams) == 0 {
+		return fmt.Errorf("pipeline %v doesn't contain codebase image streams", pipe.Spec.Name)
+	}
+
+	for _, name := range pipe.Spec.InputDockerStreams {
+		stream, err := cluster.GetCodebaseImageStream(h.client, name, stage.Namespace)
 		if err != nil {
 			return errors.Wrapf(err, "couldn't get %v codebase image stream", name)
 		}
 
-		env := fmt.Sprintf("%v/%v", pipelineName, stageName)
+		if !stage.IsFirst() {
+			previousStage, err := util.FindPreviousStage(h.client, stage.Spec.Order, pipe.Spec.Name, stage.Namespace)
+			if err != nil {
+				return err
+			}
+
+			cisName := fmt.Sprintf("%v-%v-%v-verified", pipe.Name, previousStage.Spec.Name, stream.Spec.Codebase)
+			stream, err = cluster.GetCodebaseImageStream(h.client, cisName, stage.Namespace)
+			if err != nil {
+				return errors.Wrapf(err, "unable to get codebase image stream %v", stream.Name)
+			}
+		}
+
+		env := fmt.Sprintf("%v/%v", pipe.Spec.Name, stage.Spec.Name)
 		setAnnotation(&stream.ObjectMeta, env)
 		deleteLabel(&stream.ObjectMeta, env)
 

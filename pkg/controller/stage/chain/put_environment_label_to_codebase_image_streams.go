@@ -48,7 +48,7 @@ func (h PutEnvironmentLabelToCodebaseImageStreams) ServeRequest(stage *cdPipeApi
 			continue
 		}
 
-		previousStage, err := h.findPreviousStage(stage.Spec.Order, pipe.Name, stage.Namespace)
+		previousStage, err := util.FindPreviousStage(h.client, stage.Spec.Order, pipe.Name, stage.Namespace)
 		if err != nil {
 			return err
 		}
@@ -65,7 +65,7 @@ func (h PutEnvironmentLabelToCodebaseImageStreams) ServeRequest(stage *cdPipeApi
 	}
 
 	log.Info("environment labels have been added to codebase image stream resources.")
-	return nil
+	return nextServeOrNil(h.next, stage)
 }
 
 func (h PutEnvironmentLabelToCodebaseImageStreams) updateLabel(cis *codebaseApi.CodebaseImageStream, pipeName, stageName string) error {
@@ -80,46 +80,9 @@ func (h PutEnvironmentLabelToCodebaseImageStreams) updateLabel(cis *codebaseApi.
 	return nil
 }
 
-func (h PutEnvironmentLabelToCodebaseImageStreams) findPreviousStage(currentOrder int, pipelineName, ns string) (*cdPipeApi.Stage, error) {
-	stages, err := h.findStagesRelatedToPipeline(pipelineName, ns)
-	if err != nil {
-		return nil, err
-	}
-
-	for _, s := range stages {
-		if s.Spec.Order == currentOrder-1 {
-			h.log.Info("previous stage has been found", "name", s.Name)
-			return &s, nil
-		}
-	}
-	return nil, fmt.Errorf("couldn't find stage for %v cd pipeline with %v order", pipelineName, currentOrder)
-}
-
 func setLabel(meta *v1.ObjectMeta, pipelineName, stageName string) {
 	if meta.Labels == nil {
 		meta.Labels = make(map[string]string)
 	}
 	meta.Labels[fmt.Sprintf("%v/%v", pipelineName, stageName)] = ""
-}
-
-func (h PutEnvironmentLabelToCodebaseImageStreams) findStagesRelatedToPipeline(cdPipeName, namespace string) ([]cdPipeApi.Stage, error) {
-	var stages cdPipeApi.StageList
-	if err := h.client.List(context.TODO(), &stages, &client.ListOptions{
-		Namespace: namespace,
-	}); err != nil {
-		return nil, errors.Wrap(err, "couldn't list cd stages")
-	}
-
-	var res []cdPipeApi.Stage
-	for _, v := range stages.Items {
-		if v.Spec.CdPipeline == cdPipeName {
-			res = append(res, v)
-		}
-	}
-
-	if res == nil {
-		return nil, fmt.Errorf("no one stage were found by cd pipeline name %v", cdPipeName)
-	}
-
-	return res, nil
 }

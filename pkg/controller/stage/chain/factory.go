@@ -47,9 +47,17 @@ func getChain(client client.Client, triggerType string) handler.CdStageHandler {
 				next: ConfigureRbac{
 					next: PutJenkinsJob{
 						client: client,
-						next: PutEnvironmentLabelToCodebaseImageStreams{
+						next: RemoveLabelsFromCodebaseDockerStreamsAfterCdPipelineUpdate{
 							client: client,
-							log:    log.WithName("put-environment-label-to-codebase-image-streams-chain"),
+							log:    log.WithName("remove-labels-from-codebase-docker-streams-after-cd-pipeline-update"),
+							next: DeleteEnvironmentLabelFromCodebaseImageStreams{
+								client: client,
+								log:    log.WithName("delete-environment-label-from-codebase-image-streams"),
+								next: PutEnvironmentLabelToCodebaseImageStreams{
+									client: client,
+									log:    log.WithName("put-environment-label-to-codebase-image-streams-chain"),
+								},
+							},
 						},
 						log: log.WithName("put-jenkins-job-chain"),
 					},

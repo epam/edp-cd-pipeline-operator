@@ -26,7 +26,6 @@ import (
 )
 
 const (
-	specCdPipelineIndex             = "spec.cdPipeline"
 	foregroundDeletionFinalizerName = "foregroundDeletion"
 	envLabelDeletionFinalizer       = "envLabelDeletion"
 )
@@ -54,6 +53,9 @@ func (r *ReconcileStage) SetupWithManager(mgr ctrl.Manager) error {
 				return true
 			}
 			if no.DeletionTimestamp != nil {
+				return true
+			}
+			if no.Status.ShouldBeHandled {
 				return true
 			}
 			return false
@@ -161,6 +163,7 @@ func (r *ReconcileStage) setFinishStatus(ctx context.Context, s *cdPipeApi.Stage
 		Action:          cdPipeApi.AcceptCDStageRegistration,
 		Result:          cdPipeApi.Success,
 		Value:           "active",
+		ShouldBeHandled: false,
 	}
 	if err := r.client.Status().Update(ctx, s); err != nil {
 		if err := r.client.Update(ctx, s); err != nil {
