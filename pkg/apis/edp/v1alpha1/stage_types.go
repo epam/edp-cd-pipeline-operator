@@ -61,6 +61,7 @@ type StageStatus struct {
 	Result          Result     `json:"result"`
 	DetailedMessage string     `json:"detailed_message"`
 	Value           string     `json:"value"`
+	ShouldBeHandled bool       `json:"shouldBeHandled"`
 }
 
 type Autotest struct {
