@@ -7,6 +7,8 @@ import (
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/controller/stage/chain/handler"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/controller/stage/chain/util"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/cluster"
+	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/finalizer"
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -50,29 +52,62 @@ func (h DeleteEnvironmentLabelFromCodebaseImageStreams) deleteEnvironmentLabel(s
 			return errors.Wrapf(err, "couldn't get %v codebase image stream", name)
 		}
 
-		if !stage.IsFirst() {
-			previousStage, err := util.FindPreviousStage(h.client, stage.Spec.Order, pipe.Spec.Name, stage.Namespace)
-			if err != nil {
+		if stage.IsFirst() {
+			if err := h.setEnvLabel(stage.Spec.Name, pipe.Spec.Name, stream); err != nil {
 				return err
 			}
+			continue
+		}
 
-			cisName := fmt.Sprintf("%v-%v-%v-verified", pipe.Name, previousStage.Spec.Name, stream.Spec.Codebase)
-			stream, err = cluster.GetCodebaseImageStream(h.client, cisName, stage.Namespace)
-			if err != nil {
-				return errors.Wrapf(err, "unable to get codebase image stream %v", stream.Name)
+		if err := h.setEnvLabelForVerifiedImageStream(stage, stream, pipe.Spec.Name, name); err != nil {
+			return err
+		}
+
+		if !finalizer.ContainsString(pipe.Spec.ApplicationsToPromote, stream.Spec.Codebase) {
+			if err := h.setEnvLabel(stage.Spec.Name, pipe.Spec.Name, stream); err != nil {
+				return err
 			}
+			continue
 		}
 
-		env := fmt.Sprintf("%v/%v", pipe.Spec.Name, stage.Spec.Name)
-		setAnnotation(&stream.ObjectMeta, env)
-		deleteLabel(&stream.ObjectMeta, env)
-
-		if err := h.client.Update(context.TODO(), stream); err != nil {
-			return errors.Wrapf(err, "couldn't update %v codebase image stream", stream)
-		}
-		h.log.Info("label has been deleted from codebase image stream", "label", env, "stream", name)
 	}
 
+	return nil
+}
+
+func (h DeleteEnvironmentLabelFromCodebaseImageStreams) setEnvLabel(stageName, pipeName string, stream *codebaseApi.CodebaseImageStream) error {
+	env := fmt.Sprintf("%v/%v", pipeName, stageName)
+	setAnnotation(&stream.ObjectMeta, env)
+	deleteLabel(&stream.ObjectMeta, env)
+
+	if err := h.client.Update(context.TODO(), stream); err != nil {
+		return errors.Wrapf(err, "couldn't update %v codebase image stream", stream)
+	}
+	h.log.Info("label has been deleted from codebase image stream", "label", env, "stream", stream.Name)
+	return nil
+}
+
+func (h DeleteEnvironmentLabelFromCodebaseImageStreams) setEnvLabelForVerifiedImageStream(stage *v1alpha1.Stage, stream *codebaseApi.CodebaseImageStream, pipeName, dockerStreamName string) error {
+	previousStageName, err := util.FindPreviousStageName(stage.GetAnnotations())
+	if err != nil {
+		return err
+	}
+
+	cisName := fmt.Sprintf("%v-%v-%v-verified", pipeName, previousStageName, stream.Spec.Codebase)
+	stream, err = cluster.GetCodebaseImageStream(h.client, cisName, stage.Namespace)
+	if err != nil {
+		return errors.Wrapf(err, "unable to get codebase image stream %v", stream.Name)
+	}
+
+	env := fmt.Sprintf("%v/%v", pipeName, stage.Spec.Name)
+	setAnnotation(&stream.ObjectMeta, env)
+	deleteLabel(&stream.ObjectMeta, env)
+
+	if err := h.client.Update(context.TODO(), stream); err != nil {
+		return errors.Wrapf(err, "couldn't update %v codebase image stream", stream)
+	}
+
+	h.log.Info("label has been deleted from codebase image stream", "label", env, "stream", dockerStreamName)
 	return nil
 }
 

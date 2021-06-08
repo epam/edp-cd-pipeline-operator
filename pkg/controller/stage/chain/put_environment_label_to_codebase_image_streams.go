@@ -48,12 +48,12 @@ func (h PutEnvironmentLabelToCodebaseImageStreams) ServeRequest(stage *cdPipeApi
 			continue
 		}
 
-		previousStage, err := util.FindPreviousStage(h.client, stage.Spec.Order, pipe.Name, stage.Namespace)
+		previousStageName, err := util.FindPreviousStageName(stage.GetAnnotations())
 		if err != nil {
 			return err
 		}
 
-		cisName := fmt.Sprintf("%v-%v-%v-verified", pipe.Name, previousStage.Spec.Name, stream.Spec.Codebase)
+		cisName := fmt.Sprintf("%v-%v-%v-verified", pipe.Name, previousStageName, stream.Spec.Codebase)
 		verifiedStream, err := cluster.GetCodebaseImageStream(h.client, cisName, stage.Namespace)
 		if err != nil {
 			return edpError.CISNotFound(fmt.Sprintf("couldn't get %v codebase image stream", name))
