@@ -6,11 +6,13 @@ import (
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/controller/stage/chain/handler"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/controller/stage/chain/util"
+	edpErr "github.com/epam/edp-cd-pipeline-operator/v2/pkg/error"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/cluster"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/finalizer"
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
+	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"strings"
@@ -96,6 +98,9 @@ func (h DeleteEnvironmentLabelFromCodebaseImageStreams) setEnvLabelForVerifiedIm
 	cisName := fmt.Sprintf("%v-%v-%v-verified", pipeName, previousStageName, stream.Spec.Codebase)
 	stream, err = cluster.GetCodebaseImageStream(h.client, cisName, stage.Namespace)
 	if err != nil {
+		if k8sErrors.IsNotFound(err) {
+			return edpErr.CISNotFound(fmt.Sprintf("codebase image stream %v is not found", cisName))
+		}
 		return errors.Wrapf(err, "unable to get codebase image stream %v", stream.Name)
 	}
 
