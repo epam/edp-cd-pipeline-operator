@@ -272,6 +272,9 @@ github.com/epam/edp-codebase-operator/v2 v2.3.0-95.0.20210426125026-571bd859bdf0
 github.com/epam/edp-codebase-operator/v2 v2.3.0-95.0.20210426125026-571bd859bdf0/go.mod h1:6bhnuG7CHMvSxnHG9/gUTlCA/GsY/CIciBvsIvPAl3E=
 github.com/epam/edp-codebase-operator/v2 v2.3.0-95.0.20210531100750-614060915d79 h1:JnhkNQ6US2v8Kx4n4bpHFmUw6oUcvuDnkXk5UtVvp7M=
 github.com/epam/edp-codebase-operator/v2 v2.3.0-95.0.20210531100750-614060915d79/go.mod h1:6tnAoX5VBOmRbufutBrT5U6e66tiQLaY4HLC/FbVO7g=
+github.com/epam/edp-codebase-operator/v2 v2.3.0-95.0.20210611080055-9f3a3a271e99/go.mod h1:6tnAoX5VBOmRbufutBrT5U6e66tiQLaY4HLC/FbVO7g=
+github.com/epam/edp-codebase-operator/v2 v2.3.0-95.0.20210615090821-27e73211c5f4 h1:nE611SKWQSSLjpBisbnQdDQZuODCN68Nak7wQXSb4KQ=
+github.com/epam/edp-codebase-operator/v2 v2.3.0-95.0.20210615090821-27e73211c5f4/go.mod h1:H/1y6WzQimeVsRQ6uUs0gp5IWYQ20Y4aTEubwUuzLqQ=
 github.com/epam/edp-component-operator v0.1.1-0.20210413101042-1d8f823f27cc h1:2G3B3A8k8AOe8r4s78mGBUzCCPgkLLJYXwJ05KIB1co=
 github.com/epam/edp-component-operator v0.1.1-0.20210413101042-1d8f823f27cc/go.mod h1:fxiH4grhavez0q1vBcDleIcQ5mXiIrtSK34TRtgQ4Ec=
 github.com/epam/edp-component-operator v0.1.1-0.20210427065236-c7dce7f4ea2b h1:wFz1XBg83O7C5WrvwPsQJh37gG8yP2jzozM1ntG4Fhw=
@@ -289,6 +292,7 @@ github.com/epam/edp-keycloak-operator v1.3.0-alpha-81.0.20210419073220-4d718f550
 github.com/epam/edp-keycloak-operator v1.3.0-alpha-81.0.20210427070516-9b6232f72684/go.mod h1:DdqP20bkxXiS1c8NTgc4qbrI1alCH1Kzy/2ie4JmenU=
 github.com/epam/edp-perf-operator/v2 v2.0.0-20210420132104-20958a66482a/go.mod h1:KyEAF7OCx/5rPZ29BAeCFV1mez66sxFMf94cZ/IeyVc=
 github.com/epam/edp-perf-operator/v2 v2.0.0-20210427075221-451577e1e5f2/go.mod h1:buOpUkjbWkwJe449ZLRJR8choZ9cGFamIdCaOO8VBy4=
+github.com/epam/edp-perf-operator/v2 v2.0.0-20210615084859-4e4202d10e93/go.mod h1:V04hAXIN/w/bO4tW0Dy5DJV0Y3ZvbnNPvuSLu95Nk00=
 github.com/evanphx/json-patch v4.0.0+incompatible/go.mod h1:50XU6AFN0ol/bzJsmQLiYLvXMP4fmwYFNcr97nuDLSk=
 github.com/evanphx/json-patch v4.2.0+incompatible/go.mod h1:50XU6AFN0ol/bzJsmQLiYLvXMP4fmwYFNcr97nuDLSk=
 github.com/evanphx/json-patch v4.5.0+incompatible h1:ouOWdg56aJriqS0huScTkVXPC5IcNrDCXZ6OoTAWu7M=
