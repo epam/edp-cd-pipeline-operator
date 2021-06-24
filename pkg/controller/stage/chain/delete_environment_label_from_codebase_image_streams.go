@@ -15,7 +15,6 @@ import (
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"strings"
 )
 
 type DeleteEnvironmentLabelFromCodebaseImageStreams struct {
@@ -23,8 +22,6 @@ type DeleteEnvironmentLabelFromCodebaseImageStreams struct {
 	client client.Client
 	log    logr.Logger
 }
-
-const lastDeletedEnvsAnnotationKey = "deploy.edp.epam.com/last-deleted-envs"
 
 func (h DeleteEnvironmentLabelFromCodebaseImageStreams) ServeRequest(stage *v1alpha1.Stage) error {
 	log := h.log.WithValues("stage name", stage.Name)
@@ -79,7 +76,6 @@ func (h DeleteEnvironmentLabelFromCodebaseImageStreams) deleteEnvironmentLabel(s
 
 func (h DeleteEnvironmentLabelFromCodebaseImageStreams) setEnvLabel(stageName, pipeName string, stream *codebaseApi.CodebaseImageStream) error {
 	env := fmt.Sprintf("%v/%v", pipeName, stageName)
-	setAnnotation(&stream.ObjectMeta, env)
 	deleteLabel(&stream.ObjectMeta, env)
 
 	if err := h.client.Update(context.TODO(), stream); err != nil {
@@ -105,7 +101,6 @@ func (h DeleteEnvironmentLabelFromCodebaseImageStreams) setEnvLabelForVerifiedIm
 	}
 
 	env := fmt.Sprintf("%v/%v", pipeName, stage.Spec.Name)
-	setAnnotation(&stream.ObjectMeta, env)
 	deleteLabel(&stream.ObjectMeta, env)
 
 	if err := h.client.Update(context.TODO(), stream); err != nil {
@@ -120,32 +115,4 @@ func deleteLabel(meta *v1.ObjectMeta, label string) {
 	if meta.Labels != nil {
 		delete(meta.Labels, label)
 	}
-}
-
-func setAnnotation(meta *v1.ObjectMeta, val string) {
-	if meta.Annotations == nil {
-		meta.SetAnnotations(map[string]string{})
-	}
-	meta.Annotations[lastDeletedEnvsAnnotationKey] = buildAnnotationValue(meta.GetAnnotations()[lastDeletedEnvsAnnotationKey], val)
-}
-
-func buildAnnotationValue(envs, val string) string {
-	if len(envs) == 0 {
-		return val
-	}
-
-	if findVal(strings.Split(envs, ","), val) {
-		return envs
-	}
-
-	return fmt.Sprintf("%v,%v", envs, val)
-}
-
-func findVal(envs []string, val string) bool {
-	for _, env := range envs {
-		if env == val {
-			return true
-		}
-	}
-	return false
 }
