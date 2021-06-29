@@ -1,4 +1,4 @@
-FROM alpine:3.8
+FROM alpine:3.13.5
 
 ENV OPERATOR=/usr/local/bin/cd-pipeline-operator \
     USER_UID=1001 \
