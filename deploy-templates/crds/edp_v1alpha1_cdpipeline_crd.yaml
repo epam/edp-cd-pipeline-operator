@@ -17,10 +17,6 @@ spec:
               properties:
                 name:
                   type: string
-                codebaseBranch:
-                  type: array
-                  items:
-                    type: string
                 inputDockerStreams:
                   type: array
                   items:
