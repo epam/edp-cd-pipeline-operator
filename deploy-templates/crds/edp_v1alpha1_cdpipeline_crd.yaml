@@ -31,6 +31,8 @@ spec:
               required:
                 - name
                 - deploymentType
+      subresources:
+        status: {}
   conversion:
     strategy: None
   scope: Namespaced
