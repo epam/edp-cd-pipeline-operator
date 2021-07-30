@@ -9,6 +9,7 @@ import (
 	"os"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"strconv"
+	"strings"
 )
 
 const (
@@ -30,6 +31,8 @@ func GetCdPipeline(client client.Client, name, namespace string) (*v1alpha1.CDPi
 }
 
 func GetCodebaseImageStream(client client.Client, name, namespace string) (*codebaseApi.CodebaseImageStream, error) {
+	re := strings.NewReplacer("/", "-", ".", "-")
+	name = re.Replace(name)
 	nsn := types.NamespacedName{
 		Name:      name,
 		Namespace: namespace,
