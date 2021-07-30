@@ -16,8 +16,7 @@ type CDPipelineSpec struct {
 	// Add custom validation using kubebuilder tags: https://book.kubebuilder.io/beyond_basics/generating_crd.html
 	Name                  string   `json:"name"`
 	DeploymentType        string   `json:"deploymentType"`
-	CodebaseBranch        []string `json:"codebase_branch"`
-	InputDockerStreams    []string `json:"input_docker_streams"`
+	InputDockerStreams    []string `json:"inputDockerStreams"`
 	ApplicationsToPromote []string `json:"applicationsToPromote"`
 }
 

@@ -17,10 +17,6 @@ spec:
               properties:
                 name:
                   type: string
-                codebaseBranch:
-                  type: array
-                  items:
-                    type: string
                 inputDockerStreams:
                   type: array
                   items:
@@ -35,6 +31,8 @@ spec:
               required:
                 - name
                 - deploymentType
+      subresources:
+        status: {}
   conversion:
     strategy: None
   scope: Namespaced
