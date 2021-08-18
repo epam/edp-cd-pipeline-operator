@@ -14,14 +14,14 @@ import (
 	"time"
 )
 
-type PutTenant struct {
+type PutKioskSpace struct {
 	next   handler.CdStageHandler
 	space  kiosk.SpaceManager
 	client client.Client
 	log    logr.Logger
 }
 
-func (h PutTenant) ServeRequest(stage *cdPipeApi.Stage) error {
+func (h PutKioskSpace) ServeRequest(stage *cdPipeApi.Stage) error {
 	name := fmt.Sprintf("%v-%v", stage.Namespace, stage.Name)
 	h.log.Info("try to create namespace", "name", name)
 
@@ -35,7 +35,7 @@ func (h PutTenant) ServeRequest(stage *cdPipeApi.Stage) error {
 	return nextServeOrNil(h.next, stage)
 }
 
-func (h PutTenant) createSpace(name, account string) error {
+func (h PutKioskSpace) createSpace(name, account string) error {
 	exists, err := h.spaceExists(name)
 	if err != nil {
 		return err
@@ -49,7 +49,7 @@ func (h PutTenant) createSpace(name, account string) error {
 	return h.space.Create(name, account)
 }
 
-func (h PutTenant) spaceExists(name string) (bool, error) {
+func (h PutKioskSpace) spaceExists(name string) (bool, error) {
 	h.log.Info("checking existence of space cr", "name", name)
 	_, err := h.space.Get(name)
 	if err != nil {
@@ -61,7 +61,7 @@ func (h PutTenant) spaceExists(name string) (bool, error) {
 	return true, nil
 }
 
-func (h PutTenant) setFailedStatus(ctx context.Context, stage *cdPipeApi.Stage, err error) error {
+func (h PutKioskSpace) setFailedStatus(ctx context.Context, stage *cdPipeApi.Stage, err error) error {
 	updateStatus := func(ctx context.Context, stage *cdPipeApi.Stage) error {
 		if err := h.client.Status().Update(ctx, stage); err != nil {
 			if err := h.client.Update(ctx, stage); err != nil {

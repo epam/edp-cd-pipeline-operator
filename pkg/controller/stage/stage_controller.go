@@ -90,7 +90,7 @@ func (r *ReconcileStage) Reconcile(ctx context.Context, request reconcile.Reques
 		return reconcile.Result{RequeueAfter: 5 * time.Second}, err
 	}
 
-	if err := chain.CreateDefChain(r.client, i.Spec.TriggerType).ServeRequest(i); err != nil {
+	if err := chain.CreateChain(r.client, i.Spec.TriggerType).ServeRequest(i); err != nil {
 		switch errors.Cause(err).(type) {
 		case edpError.CISNotFound:
 			log.Error(err, "cis wasn't found. reconcile again...")

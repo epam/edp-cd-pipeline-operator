@@ -42,6 +42,8 @@ spec:
               value: {{ .Values.name }}
             - name: PLATFORM_TYPE
               value: {{ .Values.global.platform }}
+            - name: KIOSK_ENABLED
+              value: {{ .Values.global.kioskEnabled }}
           resources:
 {{ toYaml .Values.resources | indent 12 }}
       {{- with .Values.nodeSelector }}

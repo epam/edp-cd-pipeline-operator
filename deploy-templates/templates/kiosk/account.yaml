@@ -1,3 +1,4 @@
+{{- if .Values.global.kioskEnabled -}}
 apiVersion: tenancy.kiosk.sh/v1alpha1
 kind: Account
 metadata:
@@ -11,3 +12,4 @@ spec:
     - kind: ServiceAccount
       name: edp-{{ .Values.name }}
       namespace: {{ .Values.global.edpName }}
+{{- end -}}
