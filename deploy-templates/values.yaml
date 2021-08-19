@@ -1,7 +1,7 @@
 global:
   edpName: ""
   platform: "openshift"
-  kioskEnabled: true
+  kioskEnabled: "true"
 
 name: cd-pipeline-operator
 annotations: {}
