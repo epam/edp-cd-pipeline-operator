@@ -61,4 +61,14 @@ rules:
   verbs:
     - get
     - list
+{{- if not .Values.global.kioskEnabled }}
+- apiGroups:
+    - ""
+  resources:
+    - namespaces
+  verbs:
+    - get
+    - list
+    - create
+{{- end -}}
 {{ end }}
