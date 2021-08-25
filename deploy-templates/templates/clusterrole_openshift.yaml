@@ -70,5 +70,6 @@ rules:
     - get
     - list
     - create
+    - delete
 {{- end -}}
 {{ end }}
