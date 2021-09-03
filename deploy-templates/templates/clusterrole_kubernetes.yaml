@@ -36,6 +36,7 @@ rules:
     - codebaseimagestreams
     - codebaseimagestreams/status
     - codebaseimagestreams/finalizers
+    - configmaps
   verbs:
     - '*'
 - apiGroups:
