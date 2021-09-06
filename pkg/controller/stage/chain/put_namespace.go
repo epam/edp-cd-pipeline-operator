@@ -5,6 +5,7 @@ import (
 	"fmt"
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/controller/stage/chain/handler"
+	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/controller/stage/chain/util"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/consts"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
@@ -26,7 +27,7 @@ func (h PutNamespace) ServeRequest(stage *cdPipeApi.Stage) error {
 	name := fmt.Sprintf("%v-%v", stage.Namespace, stage.Name)
 	h.log.Info("try to put namespace", "name", name)
 
-	if err := h.createNamespace(name); err != nil {
+	if err := h.createNamespace(stage.Namespace, stage.Name); err != nil {
 		if err := h.setFailedStatus(context.Background(), stage, err); err != nil {
 			return errors.Wrapf(err, "unable to update stage %v status", stage.Name)
 		}
@@ -36,7 +37,8 @@ func (h PutNamespace) ServeRequest(stage *cdPipeApi.Stage) error {
 	return nextServeOrNil(h.next, stage)
 }
 
-func (h PutNamespace) createNamespace(name string) error {
+func (h PutNamespace) createNamespace(sourceNs, stageName string) error {
+	name := fmt.Sprintf("%v-%v", sourceNs, stageName)
 	exists, err := h.namespaceExists(name)
 	if err != nil {
 		return err
@@ -47,7 +49,7 @@ func (h PutNamespace) createNamespace(name string) error {
 		return nil
 	}
 
-	return h.create(name)
+	return h.create(sourceNs, stageName)
 }
 
 func (h PutNamespace) namespaceExists(name string) (bool, error) {
@@ -64,12 +66,16 @@ func (h PutNamespace) namespaceExists(name string) (bool, error) {
 	return true, nil
 }
 
-func (h PutNamespace) create(name string) error {
+func (h PutNamespace) create(sourceNs, stageName string) error {
+	name := fmt.Sprintf("%v-%v", sourceNs, stageName)
 	log := h.log.WithValues("name", name)
 	log.Info("creating namespace")
 	ns := &v1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name,
+			Labels: map[string]string{
+				util.TenantLabelName: sourceNs,
+			},
 		},
 	}
 	if err := h.client.Create(context.TODO(), ns); err != nil {

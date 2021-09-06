@@ -2,6 +2,7 @@ package kiosk
 
 import (
 	"context"
+	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/controller/stage/chain/util"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/common"
 	"github.com/go-logr/logr"
 	loftKioskApi "github.com/loft-sh/kiosk/pkg/apis/tenancy/v1alpha1"
@@ -35,6 +36,9 @@ func (s Space) Create(name, account string) error {
 	space := &loftKioskApi.Space{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name,
+			Labels: map[string]string{
+				util.TenantLabelName: account,
+			},
 		},
 		Spec: loftKioskApi.SpaceSpec{
 			Account: account,
