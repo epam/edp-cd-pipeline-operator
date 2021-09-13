@@ -79,6 +79,7 @@ func (h PutTenant) setFailedStatus(ctx context.Context, stage *cdPipeApi.Stage, 
 		Username:        stage.Status.Username,
 		Result:          cdPipeApi.Error,
 		DetailedMessage: err.Error(),
+		Value:           consts.FailedStatus,
 	}
 	return updateStatus(ctx, stage)
 }
