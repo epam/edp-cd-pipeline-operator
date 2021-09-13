@@ -103,6 +103,7 @@ func (h PutNamespace) setFailedStatus(ctx context.Context, stage *cdPipeApi.Stag
 		Username:        stage.Status.Username,
 		Result:          cdPipeApi.Error,
 		DetailedMessage: err.Error(),
+		Value:           consts.FailedStatus,
 	}
 	return updateStatus(ctx, stage)
 }

@@ -79,6 +79,7 @@ func (h PutKioskSpace) setFailedStatus(ctx context.Context, stage *cdPipeApi.Sta
 		Username:        stage.Status.Username,
 		Result:          cdPipeApi.Error,
 		DetailedMessage: err.Error(),
+		Value:           consts.FailedStatus,
 	}
 	return updateStatus(ctx, stage)
 }
