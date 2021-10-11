@@ -1,13 +1,12 @@
-{{- if not .Values.global.kioskEnabled -}}
 {{- if eq .Values.global.platform "openshift" -}}
 apiVersion: authorization.openshift.io/v1
-kind: ClusterRoleBinding
+kind: RoleBinding
 metadata:
   labels:
     {{- include "cd-pipeline-operator.labels" . | nindent 4 }}
-  name: edp-{{ .Values.name }}-{{ .Values.global.edpName }}-admin
+  name: edp-{{ .Values.name }}
 roleRef:
-  name: admin
+  name: edp-{{ .Values.name }}
 subjects:
   - kind: ServiceAccount
     name: edp-{{ .Values.name }}
@@ -15,5 +14,4 @@ subjects:
 userNames:
   - system:serviceaccount:{{ .Values.global.edpName }}:edp-{{ .Values.name }}
 groupNames: []
-{{- end -}}
 {{- end -}}
