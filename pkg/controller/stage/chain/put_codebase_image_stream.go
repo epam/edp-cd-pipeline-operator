@@ -3,6 +3,7 @@ package chain
 import (
 	"context"
 	"fmt"
+
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/controller/stage/chain/handler"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/controller/stage/chain/util"
@@ -39,10 +40,10 @@ func (h PutCodebaseImageStream) ServeRequest(stage *v1alpha1.Stage) error {
 		return errors.Wrapf(err, "couldn't get %v EDP component", dockerRegistryName)
 	}
 
-	for _, stream := range pipe.Spec.InputDockerStreams {
-		stream, err := cluster.GetCodebaseImageStream(h.client, stream, stage.Namespace)
+	for _, ids := range pipe.Spec.InputDockerStreams {
+		stream, err := cluster.GetCodebaseImageStream(h.client, ids, stage.Namespace)
 		if err != nil {
-			return errors.Wrapf(err, "unable to get %v codebase image stream", stream.Name)
+			return errors.Wrapf(err, "unable to get %v codebase image stream", ids)
 		}
 
 		cisName := fmt.Sprintf("%v-%v-%v-verified", pipe.Name, stage.Spec.Name, stream.Spec.Codebase)
