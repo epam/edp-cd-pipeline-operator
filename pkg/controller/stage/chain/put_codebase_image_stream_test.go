@@ -7,14 +7,17 @@ import (
 
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1alpha1"
 	cbisV1aplha1 "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
+	mockclient "github.com/epam/edp-common/pkg/mock/controller-runtime/client"
 	edpV1alpha1 "github.com/epam/edp-component-operator/pkg/apis/v1/v1alpha1"
 	"github.com/go-logr/logr"
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
@@ -316,4 +319,109 @@ func TestPutCodebaseImageStream_ShouldNotFailWithExistingCbis(t *testing.T) {
 		},
 		cisResp)
 	assert.NoError(t, err)
+}
+
+func TestPutCodebaseImageStream_ShouldFailCreatingCbis(t *testing.T) {
+	mc := mockclient.Client{}
+
+	cdp := &v1alpha1.CDPipeline{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "cdp-name",
+			Namespace: "stub-namespace",
+		},
+		Spec: v1alpha1.CDPipelineSpec{
+			InputDockerStreams: []string{
+				"cbis-name",
+			},
+		},
+	}
+
+	s := &v1alpha1.Stage{
+		ObjectMeta: metav1.ObjectMeta{
+			OwnerReferences: []metav1.OwnerReference{{
+				Kind: "CDPipeline",
+				Name: "cdp-name",
+			}},
+			Name:      "stub-stage-name",
+			Namespace: "stub-namespace",
+		},
+		Spec: v1alpha1.StageSpec{
+			Name: "stage-name",
+		},
+	}
+
+	ec := &edpV1alpha1.EDPComponent{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      dockerRegistryName,
+			Namespace: "stub-namespace",
+		},
+		Spec: edpV1alpha1.EDPComponentSpec{
+			Url: "stub-url",
+		},
+	}
+
+	cis := &cbisV1aplha1.CodebaseImageStream{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "cbis-name",
+			Namespace: "stub-namespace",
+		},
+		Spec: cbisV1aplha1.CodebaseImageStreamSpec{
+			Codebase: "cb-name",
+		},
+	}
+
+	exsitingCis := &cbisV1aplha1.CodebaseImageStream{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "v2.edp.epam.com/v1alpha1",
+			Kind:       "CodebaseImageStream",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "cdp-name-stage-name-cb-name-verified",
+			Namespace: "stub-namespace",
+		},
+		Spec: cbisV1aplha1.CodebaseImageStreamSpec{
+			Codebase:  "cb-name",
+			ImageName: "stub-url/stub-namespace",
+		},
+	}
+
+	scheme := runtime.NewScheme()
+	scheme.AddKnownTypes(v1.SchemeGroupVersion, cdp, s, ec)
+	scheme.AddKnownTypes(schema.GroupVersion{Group: "v2.edp.epam.com", Version: "v1alpha1"}, cis)
+	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(cdp, s, ec, cis).Build()
+
+	mockErr := errors.New("fatal")
+
+	mc.On("Get", types.NamespacedName{
+		Namespace: "stub-namespace",
+		Name:      "cdp-name",
+	}, &v1alpha1.CDPipeline{}).Return(fakeCl)
+
+	mc.On("Get", types.NamespacedName{
+		Namespace: "stub-namespace",
+		Name:      dockerRegistryName,
+	}, &edpV1alpha1.EDPComponent{}).Return(fakeCl)
+
+	mc.On("Get", types.NamespacedName{
+		Namespace: "stub-namespace",
+		Name:      "cbis-name",
+	}, &cbisV1aplha1.CodebaseImageStream{}).Return(fakeCl)
+
+	var createOpts []client.CreateOption
+	mc.On("Create", exsitingCis, createOpts).Return(mockErr)
+
+	cisChain := PutCodebaseImageStream{
+		client: &mc,
+		log:    logr.DiscardLogger{},
+	}
+
+	err := cisChain.ServeRequest(s)
+	assert.Error(t, err)
+
+	if errors.Cause(err) != mockErr {
+		t.Fatal("wrong error returned")
+	}
+	if !strings.Contains(err.Error(), "couldn't create cdp-name-stage-name-cb-name-verified") {
+		t.Fatalf("wrong error returned: %s", err.Error())
+	}
 }
