@@ -5,7 +5,7 @@ metadata:
   namespace: {{ .Values.global.edpName }}
   labels:
     {{- include "cd-pipeline-operator.labels" . | nindent 4 }}
-  name: edp-{{ .Values.name }}
+  name: edp-{{ .Values.name }}-{{ .Values.global.edpName }}
 rules:
 - apiGroups:
     - '*'
