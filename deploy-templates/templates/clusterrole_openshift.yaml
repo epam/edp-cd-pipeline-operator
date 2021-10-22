@@ -1,8 +1,7 @@
 {{- if eq .Values.global.platform "openshift" -}}
 apiVersion: authorization.openshift.io/v1
-kind: Role
+kind: ClusterRole
 metadata:
-  namespace: {{ .Values.global.edpName }}
   labels:
     {{- include "cd-pipeline-operator.labels" . | nindent 4 }}
   name: edp-{{ .Values.name }}-{{ .Values.global.edpName }}
