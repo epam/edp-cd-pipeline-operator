@@ -1,0 +1,23 @@
+{{ if eq .Values.global.platform "openshift" }}
+apiVersion: authorization.openshift.io/v1
+kind: ClusterRole
+metadata:
+  name: edp-{{ .Values.global.edpName }}-deployment-view
+  labels:
+    {{- include "admin-console-operator.labels" . | nindent 4 }}
+rules:
+- apiGroups:
+    - 'apps'
+  resources:
+    - deployments
+  verbs:
+    - get
+    - list
+- apiGroups:
+    - '*'
+  resources:
+    - deploymentconfigs
+  verbs:
+    - get
+    - list
+{{ end}}
