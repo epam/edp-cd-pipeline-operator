@@ -1,3 +1,4 @@
+{{- if .Values.global.kioskEnabled -}}
 {{- if eq .Values.global.platform "openshift" -}}
 apiVersion: authorization.openshift.io/v1
 kind: ClusterRoleBinding
@@ -14,4 +15,5 @@ subjects:
 userNames:
   - system:serviceaccount:{{ .Values.global.edpName }}:edp-{{ .Values.name }}
 groupNames: []
+{{- end -}}
 {{- end -}}

@@ -1,7 +1,7 @@
 {{- if not .Values.global.kioskEnabled -}}
 {{- if eq .Values.global.platform "openshift" -}}
 apiVersion: authorization.openshift.io/v1
-kind: RoleBinding
+kind: ClusterRoleBinding
 metadata:
   labels:
     {{- include "cd-pipeline-operator.labels" . | nindent 4 }}
