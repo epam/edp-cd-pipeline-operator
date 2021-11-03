@@ -4,7 +4,7 @@ kind: ClusterRole
 metadata:
   name: edp-{{ .Values.global.edpName }}-deployment-view
   labels:
-    {{- include "admin-console-operator.labels" . | nindent 4 }}
+    {{- include "cd-pipeline-operator.labels" . | nindent 4 }}
 rules:
 - apiGroups:
     - 'apps'
