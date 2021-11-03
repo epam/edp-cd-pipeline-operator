@@ -1,3 +1,4 @@
+{{- if .Values.global.kioskEnabled -}}
 {{- if eq .Values.global.platform "openshift" -}}
 apiVersion: authorization.openshift.io/v1
 kind: ClusterRole
@@ -63,4 +64,5 @@ rules:
   verbs:
     - get
     - list
-{{ end }}
+{{- end -}}
+{{- end -}}
