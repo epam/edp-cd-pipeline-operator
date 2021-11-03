@@ -1,5 +1,4 @@
 {{- if eq .Values.global.platform "openshift" -}}
-{{- if not .Values.global.kioskEnabled -}}
 apiVersion: authorization.openshift.io/v1
 kind: ClusterRole
 metadata:
@@ -7,6 +6,64 @@ metadata:
     {{- include "cd-pipeline-operator.labels" . | nindent 4 }}
   name: edp-{{ .Values.name }}-{{ .Values.global.edpName }}
 rules:
+- apiGroups:
+    - '*'
+  resources:
+    - cdpipelines
+    - cdpipelines/finalizers
+    - cdpipelines/status
+    - jenkinsfolders
+    - jenkinsfolders/finalizers
+    - jenkinsfolders/status
+    - jenkinsjobs
+    - jenkinsjobs/finalizers
+    - jenkinsjobs/status
+    - codebases
+    - codebases/finalizers
+    - codebases/status
+    - codebasebranches
+    - codebasebranches/finalizers
+    - codebasebranches/status
+    - stages
+    - stages/finalizers
+    - stages/status
+    - gitservers
+    - gitservers/status
+    - gitservers/finalizers
+    - edpcomponents
+    - edpcomponents/finalizers
+    - edpcomponents/status
+    - codebaseimagestreams
+    - codebaseimagestreams/status
+    - codebaseimagestreams/finalizers
+    - configmaps
+    - events
+  verbs:
+    - '*'
+- apiGroups:
+    - coordination.k8s.io
+  resources:
+    - leases
+  verbs:
+    - create
+    - get
+    - list
+    - update
+- apiGroups:
+    - 'apps'
+  resources:
+    - deployments
+  verbs:
+    - get
+    - list
+- apiGroups:
+    - '*'
+  resources:
+    - deploymentconfigs
+  verbs:
+    - get
+    - list
+{{- if not .Values.global.kioskEnabled }}
 - apiGroups:
     - ""
   resources:
@@ -17,4 +74,4 @@ rules:
     - create
     - delete
 {{- end -}}
-{{- end -}}
+{{ end }}
