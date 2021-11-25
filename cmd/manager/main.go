@@ -2,16 +2,18 @@ package main
 
 import (
 	"flag"
+	"os"
+
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/controller/cdpipeline"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/controller/stage"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/cluster"
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
+	buildInfo "github.com/epam/edp-common/pkg/config"
 	edpCompApi "github.com/epam/edp-component-operator/pkg/apis/v1/v1alpha1"
 	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1alpha1"
 	loftKioskApi "github.com/loft-sh/kiosk/pkg/apis/tenancy/v1alpha1"
 	k8sApi "k8s.io/api/rbac/v1"
-	"os"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
@@ -74,7 +76,19 @@ func main() {
 	opts.BindFlags(flag.CommandLine)
 	flag.Parse()
 
+	v := buildInfo.Get()
+
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
+
+	setupLog.Info("Starting the CD Pipeline Operator",
+		"version", v.Version,
+		"git-commit", v.GitCommit,
+		"git-tag", v.GitTag,
+		"build-date", v.BuildDate,
+		"go-version", v.Go,
+		"go-client", v.KubectlVersion,
+		"platform", v.Platform,
+	)
 
 	ns, err := cluster.GetWatchNamespace()
 	if err != nil {
