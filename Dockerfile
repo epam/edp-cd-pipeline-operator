@@ -6,7 +6,7 @@ ENV OPERATOR=/usr/local/bin/cd-pipeline-operator \
     HOME=/home/cd-pipeline-operator
 
 # install operator binary
-COPY go-binary ${OPERATOR}
+COPY ./dist/go-binary ${OPERATOR}
 
 COPY build/bin /usr/local/bin
 COPY build/pipelines /usr/local/bin/pipelines
