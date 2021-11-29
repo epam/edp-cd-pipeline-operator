@@ -1,3 +1,5 @@
+[![codecov](https://codecov.io/gh/epam/edp-cd-pipeline-operator/branch/master/graph/badge.svg?token=T3XGW910VD)](https://codecov.io/gh/epam/edp-cd-pipeline-operator)
+
 # CD Pipeline Operator
 
 | :heavy_exclamation_mark: Please refer to [EDP documentation](https://epam.github.io/edp-install/) to get the notion of the main concepts and guidelines. |
