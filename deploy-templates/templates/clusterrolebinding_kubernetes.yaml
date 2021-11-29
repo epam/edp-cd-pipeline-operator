@@ -1,15 +1,15 @@
 {{- if .Values.global.kioskEnabled -}}
 {{- if eq .Values.global.platform "kubernetes" -}}
 apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
+kind: ClusterRoleBinding
 metadata:
   labels:
     {{- include "cd-pipeline-operator.labels" . | nindent 4 }}
-  name: edp-{{ .Values.name }}
+  name: edp-{{ .Values.name }}-{{ .Values.global.edpName }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
-  kind: Role
-  name: edp-{{ .Values.name }}
+  kind: ClusterRole
+  name: edp-{{ .Values.name }}-{{ .Values.global.edpName }}
 subjects:
   - kind: ServiceAccount
     name: edp-{{ .Values.name }}
