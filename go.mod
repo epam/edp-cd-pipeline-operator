@@ -14,7 +14,7 @@ replace (
 
 require (
 	github.com/bndr/gojenkins v0.2.1-0.20181125150310-de43c03cf849
-	github.com/epam/edp-codebase-operator/v2 v2.3.0-95.0.20211129101535-3ae80e0cbd5f
+	github.com/epam/edp-codebase-operator/v2 v2.3.0-95.0.20211130102103-b05e463cf62b
 	github.com/epam/edp-common v0.0.0-20211124100535-e54dcdf42879
 	github.com/epam/edp-component-operator v0.1.1-0.20211129100139-b5b7659f98f6
 	github.com/epam/edp-jenkins-operator/v2 v2.3.0-130.0.20211129152322-3fdc74f98b19
@@ -59,7 +59,7 @@ require (
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e // indirect
 	github.com/golang/protobuf v1.4.3 // indirect
-	github.com/google/go-cmp v0.5.2 // indirect
+	github.com/google/go-cmp v0.5.6 // indirect
 	github.com/google/gofuzz v1.1.0 // indirect
 	github.com/google/uuid v1.1.2 // indirect
 	github.com/googleapis/gnostic v0.5.1 // indirect
