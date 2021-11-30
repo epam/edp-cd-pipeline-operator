@@ -14,7 +14,7 @@ replace (
 
 require (
 	github.com/bndr/gojenkins v0.2.1-0.20181125150310-de43c03cf849
-	github.com/epam/edp-codebase-operator/v2 v2.3.0-95.0.20210719101613-f5c6cff5e79e
+	github.com/epam/edp-codebase-operator/v2 v2.3.0-95.0.20211129101535-3ae80e0cbd5f
 	github.com/epam/edp-common v0.0.0-20211124100535-e54dcdf42879
 	github.com/epam/edp-component-operator v0.1.1-0.20211129100139-b5b7659f98f6
 	github.com/epam/edp-jenkins-operator/v2 v2.3.0-130.0.20211129152322-3fdc74f98b19
@@ -65,13 +65,15 @@ require (
 	github.com/googleapis/gnostic v0.5.1 // indirect
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0 // indirect
 	github.com/hashicorp/golang-lru v0.5.4 // indirect
-	github.com/imdario/mergo v0.3.10 // indirect
+	github.com/imdario/mergo v0.3.12 // indirect
 	github.com/json-iterator/go v1.1.10 // indirect
 	github.com/mailru/easyjson v0.7.0 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.2-0.20181231171920-c182affec369 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.1 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
+	github.com/onsi/ginkgo v1.15.0 // indirect
+	github.com/onsi/gomega v1.10.5 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/prometheus/client_golang v1.7.1 // indirect
 	github.com/prometheus/client_model v0.2.0 // indirect
@@ -96,6 +98,7 @@ require (
 	google.golang.org/genproto v0.0.0-20201110150050-8816d57aaa9a // indirect
 	google.golang.org/grpc v1.30.0 // indirect
 	google.golang.org/protobuf v1.25.0 // indirect
+	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
