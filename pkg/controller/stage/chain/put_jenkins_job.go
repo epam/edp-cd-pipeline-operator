@@ -163,7 +163,7 @@ func (h PutJenkinsJob) getDeploymentType(stage *v1alpha1.Stage) (*string, error)
 }
 
 func getQualityGateStages(qualityGates []v1alpha1.QualityGate) (*string, error) {
-	if qualityGates == nil || len(qualityGates) == 0 {
+	if len(qualityGates) == 0 {
 		return nil, nil
 	}
 

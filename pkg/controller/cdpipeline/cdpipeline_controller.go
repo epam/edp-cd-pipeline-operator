@@ -44,10 +44,7 @@ func (r *ReconcileCDPipeline) SetupWithManager(mgr ctrl.Manager) error {
 		UpdateFunc: func(e event.UpdateEvent) bool {
 			oo := e.ObjectOld.(*cdPipeApi.CDPipeline)
 			no := e.ObjectNew.(*cdPipeApi.CDPipeline)
-			if !reflect.DeepEqual(oo.Spec, no.Spec) {
-				return true
-			}
-			return false
+			return !reflect.DeepEqual(oo.Spec, no.Spec)
 		},
 	}
 	return ctrl.NewControllerManagedBy(mgr).
