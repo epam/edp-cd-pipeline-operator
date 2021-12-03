@@ -2,7 +2,7 @@ style: none
 template: CHANGELOG.tpl.md
 info:
   title: CHANGELOG
-  repository_url: https://github.com/epam/edp-admin-console-operator
+  repository_url: https://github.com/epam/edp-cd-pipeline-operator
 
 options:
   tag_filter_pattern: '^v'
