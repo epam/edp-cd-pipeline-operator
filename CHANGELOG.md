@@ -28,6 +28,8 @@
 
 ### Routine
 
+- Fix link in changelog config [EPMDEDP-7874](https://jiraeu.epam.com/browse/EPMDEDP-7874)
+- Add changelog generator [EPMDEDP-7874](https://jiraeu.epam.com/browse/EPMDEDP-7874)
 - Update go.sum and go.mod. [EPMDEDP-7930](https://jiraeu.epam.com/browse/EPMDEDP-7930)
 - Update codebase-operator to the latest stable [EPMDEDP-7930](https://jiraeu.epam.com/browse/EPMDEDP-7930)
 - Update codebase-operator to the latest stable [EPMDEDP-7930](https://jiraeu.epam.com/browse/EPMDEDP-7930)
@@ -60,10 +62,10 @@
 <a name="v2.7.0"></a>
 ## [v2.7.0] - 2021-12-03
 
-[Unreleased]: https://github.com/epam/edp-admin-console-operator/compare/v2.9.0...HEAD
-[v2.9.0]: https://github.com/epam/edp-admin-console-operator/compare/v2.8.2...v2.9.0
-[v2.8.2]: https://github.com/epam/edp-admin-console-operator/compare/v2.8.1...v2.8.2
-[v2.8.1]: https://github.com/epam/edp-admin-console-operator/compare/v2.8.0...v2.8.1
-[v2.8.0]: https://github.com/epam/edp-admin-console-operator/compare/v2.7.1...v2.8.0
-[v2.7.1]: https://github.com/epam/edp-admin-console-operator/compare/v2.7.0...v2.7.1
-[v2.7.0]: https://github.com/epam/edp-admin-console-operator/compare/v2.3.0-58...v2.7.0
+[Unreleased]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.9.0...HEAD
+[v2.9.0]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.8.2...v2.9.0
+[v2.8.2]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.8.1...v2.8.2
+[v2.8.1]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.8.0...v2.8.1
+[v2.8.0]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.7.1...v2.8.0
+[v2.7.1]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.7.0...v2.7.1
+[v2.7.0]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.3.0-58...v2.7.0
