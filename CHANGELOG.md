@@ -1,12 +1,18 @@
 <a name="unreleased"></a>
 ## [Unreleased]
 
+
+<a name="v2.10.0"></a>
+## [v2.10.0] - 2021-12-06
 ### Features
 
 - Provide operator's build information [EPMDEDP-7847](https://jiraeu.epam.com/browse/EPMDEDP-7847)
 
 ### Bug Fixes
 
+- Changelog links [EPMDEDP-7847](https://jiraeu.epam.com/browse/EPMDEDP-7847)
+- Extend cd-operator permissions on EKS [EPMDEDP-7935](https://jiraeu.epam.com/browse/EPMDEDP-7935)
+- Fix links in changelog [EPMDEDP-7847](https://jiraeu.epam.com/browse/EPMDEDP-7847)
 - Extend cd-operator permissions on EKS [EPMDEDP-7935](https://jiraeu.epam.com/browse/EPMDEDP-7935)
 - Extend cd-operator permissions on EKS [EPMDEDP-7935](https://jiraeu.epam.com/browse/EPMDEDP-7935)
 - Fix panic issue with non-existing cbis [EPMDEDP-7470](https://jiraeu.epam.com/browse/EPMDEDP-7470)
@@ -62,7 +68,8 @@
 <a name="v2.7.0"></a>
 ## [v2.7.0] - 2021-12-03
 
-[Unreleased]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.9.0...HEAD
+[Unreleased]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.10.0...HEAD
+[v2.10.0]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.9.0...v2.10.0
 [v2.9.0]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.8.2...v2.9.0
 [v2.8.2]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.8.1...v2.8.2
 [v2.8.1]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.8.0...v2.8.1
