@@ -3,14 +3,16 @@ package chain
 import (
 	"context"
 	"fmt"
+	"strings"
+
+	"github.com/go-logr/logr"
+	"github.com/pkg/errors"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/controller/stage/chain/handler"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/controller/stage/chain/util"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/cluster"
-	"github.com/go-logr/logr"
-	"github.com/pkg/errors"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"strings"
 )
 
 type RemoveLabelsFromCodebaseDockerStreamsAfterCdPipelineUpdate struct {
@@ -41,13 +43,13 @@ func (h RemoveLabelsFromCodebaseDockerStreamsAfterCdPipelineUpdate) ServeRequest
 	for _, v := range streams {
 		stream, err := cluster.GetCodebaseImageStream(h.client, v, stage.Namespace)
 		if err != nil {
-			return errors.Wrapf(err, "couldn't get %v codebase image stream", "asd")
+			return errors.Wrapf(err, "couldn't get %v codebase image stream", stream)
 		}
 
 		env := fmt.Sprintf("%v/%v", pipe.Name, stage.Spec.Name)
 		deleteLabel(&stream.ObjectMeta, env)
 
-		if err := h.client.Update(context.TODO(), stream); err != nil {
+		if err := h.client.Update(context.Background(), stream); err != nil {
 			return errors.Wrapf(err, "couldn't update %v codebase image stream", stream)
 		}
 	}

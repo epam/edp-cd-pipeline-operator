@@ -3,18 +3,20 @@ package chain
 import (
 	"context"
 	"fmt"
-	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1alpha1"
-	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/controller/stage/chain/handler"
-	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/controller/stage/chain/util"
-	edpErr "github.com/epam/edp-cd-pipeline-operator/v2/pkg/error"
-	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/cluster"
-	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/finalizer"
+
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1alpha1"
+	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/controller/stage/chain/handler"
+	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/controller/stage/chain/util"
+	edpErr "github.com/epam/edp-cd-pipeline-operator/v2/pkg/error"
+	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/cluster"
+	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/finalizer"
 )
 
 type DeleteEnvironmentLabelFromCodebaseImageStreams struct {
@@ -38,17 +40,17 @@ func (h DeleteEnvironmentLabelFromCodebaseImageStreams) ServeRequest(stage *v1al
 func (h DeleteEnvironmentLabelFromCodebaseImageStreams) deleteEnvironmentLabel(stage *v1alpha1.Stage) error {
 	pipe, err := util.GetCdPipeline(h.client, stage)
 	if err != nil {
-		return errors.Wrapf(err, "couldn't get %v cd pipeline", stage.Spec.CdPipeline)
+		return errors.Wrapf(err, "couldn't get %s cd pipeline", stage.Spec.CdPipeline)
 	}
 
 	if len(pipe.Spec.InputDockerStreams) == 0 {
-		return fmt.Errorf("pipeline %v doesn't contain codebase image streams", pipe.Spec.Name)
+		return fmt.Errorf("pipeline %s doesn't contain codebase image streams", pipe.Spec.Name)
 	}
 
 	for _, name := range pipe.Spec.InputDockerStreams {
 		stream, err := cluster.GetCodebaseImageStream(h.client, name, stage.Namespace)
 		if err != nil {
-			return errors.Wrapf(err, "couldn't get %v codebase image stream", name)
+			return errors.Wrapf(err, "couldn't get %s codebase image stream", name)
 		}
 
 		if stage.IsFirst() {
@@ -75,10 +77,10 @@ func (h DeleteEnvironmentLabelFromCodebaseImageStreams) deleteEnvironmentLabel(s
 }
 
 func (h DeleteEnvironmentLabelFromCodebaseImageStreams) setEnvLabel(stageName, pipeName string, stream *codebaseApi.CodebaseImageStream) error {
-	env := fmt.Sprintf("%v/%v", pipeName, stageName)
+	env := createLabelName(pipeName, stageName)
 	deleteLabel(&stream.ObjectMeta, env)
 
-	if err := h.client.Update(context.TODO(), stream); err != nil {
+	if err := h.client.Update(context.Background(), stream); err != nil {
 		return errors.Wrapf(err, "couldn't update %v codebase image stream", stream)
 	}
 	h.log.Info("label has been deleted from codebase image stream", "label", env, "stream", stream.Name)
@@ -91,19 +93,19 @@ func (h DeleteEnvironmentLabelFromCodebaseImageStreams) setEnvLabelForVerifiedIm
 		return err
 	}
 
-	cisName := fmt.Sprintf("%v-%v-%v-verified", pipeName, previousStageName, stream.Spec.Codebase)
+	cisName := createCisName(pipeName, previousStageName, stream.Spec.Codebase)
 	stream, err = cluster.GetCodebaseImageStream(h.client, cisName, stage.Namespace)
 	if err != nil {
 		if k8sErrors.IsNotFound(err) {
-			return edpErr.CISNotFound(fmt.Sprintf("codebase image stream %v is not found", cisName))
+			return edpErr.CISNotFound(fmt.Sprintf("codebase image stream %s is not found", cisName))
 		}
-		return errors.Wrapf(err, "unable to get codebase image stream %v", stream.Name)
+		return errors.Wrapf(err, "unable to get codebase image stream %s", stream.Name)
 	}
 
-	env := fmt.Sprintf("%v/%v", pipeName, stage.Spec.Name)
+	env := createLabelName(pipeName, stage.Spec.Name)
 	deleteLabel(&stream.ObjectMeta, env)
 
-	if err := h.client.Update(context.TODO(), stream); err != nil {
+	if err := h.client.Update(context.Background(), stream); err != nil {
 		return errors.Wrapf(err, "couldn't update %v codebase image stream", stream)
 	}
 

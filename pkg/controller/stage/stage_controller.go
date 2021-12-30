@@ -2,20 +2,19 @@ package stage
 
 import (
 	"context"
+	"fmt"
+	"reflect"
+	"time"
+
+	"github.com/go-logr/logr"
+	"k8s.io/apimachinery/pkg/runtime"
+	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
+
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/controller/stage/chain"
 	edpError "github.com/epam/edp-cd-pipeline-operator/v2/pkg/error"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/cluster"
-	"github.com/go-logr/logr"
-	"k8s.io/apimachinery/pkg/runtime"
-	"reflect"
-	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/builder"
-	"time"
 
-	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1alpha1"
-	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/controller/helper"
-	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/consts"
-	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/finalizer"
 	"github.com/pkg/errors"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -23,6 +22,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+
+	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1alpha1"
+	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/controller/helper"
+	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/consts"
+	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/finalizer"
 )
 
 const (
@@ -143,13 +147,13 @@ func (r *ReconcileStage) setCDPipelineOwnerRef(ctx context.Context, s *cdPipeApi
 	}
 	p, err := cluster.GetCdPipeline(r.client, s.Spec.CdPipeline, s.Namespace)
 	if err != nil {
-		return errors.Wrapf(err, "couldn't get CD Pipeline %v from cluster", s.Spec.CdPipeline)
+		return fmt.Errorf("couldn't get CD Pipeline %s from cluster: %w", s.Spec.CdPipeline, err)
 	}
 	if err := controllerutil.SetControllerReference(p, s, r.scheme); err != nil {
-		return errors.Wrapf(err, "couldn't set CD Pipeline %v owner ref", s.Spec.CdPipeline)
+		return fmt.Errorf("couldn't set CD Pipeline %s owner ref: %w", s.Spec.CdPipeline, err)
 	}
 	if err := r.client.Update(ctx, s); err != nil {
-		return errors.Wrapf(err, "an error has been occurred while updating stage's owner %v", s.Name)
+		return fmt.Errorf("an error has been occurred while updating stage's owner %s: %w", s.Name, err)
 	}
 	return nil
 }

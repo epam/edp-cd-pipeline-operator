@@ -3,13 +3,15 @@ package cluster
 import (
 	"context"
 	"fmt"
-	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1alpha1"
-	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
-	"k8s.io/apimachinery/pkg/types"
 	"os"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"strconv"
 	"strings"
+
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
+	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1alpha1"
 )
 
 const (
@@ -38,7 +40,7 @@ func GetCodebaseImageStream(client client.Client, name, namespace string) (*code
 		Namespace: namespace,
 	}
 	i := &codebaseApi.CodebaseImageStream{}
-	if err := client.Get(context.TODO(), nsn, i); err != nil {
+	if err := client.Get(context.Background(), nsn, i); err != nil {
 		return nil, err
 	}
 	return i, nil

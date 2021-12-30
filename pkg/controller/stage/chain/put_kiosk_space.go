@@ -3,15 +3,17 @@ package chain
 import (
 	"context"
 	"fmt"
-	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1alpha1"
-	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/controller/stage/chain/handler"
-	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/controller/stage/kiosk"
-	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/consts"
+	"time"
+
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"time"
+
+	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1alpha1"
+	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/controller/stage/chain/handler"
+	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/controller/stage/kiosk"
+	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/consts"
 )
 
 type PutKioskSpace struct {
@@ -22,14 +24,14 @@ type PutKioskSpace struct {
 }
 
 func (h PutKioskSpace) ServeRequest(stage *cdPipeApi.Stage) error {
-	name := fmt.Sprintf("%v-%v", stage.Namespace, stage.Name)
+	name := fmt.Sprintf("%s-%s", stage.Namespace, stage.Name)
 	h.log.Info("try to create namespace", "name", name)
 
 	if err := h.createSpace(name, stage.Namespace); err != nil {
 		if err := h.setFailedStatus(context.Background(), stage, err); err != nil {
-			return errors.Wrapf(err, "unable to update stage %v status", stage.Name)
+			return errors.Wrapf(err, "unable to update stage %s status", stage.Name)
 		}
-		return errors.Wrapf(err, "unable to create %v lofk kiosk space cr", name)
+		return errors.Wrapf(err, "unable to create %s lofk kiosk space cr", name)
 	}
 
 	return nextServeOrNil(h.next, stage)

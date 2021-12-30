@@ -19,19 +19,19 @@ type SpaceManager interface {
 }
 
 type Space struct {
-	client client.Client
-	log    logr.Logger
+	Client client.Client
+	Log    logr.Logger
 }
 
 func InitSpace(client client.Client) SpaceManager {
 	return Space{
-		client: client,
-		log:    ctrl.Log.WithName("space-manager"),
+		Client: client,
+		Log:    ctrl.Log.WithName("space-manager"),
 	}
 }
 
 func (s Space) Create(name, account string) error {
-	log := s.log.WithValues("name", name)
+	log := s.Log.WithValues("name", name)
 	log.Info("creating loft kiosk space")
 	space := &loftKioskApi.Space{
 		ObjectMeta: metav1.ObjectMeta{
@@ -44,7 +44,7 @@ func (s Space) Create(name, account string) error {
 			Account: account,
 		},
 	}
-	if err := s.client.Create(context.Background(), space); err != nil {
+	if err := s.Client.Create(context.Background(), space); err != nil {
 		return err
 	}
 	log.Info("loft kiosk space is created")
@@ -52,10 +52,10 @@ func (s Space) Create(name, account string) error {
 }
 
 func (s Space) Get(name string) (*loftKioskApi.Space, error) {
-	log := s.log.WithValues("name", name)
+	log := s.Log.WithValues("name", name)
 	log.Info("getting loft kiosk space resource")
 	space := &loftKioskApi.Space{}
-	if err := s.client.Get(context.Background(), types.NamespacedName{
+	if err := s.Client.Get(context.Background(), types.NamespacedName{
 		Name: name,
 	}, space); err != nil {
 		return nil, err
@@ -65,9 +65,9 @@ func (s Space) Get(name string) (*loftKioskApi.Space, error) {
 }
 
 func (s Space) Delete(name string) error {
-	log := s.log.WithValues("name", name)
+	log := s.Log.WithValues("name", name)
 	log.Info("deleting loft kiosk space")
-	if err := s.client.Delete(context.Background(), &loftKioskApi.Space{
+	if err := s.Client.Delete(context.Background(), &loftKioskApi.Space{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name,
 		},
