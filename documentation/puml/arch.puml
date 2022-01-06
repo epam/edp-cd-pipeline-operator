@@ -1,4 +1,4 @@
-@startuml
+@startuml cdpipeline-operator
 
 skinparam class {
     BackgroundColor #white
@@ -11,82 +11,89 @@ package com.epam.edp.cd {
     -- metadata --
         String name
     -- spec --
-        String name
-        []String codebaseBranch
-        []String inputDockerStreams
-        []String services
         []String applicationsToPromote
+        String deploymentType
+        []String inputDockerStreams
+        String name
     -- status --
+        ActionType action
         Boolean available
+        String detailedMessage
         Date lastTimeUpdated
+        Result result
         String status
         String username
-        ActionType action
-        Result result
-        String detailedMessage
         String value
   }
 
   CdPipeline "1" -l-* "1..*" Stage : cdPipeline
 
+  enum DeploymentType {
+    CONTAINER
+    CUSTOM
+  }
+
+  CdPipeline --> DeploymentType : deploymentType
+
   class Stage {
     -- metadata --
+        []String annotations
         String name
     -- spec --
-        String name
         String cdPipeline
         String description
-        String triggerType
+        String jobProvisioning
+        String name
         Integer order
         []QualityGate qualityGates
         Source  Source
-        String jobProvisioning
+        String triggerType
     -- status --
+        ActionType action
         Boolean available
+        String detailedMessage
         Date lastTimeUpdated
+        Result result
         String status
         String username
-        ActionType action
-        Result result
-        String detailedMessage
         String value
   }
 
   Stage "1" --* "1..*" QualityGate : internal structure
   class QualityGate  {
-        String qualityGateType
-        String stepName
         String autotestName
         String branchName
+        String qualityGateType
+        String stepName
   }
 
   QualityGate --> QualityGateType : qualityGateType
   enum QualityGateType {
-        MANUAL
         AUTOTESTS
+        MANUAL
   }
 
   Stage --> Source : internal structure
   class Source {
-        String type
         Library library
+        String type
   }
   Source --> SourceType : type
   enum SourceType {
         DEFAULT
-        CUSTOM
+        LIBRARY
   }
   Source --> Library : internal structure
   class Library {
-        String name
         String branch
+        String name
   }
 
-  Stage --> Stage : <color red>owner ref next stage</color>
+  Stage --> Stage : \n\n\n<color red>annotation: deploy.edp.epam.com/previous-stage-name</color>
 
   enum TriggerType {
-    MANUAL
     AUTO
+    MANUAL
   }
   Stage --> TriggerType : triggerType
 
@@ -94,34 +101,33 @@ package com.epam.edp.cd {
     -- metadata --
         String name
     -- spec --
-        String lang
-        String description
-        String framework
         String buildTool
-        Strategy strategy
-        Repository repository
-        Route route
-        String testReportFramework
-        String type
+        String ciTool
+        String commitMessagePattern
+        String defaultBranch
+        String deploymentScript
+        String description
+        Bool emptyProject
+        String framework
         String gitServer
         String gitUrlPath
         String jenkinsSlave
-        String jobProvisioning
-        String deploymentScript
-        Versioning versioning
-        String jiraServer
-        String commitMessagePattern
-        String ticketNamePattern
-        String ciTool
-        Perf  perf
-        String defaultBranch
         String jiraIssueMetadataPayload
-        Bool emptyProject
+        String jobProvisioning
+        String lang
+        Perf perf
+        Repository repository
+        Strategy strategy
+        String testReportFramework
+        String ticketNamePattern
+        String type
+        Versioning versioning
     -- status --
         ActionType action
         Boolean available
         String detailedMessage
         Integer failureCount
+        String git
         Date lastTimeUpdated
         Result result
         String status
@@ -135,10 +141,12 @@ package com.epam.edp.cd {
     -- spec --
         String branchName
         String codebaseName
+        String fromCommit
         Boolean release
+        ReleaseJobParams releaseJobParams
     -- status --
         ActionType action
-        Integer build
+        String build
         String detailedMessage
         Integer failureCount
         Date lastTimeUpdated
@@ -146,21 +154,21 @@ package com.epam.edp.cd {
         String status
         String username
         String value
+        []String versionHistory
   }
 
   class JenkinsFolder {
     -- metadata --
         String name
     -- spec --
-        String ownerName
         String codebaseName
         []String job
-        String config
+        String ownerName
     -- status --
-        String status
         Boolean available
-        Date lastTimeUpdated
         Integer jenkinsJobProvisionBuildNumber
+        Date lastTimeUpdated
+        String status
   }
 
   class JenkinsJob {
@@ -168,30 +176,19 @@ package com.epam.edp.cd {
         String name
     -- spec --
         String jenkinsFolder
-        String stageName
         []String job
-        String config
-        Integer autoTriggerPeriod
+        String ownerName
+        String stageName
     -- status --
-        Result result
-        String status
-        Date lastTimeUpdated
-        Integer jenkinsJobProvisionBuildNumber
+        ActionType action
         Boolean available
         String detailedMessage
-        ActionType action
+        Integer jenkinsJobProvisionBuildNumber
+        Date lastTimeUpdated
+        Result result
+        String status
         String username
         String value
-  }
-
-  class Service {
-    -- metadata --
-        String name
-    -- spec --
-        String description
-        String icon
-        String url
-        String version
   }
 
   class CDStageDeploy {
@@ -201,8 +198,6 @@ package com.epam.edp.cd {
         String pipeline
         String stage
         []String tags
-        String codebase
-        String tag
   }
 
   class CDStageJenkinsDeployment {
@@ -210,36 +205,31 @@ package com.epam.edp.cd {
         String name
     -- spec --
         String job
-        []String tags
+        []Tag tags
+  }
+  CDStageJenkinsDeployment --> Tag : internal structure
+  class Tag {
         String codebase
         String tag
   }
 
-class CodebaseImageStream {
+  class CodebaseImageStream {
     -- metadata --
         String name
     -- spec --
         String codebase
         String imageName
-        String tags
+        []Tag tags
   }
 
 JenkinsFolder <-- CdPipeline : "creates"
-Service "0..*" o- "0..*" CdPipeline : Services
 Codebase "1..*" o--- "1..*" CdPipeline : applicationsToPromote
 CodebaseImageStream "1..*" o--- "1..*" CdPipeline : inputDockerStreams
 CodebaseBranch "0..1" o--- "1..*" QualityGate : autotestName+branchName
 CodebaseBranch "1" o--- "1..*" Library : name+branch
 JenkinsJob "1" <-- "1" Stage : creates
-CodebaseImageStream "1..*" <-- "1" Stage : creates output stream
+CodebaseImageStream "1..*" <-- "1" Stage : creates verified stream
 CDStageDeploy "1..*" <-- "1" Stage : creates
 CDStageJenkinsDeployment "1..*" <-- "1" CDStageDeploy : creates
-
-legend
-|<back:LightGoldenRodYellow>    </back>| Work In Progress |
-|<back:LightGreen>    </back>| Implemented |
-|<back:Khaki>    </back>| TBD |
-endlegend
-
 
 @enduml
