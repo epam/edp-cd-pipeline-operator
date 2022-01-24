@@ -5,6 +5,14 @@
 
 - Changelog links [EPMDEDP-7847](https://jiraeu.epam.com/browse/EPMDEDP-7847)
 
+### Routine
+
+- Update release CI pipelines [EPMDEDP-7847](https://jiraeu.epam.com/browse/EPMDEDP-7847)
+
+### Documentation
+
+- Align diagram to the current state [EPMDEDP-7970](https://jiraeu.epam.com/browse/EPMDEDP-7970)
+
 
 <a name="v2.10.0"></a>
 ## [v2.10.0] - 2021-12-06
