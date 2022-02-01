@@ -24,21 +24,26 @@ _**NOTE:** Operator is platform-independent, that is why there is a unified inst
 In order to install the CD Pipeline Operator, follow the steps below:
 
 1. To add the Helm EPAMEDP Charts for local client, run "helm repo add":
+
      ```bash
      helm repo add epamedp https://chartmuseum.demo.edp-epam.com/
      ```
+
 2. Choose available Helm chart version:
+
      ```bash
      helm search repo epamedp/cd-pipeline-operator
      NAME                              CHART VERSION   APP VERSION     DESCRIPTION
-     epamedp/cd-pipeline-operator      v2.4.0                          Helm chart for Golang application/service deplo...
+     epamedp/cd-pipeline-operator      v2.10.0                          Helm chart for Golang application/service deplo...
      ```
+
    _**NOTE:** It is highly recommended to use the latest released version._
 
 3. Deploy operator:
 
     Full available chart parameters list:
-    ```
+
+    ```bash
     - chart_version                                 # a version of CD Pipeline operator Helm chart;
     - global.edpName                                # a namespace or a project name (in case of OpenShift);
     - global.platform                               # openshift or kubernetes;
@@ -56,9 +61,9 @@ In order to install the CD Pipeline Operator, follow the steps below:
 
 ## Local Development
 
-In order to develop the operator, first set up a local environment. For details, please refer to the [Local Development](documentation/local-development.md) page.
+In order to develop the operator, first set up a local environment. For details, please refer to the [Developer Guide](https://epam.github.io/edp-install/developer-guide/local-development/) page.
 
 ### Related Articles
 
-- [Architecture Scheme of CD Pipeline Operator](documentation/arch.md)
+- [Architecture Scheme of CD Pipeline Operator](docs/arch.md)
 - [Install EDP](https://epam.github.io/edp-install/operator-guide/install-edp/)
