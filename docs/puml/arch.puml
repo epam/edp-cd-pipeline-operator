@@ -6,8 +6,8 @@ skinparam class {
 	BackgroundColor<<tbd>> Khaki
 }
 
-package com.epam.edp.cd {
-  class CdPipeline {
+package cdpipeline-operator {
+    class CdPipeline {
     -- metadata --
         String name
     -- spec --
@@ -24,203 +24,209 @@ package com.epam.edp.cd {
         String status
         String username
         String value
-  }
+    }
 
-  CdPipeline "1" -l-* "1..*" Stage : cdPipeline
+    CdPipeline "1" -l-* "1..*" Stage : cdPipeline
 
-  enum DeploymentType {
-    CONTAINER
-    CUSTOM
-  }
+    enum DeploymentType {
+        CONTAINER
+        CUSTOM
+    }
 
-  CdPipeline --> DeploymentType : deploymentType
+    CdPipeline --> DeploymentType : deploymentType
 
-  class Stage {
-    -- metadata --
-        []String annotations
-        String name
-    -- spec --
-        String cdPipeline
-        String description
-        String jobProvisioning
-        String name
-        Integer order
-        []QualityGate qualityGates
-        Source  Source
-        String triggerType
-    -- status --
-        ActionType action
-        Boolean available
-        String detailedMessage
-        Date lastTimeUpdated
-        Result result
-        String status
-        String username
-        String value
-  }
+    class Stage {
+        -- metadata --
+            []String annotations
+            String name
+        -- spec --
+            String cdPipeline
+            String description
+            String jobProvisioning
+            String name
+            Integer order
+            []QualityGate qualityGates
+            Source  Source
+            String triggerType
+        -- status --
+            ActionType action
+            Boolean available
+            String detailedMessage
+            Date lastTimeUpdated
+            Result result
+            String status
+            String username
+            String value
+    }
 
-  Stage "1" --* "1..*" QualityGate : internal structure
-  class QualityGate  {
+    Stage "1" --* "1..*" QualityGate : internal structure
+    class QualityGate  {
         String autotestName
         String branchName
         String qualityGateType
         String stepName
-  }
+    }
 
-  QualityGate --> QualityGateType : qualityGateType
-  enum QualityGateType {
+    QualityGate --> QualityGateType : qualityGateType
+    enum QualityGateType {
         AUTOTESTS
         MANUAL
-  }
+    }
 
-  Stage --> Source : internal structure
-  class Source {
+    Stage --> Source : internal structure
+    class Source {
         Library library
         String type
-  }
-  Source --> SourceType : type
-  enum SourceType {
+    }
+    Source --> SourceType : type
+    enum SourceType {
         DEFAULT
         LIBRARY
-  }
-  Source --> Library : internal structure
-  class Library {
+    }
+    Source --> Library : internal structure
+    class Library {
         String branch
         String name
-  }
+    }
 
-  Stage --> Stage : \n\n\n<color red>annotation: deploy.edp.epam.com/previous-stage-name</color>
+    Stage --> Stage : \n\n\n<color red>annotation: deploy.edp.epam.com/previous-stage-name</color>
 
-  enum TriggerType {
-    AUTO
-    MANUAL
-  }
-  Stage --> TriggerType : triggerType
+    enum TriggerType {
+        AUTO
+        MANUAL
+    }
+    Stage --> TriggerType : triggerType
+}
 
-  class Codebase {
-    -- metadata --
-        String name
-    -- spec --
-        String buildTool
-        String ciTool
-        String commitMessagePattern
-        String defaultBranch
-        String deploymentScript
-        String description
-        Bool emptyProject
-        String framework
-        String gitServer
-        String gitUrlPath
-        String jenkinsSlave
-        String jiraIssueMetadataPayload
-        String jobProvisioning
-        String lang
-        Perf perf
-        Repository repository
-        Strategy strategy
-        String testReportFramework
-        String ticketNamePattern
-        String type
-        Versioning versioning
-    -- status --
-        ActionType action
-        Boolean available
-        String detailedMessage
-        Integer failureCount
-        String git
-        Date lastTimeUpdated
-        Result result
-        String status
-        String username
-        String value
-  }
+package codebase-operator {
+    class Codebase {
+        -- metadata --
+            String name
+        -- spec --
+            String buildTool
+            String ciTool
+            String commitMessagePattern
+            String defaultBranch
+            String deploymentScript
+            String description
+            Bool emptyProject
+            String framework
+            String gitServer
+            String gitUrlPath
+            String jenkinsSlave
+            String jiraIssueMetadataPayload
+            String jobProvisioning
+            String lang
+            Perf perf
+            Repository repository
+            Strategy strategy
+            String testReportFramework
+            String ticketNamePattern
+            String type
+            Versioning versioning
+        -- status --
+            ActionType action
+            Boolean available
+            String detailedMessage
+            Integer failureCount
+            String git
+            Date lastTimeUpdated
+            Result result
+            String status
+            String username
+            String value
+    }
 
-  class CodebaseBranch {
-    -- metadata --
-        String name
-    -- spec --
-        String branchName
-        String codebaseName
-        String fromCommit
-        Boolean release
-        ReleaseJobParams releaseJobParams
-    -- status --
-        ActionType action
-        String build
-        String detailedMessage
-        Integer failureCount
-        Date lastTimeUpdated
-        Result result
-        String status
-        String username
-        String value
-        []String versionHistory
-  }
+    class CodebaseBranch {
+        -- metadata --
+            String name
+        -- spec --
+            String branchName
+            String codebaseName
+            String fromCommit
+            Boolean release
+            ReleaseJobParams releaseJobParams
+        -- status --
+            ActionType action
+            String build
+            String detailedMessage
+            Integer failureCount
+            Date lastTimeUpdated
+            Result result
+            String status
+            String username
+            String value
+            []String versionHistory
+    }
 
-  class JenkinsFolder {
-    -- metadata --
-        String name
-    -- spec --
-        String codebaseName
-        []String job
-        String ownerName
-    -- status --
-        Boolean available
-        Integer jenkinsJobProvisionBuildNumber
-        Date lastTimeUpdated
-        String status
-  }
+    class CDStageDeploy {
+        -- metadata --
+            String name
+        -- spec --
+            String pipeline
+            String stage
+            []String tags
+    }
 
-  class JenkinsJob {
-    -- metadata --
-        String name
-    -- spec --
-        String jenkinsFolder
-        []String job
-        String ownerName
-        String stageName
-    -- status --
-        ActionType action
-        Boolean available
-        String detailedMessage
-        Integer jenkinsJobProvisionBuildNumber
-        Date lastTimeUpdated
-        Result result
-        String status
-        String username
-        String value
-  }
+    class CodebaseImageStream {
+        -- metadata --
+            String name
+        -- spec --
+            String codebase
+            String imageName
+            []Tag tags
+    }
+}
 
-  class CDStageDeploy {
-    -- metadata --
-        String name
-    -- spec --
-        String pipeline
-        String stage
-        []String tags
-  }
+package jenkins-operator {
+    class JenkinsFolder {
+        -- metadata --
+            String name
+        -- spec --
+            String codebaseName
+            []String job
+            String ownerName
+        -- status --
+            Boolean available
+            Integer jenkinsJobProvisionBuildNumber
+            Date lastTimeUpdated
+            String status
+    }
 
-  class CDStageJenkinsDeployment {
-    -- metadata --
-        String name
-    -- spec --
-        String job
-        []Tag tags
-  }
-  CDStageJenkinsDeployment --> Tag : internal structure
-  class Tag {
+    class JenkinsJob {
+        -- metadata --
+            String name
+        -- spec --
+            String jenkinsFolder
+            []String job
+            String ownerName
+            String stageName
+        -- status --
+            ActionType action
+            Boolean available
+            String detailedMessage
+            Integer jenkinsJobProvisionBuildNumber
+            Date lastTimeUpdated
+            Result result
+            String status
+            String username
+            String value
+    }
+
+    class CDStageJenkinsDeployment {
+        -- metadata --
+            String name
+        -- spec --
+            String job
+            []Tag tags
+    }
+
+    CDStageJenkinsDeployment --> Tag : internal structure
+    class Tag {
         String codebase
         String tag
-  }
-
-  class CodebaseImageStream {
-    -- metadata --
-        String name
-    -- spec --
-        String codebase
-        String imageName
-        []Tag tags
-  }
+    }
+}
 
 JenkinsFolder <-- CdPipeline : "creates"
 Codebase "1..*" o--- "1..*" CdPipeline : applicationsToPromote
@@ -230,6 +236,6 @@ CodebaseBranch "1" o--- "1..*" Library : name+branch
 JenkinsJob "1" <-- "1" Stage : creates
 CodebaseImageStream "1..*" <-- "1" Stage : creates verified stream
 CDStageDeploy "1..*" <-- "1" Stage : creates
-CDStageJenkinsDeployment "1..*" <-- "1" CDStageDeploy : creates
+CDStageJenkinsDeployment "1..*" <-=- "1" CDStageDeploy : creates
 
 @enduml
