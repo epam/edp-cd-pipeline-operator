@@ -1,11 +1,77 @@
 apiVersion: v2
 description: A Helm chart for EDP CD Pipeline Operator
-home: https://solutionshub.epam.com/solution/epam-delivery-platform
+home: https://epam.github.io/edp-install/
 name: cd-pipeline-operator
 type: application
 version: 2.11.0-SNAPSHOT
 appVersion: 2.11.0-SNAPSHOT
+icon: https://epam.github.io/edp-install/assets/logo.png
+keywords:
+  - edp
+  - operator
+  - pipelines
+  - cd
 maintainers:
-  - name: EPAM EDP Team
+  - name: epmd-edp
+    email: SupportEPMD-EDP@epam.com
+    url: https://solutionshub.epam.com/solution/epam-delivery-platform
+  - name: sergk
+    url: https://github.com/SergK
 sources:
   - https://github.com/epam/edp-cd-pipeline-operator
+annotations:
+  artifacthub.io/license: Apache-2.0
+  artifacthub.io/operator: "true"
+  artifacthub.io/images: |
+    - name: cd-pipeline-operator:2.10.2
+      image: epamedp/cd-pipeline-operator:2.10.2
+    - name: cd-pipeline-operator:2.9.0
+      image: epamedp/cd-pipeline-operator:2.9.0
+  artifacthub.io/operatorCapabilities: Full Lifecycle
+  artifacthub.io/crds: |
+    - kind: CDPipeline
+      version: v2.edp.epam.com/v1alpha1
+      name: cdpipeline
+      displayName: CDPipeline
+      description: Predefined configuration for EDP CDPipelines
+    - kind: Stage
+      version: v2.edp.epam.com/v1alpha1
+      name: stage
+      displayName: Stage
+      description: CD Stage management
+  artifacthub.io/crdsExamples: |
+    - apiVersion: v2.edp.epam.com/v1alpha1
+      kind: CDPipeline
+      metadata:
+        name: clone-edp-javascript
+      spec:
+        applicationsToPromote:
+          - javascript-clone-deploy-edp
+        deploymentType: container
+        inputDockerStreams:
+          - javascript-clone-deploy-edp-clone
+        name: clone-edp-javascript
+    - apiVersion: v2.edp.epam.com/v1alpha1
+      kind: Stage
+      metadata:
+        name: release-github-javascript-dev
+      spec:
+        cdPipeline: release-github-javascript
+        description: dev
+        jobProvisioning: default
+        name: dev
+        order: 0
+        qualityGates:
+          - autotestName: null
+            branchName: null
+            qualityGateType: manual
+            stepName: approve
+        source:
+          library: {}
+          type: default
+        triggerType: Auto
+  artifacthub.io/links: |
+    - name: EDP Documentation
+      url: https://epam.github.io/edp-install/
+    - name: EPAM SolutionHub
+      url: https://solutionshub.epam.com/solution/epam-delivery-platform
