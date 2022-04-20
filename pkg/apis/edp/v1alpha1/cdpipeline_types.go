@@ -17,6 +17,7 @@ type CDPipelineSpec struct {
 	Name                  string   `json:"name"`
 	DeploymentType        string   `json:"deploymentType"`
 	InputDockerStreams    []string `json:"inputDockerStreams"`
+	Applications          []string `json:"applications"`
 	ApplicationsToPromote []string `json:"applicationsToPromote"`
 }
 

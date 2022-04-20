@@ -100,6 +100,13 @@ Resource Types:
         </td>
         <td>true</td>
       </tr><tr>
+        <td><b>applications</b></td>
+        <td>[]string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>applicationsToPromote</b></td>
         <td>[]string</td>
         <td>

@@ -45,6 +45,8 @@ annotations:
       metadata:
         name: clone-edp-javascript
       spec:
+        applications:
+          - javascript-clone-deploy-edp
         applicationsToPromote:
           - javascript-clone-deploy-edp
         deploymentType: container

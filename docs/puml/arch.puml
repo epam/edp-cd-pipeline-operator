@@ -11,6 +11,7 @@ package cdpipeline-operator {
     -- metadata --
         String name
     -- spec --
+        []String applications
         []String applicationsToPromote
         String deploymentType
         []String inputDockerStreams

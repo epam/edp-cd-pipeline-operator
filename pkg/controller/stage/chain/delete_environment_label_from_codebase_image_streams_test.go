@@ -124,6 +124,7 @@ func TestDeleteEnvironmentLabel_ApplicationToPromote(t *testing.T) {
 	labels := make(map[string]string)
 	labels[createLabelName(name, name)] = labelValue
 
+	codebaseWithoutPromotion := "stub-codebase-non-prom"
 	cisName := createCisName(name, previousStageName, codebase)
 
 	stage := createStage(t, 1, cdPipeline)
@@ -138,6 +139,7 @@ func TestDeleteEnvironmentLabel_ApplicationToPromote(t *testing.T) {
 		},
 		Spec: v1alpha1.CDPipelineSpec{
 			InputDockerStreams:    []string{dockerImageName},
+			Applications:          []string{codebase, codebaseWithoutPromotion},
 			ApplicationsToPromote: []string{codebase},
 			Name:                  name,
 		},

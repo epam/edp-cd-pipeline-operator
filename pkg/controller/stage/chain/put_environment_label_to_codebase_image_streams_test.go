@@ -217,6 +217,7 @@ func TestPutEnvironmentLabelToCodebaseImageStreams_ServeRequest_CantGetPreviousS
 		},
 		Spec: v1alpha1.CDPipelineSpec{
 			InputDockerStreams:    []string{dockerImageName},
+			Applications:          []string{codebase},
 			ApplicationsToPromote: []string{codebase},
 			Name:                  name,
 		},
