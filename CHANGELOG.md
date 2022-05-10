@@ -1,17 +1,40 @@
 <a name="unreleased"></a>
 ## [Unreleased]
 
+### Features
+
+- Update Makefile changelog target [EPMDEDP-8218](https://jiraeu.epam.com/browse/EPMDEDP-8218)
+- Generate CRDs and helm docs automatically [EPMDEDP-8385](https://jiraeu.epam.com/browse/EPMDEDP-8385)
+- Add aplication field to CDPipeline CRD [EPMDEDP-8929](https://jiraeu.epam.com/browse/EPMDEDP-8929)
+
 ### Bug Fixes
 
 - Changelog links [EPMDEDP-7847](https://jiraeu.epam.com/browse/EPMDEDP-7847)
+- Fix changelog generation in GH Release Action [EPMDEDP-8468](https://jiraeu.epam.com/browse/EPMDEDP-8468)
+- Correct image version [EPMDEDP-8471](https://jiraeu.epam.com/browse/EPMDEDP-8471)
+
+### Code Refactoring
+
+- Remove deprecated parameter [EPMDEDP-8168](https://jiraeu.epam.com/browse/EPMDEDP-8168)
+- Switch from Virtual resources to CRD one [EPMDEDP-8287](https://jiraeu.epam.com/browse/EPMDEDP-8287)
+
+### Testing
+
+- Add tests [EPMDEDP-7993](https://jiraeu.epam.com/browse/EPMDEDP-7993)
 
 ### Routine
 
 - Update release CI pipelines [EPMDEDP-7847](https://jiraeu.epam.com/browse/EPMDEDP-7847)
+- Align codecov generation flow [EPMDEDP-7993](https://jiraeu.epam.com/browse/EPMDEDP-7993)
+- Populate chart with Artifacthub annotations [EPMDEDP-8049](https://jiraeu.epam.com/browse/EPMDEDP-8049)
+- Update changelog [EPMDEDP-8227](https://jiraeu.epam.com/browse/EPMDEDP-8227)
+- Update base docker image to alpine 3.15.4 [EPMDEDP-8853](https://jiraeu.epam.com/browse/EPMDEDP-8853)
 
 ### Documentation
 
 - Align diagram to the current state [EPMDEDP-7970](https://jiraeu.epam.com/browse/EPMDEDP-7970)
+- Updates architecture diagram [EPMDEDP-8255](https://jiraeu.epam.com/browse/EPMDEDP-8255)
+- Update documentation section [EPMDEDP-8255](https://jiraeu.epam.com/browse/EPMDEDP-8255)
 
 
 <a name="v2.10.0"></a>
