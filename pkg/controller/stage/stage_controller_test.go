@@ -6,20 +6,21 @@ import (
 	"testing"
 	"time"
 
-	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
-	v1alphaEdpComponent "github.com/epam/edp-component-operator/pkg/apis/v1/v1alpha1"
-	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1alpha1"
 	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
 	k8sApi "k8s.io/api/rbac/v1"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
+	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
+	componentApi "github.com/epam/edp-component-operator/pkg/apis/v1/v1"
+	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1alpha1"
 
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/cluster"
@@ -72,8 +73,8 @@ func TestTryToDeleteCDStage_DeletionTimestampIsZero(t *testing.T) {
 	scheme.AddKnownTypes(k8sApi.SchemeGroupVersion, &v1alpha1.Stage{})
 
 	stage := &v1alpha1.Stage{
-		TypeMeta: metav1.TypeMeta{},
-		ObjectMeta: metav1.ObjectMeta{
+		TypeMeta: metaV1.TypeMeta{},
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:       name,
 			Namespace:  namespace,
 			Finalizers: []string{},
@@ -103,12 +104,12 @@ func TestTryToDeleteCDStage_Success(t *testing.T) {
 	scheme.AddKnownTypes(k8sApi.SchemeGroupVersion, &v1alpha1.Stage{}, &v1alpha1.CDPipeline{}, &codebaseApi.CodebaseImageStream{}, &v1.Namespace{})
 
 	stage := &v1alpha1.Stage{
-		TypeMeta: metav1.TypeMeta{},
-		ObjectMeta: metav1.ObjectMeta{
+		TypeMeta: metaV1.TypeMeta{},
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:       name,
 			Namespace:  namespace,
 			Generation: 0,
-			DeletionTimestamp: &metav1.Time{
+			DeletionTimestamp: &metaV1.Time{
 				Time: time.Now().UTC(),
 			},
 			Finalizers: []string{envLabelDeletionFinalizer},
@@ -125,8 +126,8 @@ func TestTryToDeleteCDStage_Success(t *testing.T) {
 	labels[createLabelName(name, name)] = labelValue
 
 	cdPipeline := &v1alpha1.CDPipeline{
-		TypeMeta: metav1.TypeMeta{},
-		ObjectMeta: metav1.ObjectMeta{
+		TypeMeta: metaV1.TypeMeta{},
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      cdPipeline,
 			Namespace: namespace,
 		},
@@ -137,8 +138,8 @@ func TestTryToDeleteCDStage_Success(t *testing.T) {
 	}
 
 	image := &codebaseApi.CodebaseImageStream{
-		TypeMeta: metav1.TypeMeta{},
-		ObjectMeta: metav1.ObjectMeta{
+		TypeMeta: metaV1.TypeMeta{},
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      dockerImageName,
 			Namespace: namespace,
 			Labels:    labels,
@@ -169,11 +170,11 @@ func TestSetCDPipelineOwnerRef_Success(t *testing.T) {
 	scheme.AddKnownTypes(k8sApi.SchemeGroupVersion, &v1alpha1.Stage{}, &v1alpha1.CDPipeline{}, &codebaseApi.CodebaseImageStream{}, &v1.Namespace{})
 
 	stage := &v1alpha1.Stage{
-		TypeMeta: metav1.TypeMeta{},
-		ObjectMeta: metav1.ObjectMeta{
+		TypeMeta: metaV1.TypeMeta{},
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
-			DeletionTimestamp: &metav1.Time{
+			DeletionTimestamp: &metaV1.Time{
 				Time: time.Now().UTC(),
 			},
 		},
@@ -184,8 +185,8 @@ func TestSetCDPipelineOwnerRef_Success(t *testing.T) {
 	}
 
 	cdPipeline := &v1alpha1.CDPipeline{
-		TypeMeta: metav1.TypeMeta{},
-		ObjectMeta: metav1.ObjectMeta{
+		TypeMeta: metaV1.TypeMeta{},
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      cdPipeline,
 			Namespace: namespace,
 		},
@@ -213,17 +214,17 @@ func TestSetCDPipelineOwnerRef_OwnerExists(t *testing.T) {
 	scheme := runtime.NewScheme()
 	scheme.AddKnownTypes(k8sApi.SchemeGroupVersion, &v1alpha1.Stage{}, &v1alpha1.CDPipeline{}, &codebaseApi.CodebaseImageStream{}, &v1.Namespace{})
 
-	ownerReference := metav1.OwnerReference{
+	ownerReference := metaV1.OwnerReference{
 		Kind: consts.CDPipelineKind,
 		Name: cdPipeline,
 	}
 
 	stage := &v1alpha1.Stage{
-		TypeMeta: metav1.TypeMeta{},
-		ObjectMeta: metav1.ObjectMeta{
+		TypeMeta: metaV1.TypeMeta{},
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:            name,
 			Namespace:       namespace,
-			OwnerReferences: []metav1.OwnerReference{ownerReference},
+			OwnerReferences: []metaV1.OwnerReference{ownerReference},
 		},
 	}
 
@@ -247,8 +248,8 @@ func TestSetFinishStatus_Success(t *testing.T) {
 	scheme.AddKnownTypes(k8sApi.SchemeGroupVersion, &v1alpha1.Stage{})
 
 	stage := &v1alpha1.Stage{
-		TypeMeta: metav1.TypeMeta{},
-		ObjectMeta: metav1.ObjectMeta{
+		TypeMeta: metaV1.TypeMeta{},
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
 		},
@@ -274,12 +275,12 @@ func TestReconcileStage_Reconcile_Success(t *testing.T) {
 	scheme.AddKnownTypes(k8sApi.SchemeGroupVersion, &v1alpha1.Stage{}, &v1alpha1.CDPipeline{}, &codebaseApi.CodebaseImageStream{}, &v1.Namespace{})
 
 	stage := &v1alpha1.Stage{
-		TypeMeta: metav1.TypeMeta{},
-		ObjectMeta: metav1.ObjectMeta{
+		TypeMeta: metaV1.TypeMeta{},
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:       name,
 			Namespace:  namespace,
 			Generation: 0,
-			DeletionTimestamp: &metav1.Time{
+			DeletionTimestamp: &metaV1.Time{
 				Time: time.Now().UTC(),
 			},
 			Finalizers: []string{envLabelDeletionFinalizer},
@@ -296,8 +297,8 @@ func TestReconcileStage_Reconcile_Success(t *testing.T) {
 	labels[createLabelName(name, name)] = labelValue
 
 	cdPipeline := &v1alpha1.CDPipeline{
-		TypeMeta: metav1.TypeMeta{},
-		ObjectMeta: metav1.ObjectMeta{
+		TypeMeta: metaV1.TypeMeta{},
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      cdPipeline,
 			Namespace: namespace,
 		},
@@ -308,8 +309,8 @@ func TestReconcileStage_Reconcile_Success(t *testing.T) {
 	}
 
 	image := &codebaseApi.CodebaseImageStream{
-		TypeMeta: metav1.TypeMeta{},
-		ObjectMeta: metav1.ObjectMeta{
+		TypeMeta: metaV1.TypeMeta{},
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      dockerImageName,
 			Namespace: namespace,
 			Labels:    labels,
@@ -340,11 +341,11 @@ func TestReconcileStage_Reconcile_Success(t *testing.T) {
 
 func TestReconcileStage_ReconcileReconcile_SetOwnerRef(t *testing.T) {
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(k8sApi.SchemeGroupVersion, &v1alpha1.Stage{}, &v1alpha1.CDPipeline{}, &codebaseApi.CodebaseImageStream{}, &v1.Namespace{}, &v1alphaEdpComponent.EDPComponent{}, &k8sApi.RoleBinding{}, &jenkinsApi.JenkinsJob{})
+	scheme.AddKnownTypes(k8sApi.SchemeGroupVersion, &v1alpha1.Stage{}, &v1alpha1.CDPipeline{}, &codebaseApi.CodebaseImageStream{}, &v1.Namespace{}, &componentApi.EDPComponent{}, &k8sApi.RoleBinding{}, &jenkinsApi.JenkinsJob{})
 
-	edpComponent := &v1alphaEdpComponent.EDPComponent{
-		TypeMeta: metav1.TypeMeta{},
-		ObjectMeta: metav1.ObjectMeta{
+	edpComponent := &componentApi.EDPComponent{
+		TypeMeta: metaV1.TypeMeta{},
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      dockerRegistry,
 			Namespace: namespace,
 		},
@@ -353,8 +354,8 @@ func TestReconcileStage_ReconcileReconcile_SetOwnerRef(t *testing.T) {
 	qualityGate := v1alpha1.QualityGate{}
 
 	stage := &v1alpha1.Stage{
-		TypeMeta: metav1.TypeMeta{},
-		ObjectMeta: metav1.ObjectMeta{
+		TypeMeta: metaV1.TypeMeta{},
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:       name,
 			Namespace:  namespace,
 			Finalizers: []string{envLabelDeletionFinalizer},
@@ -372,8 +373,8 @@ func TestReconcileStage_ReconcileReconcile_SetOwnerRef(t *testing.T) {
 	labels[createLabelName(name, name)] = labelValue
 
 	cdPipeline := &v1alpha1.CDPipeline{
-		TypeMeta: metav1.TypeMeta{},
-		ObjectMeta: metav1.ObjectMeta{
+		TypeMeta: metaV1.TypeMeta{},
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      cdPipeline,
 			Namespace: namespace,
 		},
@@ -384,8 +385,8 @@ func TestReconcileStage_ReconcileReconcile_SetOwnerRef(t *testing.T) {
 	}
 
 	image := &codebaseApi.CodebaseImageStream{
-		TypeMeta: metav1.TypeMeta{},
-		ObjectMeta: metav1.ObjectMeta{
+		TypeMeta: metaV1.TypeMeta{},
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      dockerImageName,
 			Namespace: namespace,
 			Labels:    labels,
@@ -428,7 +429,7 @@ func TestReconcileStage_Reconcile_StageIsNotFound(t *testing.T) {
 		Namespace: namespace,
 		Name:      name,
 	}, stage)
-	assert.True(t, k8serrors.IsNotFound(err))
+	assert.True(t, k8sErrors.IsNotFound(err))
 
 	_, err = reconcileStage.Reconcile(context.Background(), reconcile.Request{NamespacedName: types.NamespacedName{
 		Namespace: namespace,

@@ -4,18 +4,20 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1alpha1"
-	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/controller/stage/chain/handler"
-	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/controller/stage/chain/util"
-	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/cluster"
-	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
-	v1alphaEdpComponent "github.com/epam/edp-component-operator/pkg/apis/v1/v1alpha1"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
+	componentApi "github.com/epam/edp-component-operator/pkg/apis/v1/v1"
+
+	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1alpha1"
+	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/controller/stage/chain/handler"
+	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/controller/stage/chain/util"
+	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/cluster"
 )
 
 type PutCodebaseImageStream struct {
@@ -57,8 +59,8 @@ func (h PutCodebaseImageStream) ServeRequest(stage *v1alpha1.Stage) error {
 	return nextServeOrNil(h.next, stage)
 }
 
-func (h PutCodebaseImageStream) getDockerRegistryEdpComponent(namespace string) (*v1alphaEdpComponent.EDPComponent, error) {
-	ec := &v1alphaEdpComponent.EDPComponent{}
+func (h PutCodebaseImageStream) getDockerRegistryEdpComponent(namespace string) (*componentApi.EDPComponent, error) {
+	ec := &componentApi.EDPComponent{}
 	err := h.client.Get(context.TODO(), types.NamespacedName{
 		Name:      dockerRegistryName,
 		Namespace: namespace,

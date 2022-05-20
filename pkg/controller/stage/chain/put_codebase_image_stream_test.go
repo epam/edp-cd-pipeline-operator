@@ -5,26 +5,28 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1alpha1"
-	cbisV1aplha1 "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
-	mockclient "github.com/epam/edp-common/pkg/mock/controller-runtime/client"
-	edpV1alpha1 "github.com/epam/edp-component-operator/pkg/apis/v1/v1alpha1"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/apps/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
+	k8sMockClient "github.com/epam/edp-common/pkg/mock/controller-runtime/client"
+	componentApi "github.com/epam/edp-component-operator/pkg/apis/v1/v1"
+
+	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1alpha1"
 )
 
 func TestPutCodebaseImageStream_ShouldCreateCis(t *testing.T) {
 
 	cdp := &v1alpha1.CDPipeline{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "cdp-name",
 			Namespace: "stub-namespace",
 		},
@@ -36,8 +38,8 @@ func TestPutCodebaseImageStream_ShouldCreateCis(t *testing.T) {
 	}
 
 	s := &v1alpha1.Stage{
-		ObjectMeta: metav1.ObjectMeta{
-			OwnerReferences: []metav1.OwnerReference{{
+		ObjectMeta: metaV1.ObjectMeta{
+			OwnerReferences: []metaV1.OwnerReference{{
 				Kind: "CDPipeline",
 				Name: "cdp-name",
 			}},
@@ -49,22 +51,22 @@ func TestPutCodebaseImageStream_ShouldCreateCis(t *testing.T) {
 		},
 	}
 
-	ec := &edpV1alpha1.EDPComponent{
-		ObjectMeta: metav1.ObjectMeta{
+	ec := &componentApi.EDPComponent{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      dockerRegistryName,
 			Namespace: "stub-namespace",
 		},
-		Spec: edpV1alpha1.EDPComponentSpec{
+		Spec: componentApi.EDPComponentSpec{
 			Url: "stub-url",
 		},
 	}
 
-	cis := &cbisV1aplha1.CodebaseImageStream{
-		ObjectMeta: metav1.ObjectMeta{
+	cis := &codebaseApi.CodebaseImageStream{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "cbis-name",
 			Namespace: "stub-namespace",
 		},
-		Spec: cbisV1aplha1.CodebaseImageStreamSpec{
+		Spec: codebaseApi.CodebaseImageStreamSpec{
 			Codebase: "cb-name",
 		},
 	}
@@ -82,7 +84,7 @@ func TestPutCodebaseImageStream_ShouldCreateCis(t *testing.T) {
 	err := cisChain.ServeRequest(s)
 	assert.NoError(t, err)
 
-	cisResp := &cbisV1aplha1.CodebaseImageStream{}
+	cisResp := &codebaseApi.CodebaseImageStream{}
 	err = client.Get(context.TODO(),
 		types.NamespacedName{
 			Name:      "cdp-name-stage-name-cb-name-verified",
@@ -94,7 +96,7 @@ func TestPutCodebaseImageStream_ShouldCreateCis(t *testing.T) {
 
 func TestPutCodebaseImageStream_ShouldNotFindCDPipeline(t *testing.T) {
 	cdp := &v1alpha1.CDPipeline{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "cdp-name",
 			Namespace: "stub-namespace",
 		},
@@ -106,7 +108,7 @@ func TestPutCodebaseImageStream_ShouldNotFindCDPipeline(t *testing.T) {
 	}
 
 	s := &v1alpha1.Stage{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "stub-stage-name",
 			Namespace: "stub-namespace",
 		},
@@ -135,7 +137,7 @@ func TestPutCodebaseImageStream_ShouldNotFindCDPipeline(t *testing.T) {
 
 func TestPutCodebaseImageStream_ShouldNotFindEDPComponent(t *testing.T) {
 	cdp := &v1alpha1.CDPipeline{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "cdp-name",
 			Namespace: "stub-namespace",
 		},
@@ -147,7 +149,7 @@ func TestPutCodebaseImageStream_ShouldNotFindEDPComponent(t *testing.T) {
 	}
 
 	s := &v1alpha1.Stage{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "stub-stage-name",
 			Namespace: "stub-namespace",
 		},
@@ -177,7 +179,7 @@ func TestPutCodebaseImageStream_ShouldNotFindEDPComponent(t *testing.T) {
 func TestPutCodebaseImageStream_ShouldNotFindCbis(t *testing.T) {
 
 	cdp := &v1alpha1.CDPipeline{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "cdp-name",
 			Namespace: "stub-namespace",
 		},
@@ -189,8 +191,8 @@ func TestPutCodebaseImageStream_ShouldNotFindCbis(t *testing.T) {
 	}
 
 	s := &v1alpha1.Stage{
-		ObjectMeta: metav1.ObjectMeta{
-			OwnerReferences: []metav1.OwnerReference{{
+		ObjectMeta: metaV1.ObjectMeta{
+			OwnerReferences: []metaV1.OwnerReference{{
 				Kind: "CDPipeline",
 				Name: "cdp-name",
 			}},
@@ -202,22 +204,22 @@ func TestPutCodebaseImageStream_ShouldNotFindCbis(t *testing.T) {
 		},
 	}
 
-	ec := &edpV1alpha1.EDPComponent{
-		ObjectMeta: metav1.ObjectMeta{
+	ec := &componentApi.EDPComponent{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      dockerRegistryName,
 			Namespace: "stub-namespace",
 		},
-		Spec: edpV1alpha1.EDPComponentSpec{
+		Spec: componentApi.EDPComponentSpec{
 			Url: "stub-url",
 		},
 	}
 
-	cis := &cbisV1aplha1.CodebaseImageStream{
-		ObjectMeta: metav1.ObjectMeta{
+	cis := &codebaseApi.CodebaseImageStream{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "cbis-name",
 			Namespace: "stub-namespace",
 		},
-		Spec: cbisV1aplha1.CodebaseImageStreamSpec{
+		Spec: codebaseApi.CodebaseImageStreamSpec{
 			Codebase: "cb-name",
 		},
 	}
@@ -243,7 +245,7 @@ func TestPutCodebaseImageStream_ShouldNotFindCbis(t *testing.T) {
 func TestPutCodebaseImageStream_ShouldNotFailWithExistingCbis(t *testing.T) {
 
 	cdp := &v1alpha1.CDPipeline{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "cdp-name",
 			Namespace: "stub-namespace",
 		},
@@ -255,8 +257,8 @@ func TestPutCodebaseImageStream_ShouldNotFailWithExistingCbis(t *testing.T) {
 	}
 
 	s := &v1alpha1.Stage{
-		ObjectMeta: metav1.ObjectMeta{
-			OwnerReferences: []metav1.OwnerReference{{
+		ObjectMeta: metaV1.ObjectMeta{
+			OwnerReferences: []metaV1.OwnerReference{{
 				Kind: "CDPipeline",
 				Name: "cdp-name",
 			}},
@@ -268,32 +270,32 @@ func TestPutCodebaseImageStream_ShouldNotFailWithExistingCbis(t *testing.T) {
 		},
 	}
 
-	ec := &edpV1alpha1.EDPComponent{
-		ObjectMeta: metav1.ObjectMeta{
+	ec := &componentApi.EDPComponent{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      dockerRegistryName,
 			Namespace: "stub-namespace",
 		},
-		Spec: edpV1alpha1.EDPComponentSpec{
+		Spec: componentApi.EDPComponentSpec{
 			Url: "stub-url",
 		},
 	}
 
-	cis := &cbisV1aplha1.CodebaseImageStream{
-		ObjectMeta: metav1.ObjectMeta{
+	cis := &codebaseApi.CodebaseImageStream{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "cbis-name",
 			Namespace: "stub-namespace",
 		},
-		Spec: cbisV1aplha1.CodebaseImageStreamSpec{
+		Spec: codebaseApi.CodebaseImageStreamSpec{
 			Codebase: "cb-name",
 		},
 	}
 
-	exsitingCis := &cbisV1aplha1.CodebaseImageStream{
-		ObjectMeta: metav1.ObjectMeta{
+	exsitingCis := &codebaseApi.CodebaseImageStream{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "cdp-name-stage-name-cb-name-verified",
 			Namespace: "stub-namespace",
 		},
-		Spec: cbisV1aplha1.CodebaseImageStreamSpec{
+		Spec: codebaseApi.CodebaseImageStreamSpec{
 			Codebase: "cb-name",
 		},
 	}
@@ -311,7 +313,7 @@ func TestPutCodebaseImageStream_ShouldNotFailWithExistingCbis(t *testing.T) {
 	err := cisChain.ServeRequest(s)
 	assert.NoError(t, err)
 
-	cisResp := &cbisV1aplha1.CodebaseImageStream{}
+	cisResp := &codebaseApi.CodebaseImageStream{}
 	err = client.Get(context.TODO(),
 		types.NamespacedName{
 			Name:      "cdp-name-stage-name-cb-name-verified",
@@ -322,10 +324,10 @@ func TestPutCodebaseImageStream_ShouldNotFailWithExistingCbis(t *testing.T) {
 }
 
 func TestPutCodebaseImageStream_ShouldFailCreatingCbis(t *testing.T) {
-	mc := mockclient.Client{}
+	mc := k8sMockClient.Client{}
 
 	cdp := &v1alpha1.CDPipeline{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "cdp-name",
 			Namespace: "stub-namespace",
 		},
@@ -337,8 +339,8 @@ func TestPutCodebaseImageStream_ShouldFailCreatingCbis(t *testing.T) {
 	}
 
 	s := &v1alpha1.Stage{
-		ObjectMeta: metav1.ObjectMeta{
-			OwnerReferences: []metav1.OwnerReference{{
+		ObjectMeta: metaV1.ObjectMeta{
+			OwnerReferences: []metaV1.OwnerReference{{
 				Kind: "CDPipeline",
 				Name: "cdp-name",
 			}},
@@ -350,36 +352,36 @@ func TestPutCodebaseImageStream_ShouldFailCreatingCbis(t *testing.T) {
 		},
 	}
 
-	ec := &edpV1alpha1.EDPComponent{
-		ObjectMeta: metav1.ObjectMeta{
+	ec := &componentApi.EDPComponent{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      dockerRegistryName,
 			Namespace: "stub-namespace",
 		},
-		Spec: edpV1alpha1.EDPComponentSpec{
+		Spec: componentApi.EDPComponentSpec{
 			Url: "stub-url",
 		},
 	}
 
-	cis := &cbisV1aplha1.CodebaseImageStream{
-		ObjectMeta: metav1.ObjectMeta{
+	cis := &codebaseApi.CodebaseImageStream{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "cbis-name",
 			Namespace: "stub-namespace",
 		},
-		Spec: cbisV1aplha1.CodebaseImageStreamSpec{
+		Spec: codebaseApi.CodebaseImageStreamSpec{
 			Codebase: "cb-name",
 		},
 	}
 
-	exsitingCis := &cbisV1aplha1.CodebaseImageStream{
-		TypeMeta: metav1.TypeMeta{
+	exsitingCis := &codebaseApi.CodebaseImageStream{
+		TypeMeta: metaV1.TypeMeta{
 			APIVersion: "v2.edp.epam.com/v1alpha1",
 			Kind:       "CodebaseImageStream",
 		},
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "cdp-name-stage-name-cb-name-verified",
 			Namespace: "stub-namespace",
 		},
-		Spec: cbisV1aplha1.CodebaseImageStreamSpec{
+		Spec: codebaseApi.CodebaseImageStreamSpec{
 			Codebase:  "cb-name",
 			ImageName: "stub-url/stub-namespace",
 		},
@@ -400,12 +402,12 @@ func TestPutCodebaseImageStream_ShouldFailCreatingCbis(t *testing.T) {
 	mc.On("Get", types.NamespacedName{
 		Namespace: "stub-namespace",
 		Name:      dockerRegistryName,
-	}, &edpV1alpha1.EDPComponent{}).Return(fakeCl)
+	}, &componentApi.EDPComponent{}).Return(fakeCl)
 
 	mc.On("Get", types.NamespacedName{
 		Namespace: "stub-namespace",
 		Name:      "cbis-name",
-	}, &cbisV1aplha1.CodebaseImageStream{}).Return(fakeCl)
+	}, &codebaseApi.CodebaseImageStream{}).Return(fakeCl)
 
 	var createOpts []client.CreateOption
 	mc.On("Create", exsitingCis, createOpts).Return(mockErr)

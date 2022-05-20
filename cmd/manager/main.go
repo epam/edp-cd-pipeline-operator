@@ -10,7 +10,7 @@ import (
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/cluster"
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	buildInfo "github.com/epam/edp-common/pkg/config"
-	edpCompApi "github.com/epam/edp-component-operator/pkg/apis/v1/v1alpha1"
+	edpCompApi "github.com/epam/edp-component-operator/pkg/apis/v1/v1"
 	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1alpha1"
 	loftKioskApi "github.com/loft-sh/kiosk/pkg/apis/tenancy/v1alpha1"
 	k8sApi "k8s.io/api/rbac/v1"
