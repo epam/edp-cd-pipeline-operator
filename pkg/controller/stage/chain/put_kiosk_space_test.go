@@ -11,12 +11,12 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1alpha1"
+	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/controller/stage/kiosk"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/consts"
 )
@@ -50,7 +50,7 @@ func TestSpaceExist_NotFound(t *testing.T) {
 
 func TestSpaceExist_Success(t *testing.T) {
 	space := &loftKioskApi.Space{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name: name,
 		},
 	}
@@ -91,7 +91,7 @@ func TestCreateSpace_Success(t *testing.T) {
 
 func TestCreateSpace_AlreadyExists(t *testing.T) {
 	clientSpace := &loftKioskApi.Space{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name: name,
 		},
 	}

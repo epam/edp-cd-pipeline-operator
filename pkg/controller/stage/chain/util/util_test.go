@@ -6,11 +6,11 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	k8sApi "k8s.io/api/rbac/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1alpha1"
+	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1"
 )
 
 const (
@@ -22,24 +22,24 @@ const (
 
 func TestGetCdPipeline_WithObjectReferences(t *testing.T) {
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(k8sApi.SchemeGroupVersion, &v1alpha1.CDPipeline{}, &v1alpha1.Stage{})
+	scheme.AddKnownTypes(k8sApi.SchemeGroupVersion, &cdPipeApi.CDPipeline{}, &cdPipeApi.Stage{})
 
-	ownerReferences := []metav1.OwnerReference{{
+	ownerReferences := []metaV1.OwnerReference{{
 		Kind: ownerKind,
 		Name: name,
 	}}
 
-	stage := &v1alpha1.Stage{
-		TypeMeta: metav1.TypeMeta{},
-		ObjectMeta: metav1.ObjectMeta{
+	stage := &cdPipeApi.Stage{
+		TypeMeta: metaV1.TypeMeta{},
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:            name,
 			Namespace:       namespace,
 			OwnerReferences: ownerReferences,
 		},
 	}
 
-	cdPipeline := &v1alpha1.CDPipeline{
-		ObjectMeta: metav1.ObjectMeta{
+	cdPipeline := &cdPipeApi.CDPipeline{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:            name,
 			Namespace:       namespace,
 			OwnerReferences: ownerReferences,
@@ -55,21 +55,21 @@ func TestGetCdPipeline_WithObjectReferences(t *testing.T) {
 
 func TestGetCdPipeline_WithoutObjectReferences(t *testing.T) {
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(k8sApi.SchemeGroupVersion, &v1alpha1.CDPipeline{}, &v1alpha1.Stage{})
+	scheme.AddKnownTypes(k8sApi.SchemeGroupVersion, &cdPipeApi.CDPipeline{}, &cdPipeApi.Stage{})
 
-	stage := &v1alpha1.Stage{
-		TypeMeta: metav1.TypeMeta{},
-		ObjectMeta: metav1.ObjectMeta{
+	stage := &cdPipeApi.Stage{
+		TypeMeta: metaV1.TypeMeta{},
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
 		},
-		Spec: v1alpha1.StageSpec{
+		Spec: cdPipeApi.StageSpec{
 			CdPipeline: name,
 		},
 	}
 
-	cdPipeline := &v1alpha1.CDPipeline{
-		ObjectMeta: metav1.ObjectMeta{
+	cdPipeline := &cdPipeApi.CDPipeline{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
 		},

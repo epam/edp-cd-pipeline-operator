@@ -3,14 +3,16 @@ package chain
 import (
 	"context"
 	"fmt"
-	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1alpha1"
-	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/controller/stage/chain/handler"
+
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	v1 "k8s.io/api/core/v1"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1"
+	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/controller/stage/chain/handler"
 )
 
 type DeleteNamespace struct {
@@ -19,7 +21,7 @@ type DeleteNamespace struct {
 	log    logr.Logger
 }
 
-func (h DeleteNamespace) ServeRequest(stage *v1alpha1.Stage) error {
+func (h DeleteNamespace) ServeRequest(stage *cdPipeApi.Stage) error {
 	name := fmt.Sprintf("%v-%v", stage.Namespace, stage.Name)
 	if err := h.delete(name); err != nil {
 		return errors.Wrapf(err, "unable to delete %v namespace", name)

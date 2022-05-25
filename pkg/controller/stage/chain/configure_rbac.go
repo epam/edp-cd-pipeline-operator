@@ -6,10 +6,10 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	k8sApi "k8s.io/api/rbac/v1"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1alpha1"
+	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/controller/stage/chain/handler"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/controller/stage/rbac"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/platform/helper"
@@ -38,7 +38,7 @@ type options struct {
 	rf       k8sApi.RoleRef
 }
 
-func (h ConfigureRbac) ServeRequest(stage *v1alpha1.Stage) error {
+func (h ConfigureRbac) ServeRequest(stage *cdPipeApi.Stage) error {
 	targetNamespace := generateTargetNamespaceName(stage)
 	log := h.log.WithValues("namespace", targetNamespace)
 	log.Info("configuring rbac for newly created namespace")
@@ -69,7 +69,7 @@ func (h ConfigureRbac) roleBindingExists(name, namespace string) (bool, error) {
 	log := h.log.WithValues("name", name, "namespace", namespace)
 	log.Info("check existence of rolebinding")
 	if _, err := h.rbac.GetRoleBinding(name, namespace); err != nil {
-		if k8serrors.IsNotFound(err) {
+		if k8sErrors.IsNotFound(err) {
 			log.Info("rolebinding doesn't exist")
 			return false, nil
 		}
@@ -167,7 +167,7 @@ func buildViewGroupRoleOptions(sourceNamespace string) options {
 	}
 }
 
-func generateTargetNamespaceName(stage *v1alpha1.Stage) string {
+func generateTargetNamespaceName(stage *cdPipeApi.Stage) string {
 	return fmt.Sprintf("%s-%s", stage.Namespace, stage.Name)
 }
 

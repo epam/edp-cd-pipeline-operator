@@ -1,4 +1,4 @@
-package v1alpha1
+package v1
 
 import (
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -86,7 +86,7 @@ type CDPipelineStatus struct {
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
-// +kubebuilder:deprecatedversion
+// +kubebuilder:storageversion
 
 // CDPipeline is the Schema for the cdpipelines API
 type CDPipeline struct {

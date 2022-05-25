@@ -1,20 +1,22 @@
 package chain
 
 import (
-	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1alpha1"
+	"os"
+	"strconv"
+
+	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/controller/stage/chain/handler"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/controller/stage/kiosk"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/controller/stage/rbac"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/consts"
-	"os"
-	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"strconv"
 )
 
 var log = ctrl.Log.WithName("jenkins-job")
 
-func nextServeOrNil(next handler.CdStageHandler, stage *v1alpha1.Stage) error {
+func nextServeOrNil(next handler.CdStageHandler, stage *cdPipeApi.Stage) error {
 	if next != nil {
 		return next.ServeRequest(stage)
 	}

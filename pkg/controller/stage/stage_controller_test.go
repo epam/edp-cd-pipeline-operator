@@ -22,7 +22,7 @@ import (
 	componentApi "github.com/epam/edp-component-operator/pkg/apis/v1/v1"
 	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1alpha1"
 
-	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1alpha1"
+	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/cluster"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/consts"
 )
@@ -36,9 +36,9 @@ const (
 	dockerRegistry  = "docker-registry"
 )
 
-func getStage(t *testing.T, client client.Client, name string) *v1alpha1.Stage {
+func getStage(t *testing.T, client client.Client, name string) *cdPipeApi.Stage {
 	t.Helper()
-	stage := &v1alpha1.Stage{}
+	stage := &cdPipeApi.Stage{}
 	err := client.Get(context.Background(), types.NamespacedName{
 		Namespace: namespace,
 		Name:      name,
@@ -70,16 +70,16 @@ func TestNewReconcileStage_Success(t *testing.T) {
 
 func TestTryToDeleteCDStage_DeletionTimestampIsZero(t *testing.T) {
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(k8sApi.SchemeGroupVersion, &v1alpha1.Stage{})
+	scheme.AddKnownTypes(k8sApi.SchemeGroupVersion, &cdPipeApi.Stage{})
 
-	stage := &v1alpha1.Stage{
+	stage := &cdPipeApi.Stage{
 		TypeMeta: metaV1.TypeMeta{},
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:       name,
 			Namespace:  namespace,
 			Finalizers: []string{},
 		},
-		Spec: v1alpha1.StageSpec{
+		Spec: cdPipeApi.StageSpec{
 			TriggerType: consts.AutoDeployTriggerType,
 		},
 	}
@@ -101,9 +101,9 @@ func TestTryToDeleteCDStage_DeletionTimestampIsZero(t *testing.T) {
 
 func TestTryToDeleteCDStage_Success(t *testing.T) {
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(k8sApi.SchemeGroupVersion, &v1alpha1.Stage{}, &v1alpha1.CDPipeline{}, &codebaseApi.CodebaseImageStream{}, &v1.Namespace{})
+	scheme.AddKnownTypes(k8sApi.SchemeGroupVersion, &cdPipeApi.Stage{}, &cdPipeApi.CDPipeline{}, &codebaseApi.CodebaseImageStream{}, &v1.Namespace{})
 
-	stage := &v1alpha1.Stage{
+	stage := &cdPipeApi.Stage{
 		TypeMeta: metaV1.TypeMeta{},
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:       name,
@@ -114,7 +114,7 @@ func TestTryToDeleteCDStage_Success(t *testing.T) {
 			},
 			Finalizers: []string{envLabelDeletionFinalizer},
 		},
-		Spec: v1alpha1.StageSpec{
+		Spec: cdPipeApi.StageSpec{
 			Name:        name,
 			CdPipeline:  cdPipeline,
 			TriggerType: consts.AutoDeployTriggerType,
@@ -125,13 +125,13 @@ func TestTryToDeleteCDStage_Success(t *testing.T) {
 	labels := make(map[string]string)
 	labels[createLabelName(name, name)] = labelValue
 
-	cdPipeline := &v1alpha1.CDPipeline{
+	cdPipeline := &cdPipeApi.CDPipeline{
 		TypeMeta: metaV1.TypeMeta{},
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:      cdPipeline,
 			Namespace: namespace,
 		},
-		Spec: v1alpha1.CDPipelineSpec{
+		Spec: cdPipeApi.CDPipelineSpec{
 			InputDockerStreams: []string{dockerImageName},
 			Name:               name,
 		},
@@ -167,9 +167,9 @@ func TestTryToDeleteCDStage_Success(t *testing.T) {
 
 func TestSetCDPipelineOwnerRef_Success(t *testing.T) {
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(k8sApi.SchemeGroupVersion, &v1alpha1.Stage{}, &v1alpha1.CDPipeline{}, &codebaseApi.CodebaseImageStream{}, &v1.Namespace{})
+	scheme.AddKnownTypes(k8sApi.SchemeGroupVersion, &cdPipeApi.Stage{}, &cdPipeApi.CDPipeline{}, &codebaseApi.CodebaseImageStream{}, &v1.Namespace{})
 
-	stage := &v1alpha1.Stage{
+	stage := &cdPipeApi.Stage{
 		TypeMeta: metaV1.TypeMeta{},
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:      name,
@@ -178,19 +178,19 @@ func TestSetCDPipelineOwnerRef_Success(t *testing.T) {
 				Time: time.Now().UTC(),
 			},
 		},
-		Spec: v1alpha1.StageSpec{
+		Spec: cdPipeApi.StageSpec{
 			Name:       name,
 			CdPipeline: cdPipeline,
 		},
 	}
 
-	cdPipeline := &v1alpha1.CDPipeline{
+	cdPipeline := &cdPipeApi.CDPipeline{
 		TypeMeta: metaV1.TypeMeta{},
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:      cdPipeline,
 			Namespace: namespace,
 		},
-		Spec: v1alpha1.CDPipelineSpec{
+		Spec: cdPipeApi.CDPipelineSpec{
 			Name: name,
 		},
 	}
@@ -212,14 +212,14 @@ func TestSetCDPipelineOwnerRef_Success(t *testing.T) {
 
 func TestSetCDPipelineOwnerRef_OwnerExists(t *testing.T) {
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(k8sApi.SchemeGroupVersion, &v1alpha1.Stage{}, &v1alpha1.CDPipeline{}, &codebaseApi.CodebaseImageStream{}, &v1.Namespace{})
+	scheme.AddKnownTypes(k8sApi.SchemeGroupVersion, &cdPipeApi.Stage{}, &cdPipeApi.CDPipeline{}, &codebaseApi.CodebaseImageStream{}, &v1.Namespace{})
 
 	ownerReference := metaV1.OwnerReference{
 		Kind: consts.CDPipelineKind,
 		Name: cdPipeline,
 	}
 
-	stage := &v1alpha1.Stage{
+	stage := &cdPipeApi.Stage{
 		TypeMeta: metaV1.TypeMeta{},
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:            name,
@@ -245,9 +245,9 @@ func TestSetCDPipelineOwnerRef_OwnerExists(t *testing.T) {
 
 func TestSetFinishStatus_Success(t *testing.T) {
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(k8sApi.SchemeGroupVersion, &v1alpha1.Stage{})
+	scheme.AddKnownTypes(k8sApi.SchemeGroupVersion, &cdPipeApi.Stage{})
 
-	stage := &v1alpha1.Stage{
+	stage := &cdPipeApi.Stage{
 		TypeMeta: metaV1.TypeMeta{},
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:      name,
@@ -272,9 +272,9 @@ func TestSetFinishStatus_Success(t *testing.T) {
 
 func TestReconcileStage_Reconcile_Success(t *testing.T) {
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(k8sApi.SchemeGroupVersion, &v1alpha1.Stage{}, &v1alpha1.CDPipeline{}, &codebaseApi.CodebaseImageStream{}, &v1.Namespace{})
+	scheme.AddKnownTypes(k8sApi.SchemeGroupVersion, &cdPipeApi.Stage{}, &cdPipeApi.CDPipeline{}, &codebaseApi.CodebaseImageStream{}, &v1.Namespace{})
 
-	stage := &v1alpha1.Stage{
+	stage := &cdPipeApi.Stage{
 		TypeMeta: metaV1.TypeMeta{},
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:       name,
@@ -285,7 +285,7 @@ func TestReconcileStage_Reconcile_Success(t *testing.T) {
 			},
 			Finalizers: []string{envLabelDeletionFinalizer},
 		},
-		Spec: v1alpha1.StageSpec{
+		Spec: cdPipeApi.StageSpec{
 			Name:        name,
 			CdPipeline:  cdPipeline,
 			TriggerType: consts.AutoDeployTriggerType,
@@ -296,13 +296,13 @@ func TestReconcileStage_Reconcile_Success(t *testing.T) {
 	labels := make(map[string]string)
 	labels[createLabelName(name, name)] = labelValue
 
-	cdPipeline := &v1alpha1.CDPipeline{
+	cdPipeline := &cdPipeApi.CDPipeline{
 		TypeMeta: metaV1.TypeMeta{},
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:      cdPipeline,
 			Namespace: namespace,
 		},
-		Spec: v1alpha1.CDPipelineSpec{
+		Spec: cdPipeApi.CDPipelineSpec{
 			InputDockerStreams: []string{dockerImageName},
 			Name:               name,
 		},
@@ -341,7 +341,7 @@ func TestReconcileStage_Reconcile_Success(t *testing.T) {
 
 func TestReconcileStage_ReconcileReconcile_SetOwnerRef(t *testing.T) {
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(k8sApi.SchemeGroupVersion, &v1alpha1.Stage{}, &v1alpha1.CDPipeline{}, &codebaseApi.CodebaseImageStream{}, &v1.Namespace{}, &componentApi.EDPComponent{}, &k8sApi.RoleBinding{}, &jenkinsApi.JenkinsJob{})
+	scheme.AddKnownTypes(k8sApi.SchemeGroupVersion, &cdPipeApi.Stage{}, &cdPipeApi.CDPipeline{}, &codebaseApi.CodebaseImageStream{}, &v1.Namespace{}, &componentApi.EDPComponent{}, &k8sApi.RoleBinding{}, &jenkinsApi.JenkinsJob{})
 
 	edpComponent := &componentApi.EDPComponent{
 		TypeMeta: metaV1.TypeMeta{},
@@ -351,34 +351,34 @@ func TestReconcileStage_ReconcileReconcile_SetOwnerRef(t *testing.T) {
 		},
 	}
 
-	qualityGate := v1alpha1.QualityGate{}
+	qualityGate := cdPipeApi.QualityGate{}
 
-	stage := &v1alpha1.Stage{
+	stage := &cdPipeApi.Stage{
 		TypeMeta: metaV1.TypeMeta{},
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:       name,
 			Namespace:  namespace,
 			Finalizers: []string{envLabelDeletionFinalizer},
 		},
-		Spec: v1alpha1.StageSpec{
+		Spec: cdPipeApi.StageSpec{
 			Name:         name,
 			CdPipeline:   cdPipeline,
 			TriggerType:  consts.AutoDeployTriggerType,
 			Order:        0,
-			QualityGates: []v1alpha1.QualityGate{qualityGate},
+			QualityGates: []cdPipeApi.QualityGate{qualityGate},
 		},
 	}
 
 	labels := make(map[string]string)
 	labels[createLabelName(name, name)] = labelValue
 
-	cdPipeline := &v1alpha1.CDPipeline{
+	cdPipeline := &cdPipeApi.CDPipeline{
 		TypeMeta: metaV1.TypeMeta{},
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:      cdPipeline,
 			Namespace: namespace,
 		},
-		Spec: v1alpha1.CDPipelineSpec{
+		Spec: cdPipeApi.CDPipelineSpec{
 			InputDockerStreams: []string{dockerImageName},
 			Name:               name,
 		},
@@ -414,7 +414,7 @@ func TestReconcileStage_ReconcileReconcile_SetOwnerRef(t *testing.T) {
 
 func TestReconcileStage_Reconcile_StageIsNotFound(t *testing.T) {
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(k8sApi.SchemeGroupVersion, &v1alpha1.Stage{})
+	scheme.AddKnownTypes(k8sApi.SchemeGroupVersion, &cdPipeApi.Stage{})
 
 	fakeClient := fake.NewClientBuilder().WithScheme(scheme).Build()
 
@@ -424,7 +424,7 @@ func TestReconcileStage_Reconcile_StageIsNotFound(t *testing.T) {
 		log:    logr.DiscardLogger{},
 	}
 
-	stage := &v1alpha1.Stage{}
+	stage := &cdPipeApi.Stage{}
 	err := reconcileStage.client.Get(context.Background(), types.NamespacedName{
 		Namespace: namespace,
 		Name:      name,

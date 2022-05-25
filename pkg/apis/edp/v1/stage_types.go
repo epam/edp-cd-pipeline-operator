@@ -1,4 +1,4 @@
-package v1alpha1
+package v1
 
 import (
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -23,7 +23,7 @@ type StageSpec struct {
 	// A description of a stage.
 	Description string `json:"description"`
 
-	// Stage provisioning trigger type. E.g. Manual, Auto
+	// Stage deployment trigger type. E.g. Manual, Auto
 	TriggerType string `json:"triggerType"`
 
 	// The order to lay out Stages
@@ -33,7 +33,7 @@ type StageSpec struct {
 	QualityGates []QualityGate `json:"qualityGates"`
 
 	// Specifies a source of a pipeline library which will run release
-	Source Source `json:"source" valid:"Required"`
+	Source Source `json:"source"`
 
 	// CD Job Provisioner for Pipeline. E.g.
 	JobProvisioning string `json:"jobProvisioning"`
@@ -42,12 +42,12 @@ type StageSpec struct {
 // QualityGate defines a single quality for a release
 type QualityGate struct {
 	// A type of quality gate, e.g. "Manual", "Autotests"
-	QualityGateType string `json:"qualityGateType" valid:"Required"`
+	QualityGateType string `json:"qualityGateType"`
 
 	// +kubebuilder:validation:MinLength=2
 
 	// Specifies a name of particular
-	StepName string `json:"stepName" valid:"Required;Match(/^[A-z0-9-._]/)"`
+	StepName string `json:"stepName"`
 
 	// A name of autotests to run with quality gate
 	// +nullable
@@ -116,7 +116,7 @@ type StageStatus struct {
 }
 
 // +kubebuilder:object:root=true
-// +kubebuilder:deprecatedversion
+// +kubebuilder:storageversion
 
 // Stage is the Schema for the stages API
 type Stage struct {

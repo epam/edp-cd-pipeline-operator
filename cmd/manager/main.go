@@ -4,10 +4,6 @@ import (
 	"flag"
 	"os"
 
-	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1alpha1"
-	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/controller/cdpipeline"
-	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/controller/stage"
-	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/cluster"
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	buildInfo "github.com/epam/edp-common/pkg/config"
 	edpCompApi "github.com/epam/edp-component-operator/pkg/apis/v1/v1"
@@ -26,6 +22,12 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+
+	cdPipeApiV1 "github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1"
+	cdPipeApiV1Alpha1 "github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1alpha1"
+	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/controller/cdpipeline"
+	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/controller/stage"
+	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/cluster"
 )
 
 var (
@@ -38,7 +40,9 @@ const cdPipelineOperatorLock = "edp-cd-pipeline-operator-lock"
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
-	utilruntime.Must(cdPipeApi.AddToScheme(scheme))
+	utilruntime.Must(cdPipeApiV1Alpha1.AddToScheme(scheme))
+
+	utilruntime.Must(cdPipeApiV1.AddToScheme(scheme))
 
 	utilruntime.Must(codebaseApi.AddToScheme(scheme))
 

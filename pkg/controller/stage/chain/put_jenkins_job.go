@@ -4,19 +4,22 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1alpha1"
+	"strings"
+
+	"github.com/go-logr/logr"
+	"github.com/pkg/errors"
+	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
+	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
+	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1alpha1"
+
+	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/controller/stage/chain/handler"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/controller/stage/chain/util"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/common"
-	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
-	jenv1alpha1 "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1alpha1"
-	"github.com/go-logr/logr"
-	"github.com/pkg/errors"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"strings"
 )
 
 type PutJenkinsJob struct {
@@ -34,11 +37,11 @@ const (
 	autoDeployTriggerType    = "Auto"
 	qualityGateAutotestType  = "autotests"
 	defaultAutoTriggerPeriod = 60
-	apiVersion               = "v2.edp.epam.com/v1alpha1"
+	apiVersion               = "v2.edp.epam.com/v1"
 	jenkinsJobKind           = "JenkinsJob"
 )
 
-func (h PutJenkinsJob) ServeRequest(stage *v1alpha1.Stage) error {
+func (h PutJenkinsJob) ServeRequest(stage *cdPipeApi.Stage) error {
 	log := h.log.WithValues("stage name", stage.Name)
 	log.Info("start creating jenkins job cr.")
 	if err := h.tryToUpdateJenkinsJobConfig(*stage); err != nil {
@@ -51,7 +54,7 @@ func (h PutJenkinsJob) ServeRequest(stage *v1alpha1.Stage) error {
 	return nextServeOrNil(h.next, stage)
 }
 
-func (h PutJenkinsJob) tryToCreateJenkinsJob(stage v1alpha1.Stage) error {
+func (h PutJenkinsJob) tryToCreateJenkinsJob(stage cdPipeApi.Stage) error {
 	h.log.Info("start creating JenkinsJob CR", "name", stage.Name)
 
 	jc, err := h.createJenkinsJobConfig(stage)
@@ -59,30 +62,30 @@ func (h PutJenkinsJob) tryToCreateJenkinsJob(stage v1alpha1.Stage) error {
 		return err
 	}
 
-	jj := &jenv1alpha1.JenkinsJob{
-		TypeMeta: metav1.TypeMeta{
+	jj := &jenkinsApi.JenkinsJob{
+		TypeMeta: metaV1.TypeMeta{
 			APIVersion: apiVersion,
 			Kind:       jenkinsJobKind,
 		},
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      stage.Name,
 			Namespace: stage.Namespace,
 		},
-		Spec: jenv1alpha1.JenkinsJobSpec{
+		Spec: jenkinsApi.JenkinsJobSpec{
 			StageName:     &stage.Name,
 			JenkinsFolder: &stage.Spec.CdPipeline,
-			Job: jenv1alpha1.Job{
+			Job: jenkinsApi.Job{
 				Name:              fmt.Sprintf("job-provisions/job/cd/job/%v", stage.Spec.JobProvisioning),
 				Config:            string(jc),
 				AutoTriggerPeriod: common.GetInt32P(defaultAutoTriggerPeriod),
 			},
 		},
-		Status: jenv1alpha1.JenkinsJobStatus{
-			Action: v1alpha1.AcceptJenkinsJob,
+		Status: jenkinsApi.JenkinsJobStatus{
+			Action: cdPipeApi.AcceptJenkinsJob,
 		},
 	}
 	if err := h.client.Create(context.TODO(), jj); err != nil {
-		if k8serrors.IsAlreadyExists(err) {
+		if k8sErrors.IsAlreadyExists(err) {
 			h.log.Info("jenkins job already exists. skip creating...", "name", stage.Name)
 			return nil
 		}
@@ -92,9 +95,9 @@ func (h PutJenkinsJob) tryToCreateJenkinsJob(stage v1alpha1.Stage) error {
 	return nil
 }
 
-func (h PutJenkinsJob) tryToUpdateJenkinsJobConfig(stage v1alpha1.Stage) error {
+func (h PutJenkinsJob) tryToUpdateJenkinsJobConfig(stage cdPipeApi.Stage) error {
 	jenkinsJob, err := h.getJenkinsJob(stage.Name, stage.Namespace)
-	if k8serrors.IsNotFound(err) {
+	if k8sErrors.IsNotFound(err) {
 		h.log.Info("jenkins job does not exists. skip updating...", "name", stage.Name)
 		return nil
 	}
@@ -114,7 +117,7 @@ func (h PutJenkinsJob) tryToUpdateJenkinsJobConfig(stage v1alpha1.Stage) error {
 	return nil
 }
 
-func (h PutJenkinsJob) createJenkinsJobConfig(stage v1alpha1.Stage) ([]byte, error) {
+func (h PutJenkinsJob) createJenkinsJobConfig(stage cdPipeApi.Stage) ([]byte, error) {
 	qgStages, err := getQualityGateStages(stage.Spec.QualityGates)
 	if err != nil {
 		return nil, errors.Wrap(err, "couldn't parse quality gate stages")
@@ -154,7 +157,7 @@ func (h PutJenkinsJob) createJenkinsJobConfig(stage v1alpha1.Stage) ([]byte, err
 	return jc, nil
 }
 
-func (h PutJenkinsJob) getDeploymentType(stage *v1alpha1.Stage) (*string, error) {
+func (h PutJenkinsJob) getDeploymentType(stage *cdPipeApi.Stage) (*string, error) {
 	p, err := util.GetCdPipeline(h.client, stage)
 	if err != nil {
 		return nil, err
@@ -162,7 +165,7 @@ func (h PutJenkinsJob) getDeploymentType(stage *v1alpha1.Stage) (*string, error)
 	return common.GetStringP(p.Spec.DeploymentType), nil
 }
 
-func getQualityGateStages(qualityGates []v1alpha1.QualityGate) (*string, error) {
+func getQualityGateStages(qualityGates []cdPipeApi.QualityGate) (*string, error) {
 	if len(qualityGates) == 0 {
 		return nil, nil
 	}
@@ -195,7 +198,7 @@ func modifyQualityGateStagesJson(qgStages string) string {
 	return qgStages
 }
 
-func handleAutotestStage(qg v1alpha1.QualityGate, isPreviousStageAutotest bool, result *[]interface{}) {
+func handleAutotestStage(qg cdPipeApi.QualityGate, isPreviousStageAutotest bool, result *[]interface{}) {
 	if isPreviousStageAutotest {
 		handlePreviousAutotestStage(qg, result)
 		return
@@ -206,7 +209,7 @@ func handleAutotestStage(qg v1alpha1.QualityGate, isPreviousStageAutotest bool, 
 	})
 }
 
-func handlePreviousAutotestStage(qg v1alpha1.QualityGate, result *[]interface{}) {
+func handlePreviousAutotestStage(qg cdPipeApi.QualityGate, result *[]interface{}) {
 	switch old := (*result)[len(*result)-1].(type) {
 	case []qualityGate:
 		(*result)[len(*result)-1] = append((*result)[len(*result)-1].([]qualityGate), qualityGate{
@@ -221,14 +224,14 @@ func handlePreviousAutotestStage(qg v1alpha1.QualityGate, result *[]interface{})
 	}
 }
 
-func handleManualStage(qg v1alpha1.QualityGate, result *[]interface{}) {
+func handleManualStage(qg cdPipeApi.QualityGate, result *[]interface{}) {
 	*result = append(*result, qualityGate{
 		Name:     qg.QualityGateType,
 		StepName: qg.StepName,
 	})
 }
 
-func (h PutJenkinsJob) setLibraryParams(stage v1alpha1.Stage) (map[string]string, error) {
+func (h PutJenkinsJob) setLibraryParams(stage cdPipeApi.Stage) (map[string]string, error) {
 	cb, err := h.getLibraryParams(stage.Spec.Source.Library.Name, stage.Namespace)
 	if err != nil {
 		h.log.Error(err, "couldn't retrieve parameters for pipeline's library, default source type will be used",
@@ -288,12 +291,12 @@ func getAutoDeployStatus(tt string) string {
 	return "false"
 }
 
-func (h PutJenkinsJob) getJenkinsJob(name, namespace string) (*jenv1alpha1.JenkinsJob, error) {
+func (h PutJenkinsJob) getJenkinsJob(name, namespace string) (*jenkinsApi.JenkinsJob, error) {
 	nsn := types.NamespacedName{
 		Name:      name,
 		Namespace: namespace,
 	}
-	jj := &jenv1alpha1.JenkinsJob{}
+	jj := &jenkinsApi.JenkinsJob{}
 	if err := h.client.Get(context.TODO(), nsn, jj); err != nil {
 		return nil, err
 	}

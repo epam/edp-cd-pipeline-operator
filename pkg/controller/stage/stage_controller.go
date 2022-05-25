@@ -17,13 +17,14 @@ import (
 
 	"github.com/pkg/errors"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
+	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1alpha1"
+	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/controller/helper"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/consts"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/finalizer"
@@ -162,7 +163,7 @@ func (r *ReconcileStage) setFinishStatus(ctx context.Context, s *cdPipeApi.Stage
 	s.Status = cdPipeApi.StageStatus{
 		Status:          consts.FinishedStatus,
 		Available:       true,
-		LastTimeUpdated: time.Now(),
+		LastTimeUpdated: metaV1.Now(),
 		Username:        "system",
 		Action:          cdPipeApi.AcceptCDStageRegistration,
 		Result:          cdPipeApi.Success,

@@ -6,15 +6,15 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
+	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	componentApi "github.com/epam/edp-component-operator/pkg/apis/v1/v1"
 
-	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1alpha1"
+	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/controller/stage/chain/handler"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/controller/stage/chain/util"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/cluster"
@@ -28,7 +28,7 @@ type PutCodebaseImageStream struct {
 
 const dockerRegistryName = "docker-registry"
 
-func (h PutCodebaseImageStream) ServeRequest(stage *v1alpha1.Stage) error {
+func (h PutCodebaseImageStream) ServeRequest(stage *cdPipeApi.Stage) error {
 	log := h.log.WithValues("stage name", stage.Name)
 	log.Info("start creating codebase image streams.")
 
@@ -73,11 +73,11 @@ func (h PutCodebaseImageStream) getDockerRegistryEdpComponent(namespace string) 
 
 func (h PutCodebaseImageStream) createCodebaseImageStreamIfNotExists(name, imageName, codebaseName, namespace string) error {
 	cis := &codebaseApi.CodebaseImageStream{
-		TypeMeta: metav1.TypeMeta{
+		TypeMeta: metaV1.TypeMeta{
 			APIVersion: "v2.edp.epam.com/v1alpha1",
 			Kind:       "CodebaseImageStream",
 		},
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
 		},
@@ -88,7 +88,7 @@ func (h PutCodebaseImageStream) createCodebaseImageStreamIfNotExists(name, image
 	}
 
 	if err := h.client.Create(context.TODO(), cis); err != nil {
-		if k8serrors.IsAlreadyExists(err) {
+		if k8sErrors.IsAlreadyExists(err) {
 			h.log.Info("codebase image stream already exists. skip creating...", "name", cis.Name)
 			return nil
 		}

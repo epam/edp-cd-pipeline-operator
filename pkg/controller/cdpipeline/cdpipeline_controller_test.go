@@ -6,16 +6,17 @@ import (
 	"testing"
 	"time"
 
-	jenv1alpha1 "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1alpha1"
 	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1alpha1"
+	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1alpha1"
+
+	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/finalizer"
 )
 
@@ -28,8 +29,8 @@ const (
 func emptyCdPipelineInit(t *testing.T) cdPipeApi.CDPipeline {
 	t.Helper()
 	return cdPipeApi.CDPipeline{
-		TypeMeta: metav1.TypeMeta{},
-		ObjectMeta: metav1.ObjectMeta{
+		TypeMeta: metaV1.TypeMeta{},
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
 		},
@@ -38,9 +39,9 @@ func emptyCdPipelineInit(t *testing.T) cdPipeApi.CDPipeline {
 	}
 }
 
-func (r *ReconcileCDPipeline) getJenkinsFolder(t *testing.T) *jenv1alpha1.JenkinsFolder {
+func (r *ReconcileCDPipeline) getJenkinsFolder(t *testing.T) *jenkinsApi.JenkinsFolder {
 	t.Helper()
-	createdJenkins := &jenv1alpha1.JenkinsFolder{}
+	createdJenkins := &jenkinsApi.JenkinsFolder{}
 	err := r.client.Get(context.Background(), types.NamespacedName{
 		Namespace: namespace,
 		Name:      fmt.Sprintf("%s-%s", name, "cd-pipeline"),
@@ -67,7 +68,7 @@ func (r *ReconcileCDPipeline) getCdPipeline(t *testing.T) *cdPipeApi.CDPipeline 
 func createScheme(t *testing.T) *runtime.Scheme {
 	t.Helper()
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(cdPipeApi.SchemeGroupVersion, &cdPipeApi.CDPipeline{}, &jenv1alpha1.JenkinsFolder{})
+	scheme.AddKnownTypes(cdPipeApi.SchemeGroupVersion, &cdPipeApi.CDPipeline{}, &jenkinsApi.JenkinsFolder{})
 	return scheme
 }
 
@@ -138,11 +139,11 @@ func TestReconcile_GetCdPipelineError(t *testing.T) {
 
 func TestAddFinalizer_DeletionTimestampNotZero(t *testing.T) {
 	var finalizerArray []string
-	timeToDelete := &metav1.Time{Time: time.Now().UTC()}
+	timeToDelete := &metaV1.Time{Time: time.Now().UTC()}
 
 	cdPipeline := cdPipeApi.CDPipeline{
-		TypeMeta: metav1.TypeMeta{},
-		ObjectMeta: metav1.ObjectMeta{
+		TypeMeta: metaV1.TypeMeta{},
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:              name,
 			Namespace:         namespace,
 			Finalizers:        finalizerArray,
@@ -168,8 +169,8 @@ func TestAddFinalizer_DeletionTimestampIsZero(t *testing.T) {
 	var finalizerArray []string
 
 	cdPipeline := &cdPipeApi.CDPipeline{
-		TypeMeta: metav1.TypeMeta{},
-		ObjectMeta: metav1.ObjectMeta{
+		TypeMeta: metaV1.TypeMeta{},
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:       name,
 			Namespace:  namespace,
 			Finalizers: finalizerArray,
@@ -221,16 +222,16 @@ func TestCreateJenkinsFolder_Success(t *testing.T) {
 func TestCreateJenkinsFolder_AlreadyExists(t *testing.T) {
 	cdPipeline := emptyCdPipelineInit(t)
 
-	jenkins := &jenv1alpha1.JenkinsFolder{
-		TypeMeta: metav1.TypeMeta{
+	jenkins := &jenkinsApi.JenkinsFolder{
+		TypeMeta: metaV1.TypeMeta{
 			APIVersion: "v2.edp.epam.com/v1alpha1",
 			Kind:       jenkinsKind,
 		},
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Namespace: namespace,
 			Name:      fmt.Sprintf("%s-%s", name, "cd-pipeline"),
 		},
-		Status: jenv1alpha1.JenkinsFolderStatus{
+		Status: jenkinsApi.JenkinsFolderStatus{
 			Status: "createdWithoutUsingFunction",
 		},
 	}

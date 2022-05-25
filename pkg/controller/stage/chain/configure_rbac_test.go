@@ -10,13 +10,13 @@ import (
 	"github.com/stretchr/testify/assert"
 	k8sApi "k8s.io/api/rbac/v1"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1alpha1"
+	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/controller/stage/rbac"
 )
 
@@ -54,13 +54,13 @@ func getConfigureRbac(t *testing.T, configureRbac ConfigureRbac, name, namespace
 
 func TestConfigureRbac_ServeRequest_Success(t *testing.T) {
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(k8sApi.SchemeGroupVersion, &k8sApi.RoleBinding{}, &v1alpha1.Stage{})
+	scheme.AddKnownTypes(k8sApi.SchemeGroupVersion, &k8sApi.RoleBinding{}, &cdPipeApi.Stage{})
 	fakeClient := fake.NewClientBuilder().WithScheme(scheme).Build()
 	rbacManager := rbac.InitRbacManager(fakeClient)
 	configureRbac := createConfigureRbac(t, fakeClient, rbacManager)
 
-	stage := &v1alpha1.Stage{
-		ObjectMeta: metav1.ObjectMeta{
+	stage := &cdPipeApi.Stage{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
 		},
@@ -97,15 +97,15 @@ func TestConfigureRbac_ServeRequest_DifferentPlatformType(t *testing.T) {
 	}()
 
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(k8sApi.SchemeGroupVersion, &k8sApi.RoleBinding{}, &v1alpha1.Stage{})
+	scheme.AddKnownTypes(k8sApi.SchemeGroupVersion, &k8sApi.RoleBinding{}, &cdPipeApi.Stage{})
 	fakeClient := fake.NewClientBuilder().WithScheme(scheme).Build()
 
 	rbacManager := rbac.InitRbacManager(fakeClient)
 
 	configureRbac := createConfigureRbac(t, fakeClient, rbacManager)
 
-	stage := &v1alpha1.Stage{
-		ObjectMeta: metav1.ObjectMeta{
+	stage := &cdPipeApi.Stage{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
 		},
@@ -170,7 +170,7 @@ func TestCreateRoleBinding_AlreadyExists(t *testing.T) {
 	}
 
 	preCreatedRoleBinding := &k8sApi.RoleBinding{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:            name,
 			Namespace:       namespace,
 			ResourceVersion: resourceVersion,

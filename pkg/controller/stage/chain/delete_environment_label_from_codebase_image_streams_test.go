@@ -4,14 +4,15 @@ import (
 	"fmt"
 	"testing"
 
-	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1alpha1"
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
+
+	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1"
 	edpErr "github.com/epam/edp-cd-pipeline-operator/v2/pkg/error"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/cluster"
 )
@@ -26,21 +27,21 @@ func TestServeRequest_Success(t *testing.T) {
 
 	stage := createStage(t, 0, cdPipeline)
 
-	cdPipeline := v1alpha1.CDPipeline{
-		TypeMeta: metav1.TypeMeta{},
-		ObjectMeta: metav1.ObjectMeta{
+	cdPipeline := cdPipeApi.CDPipeline{
+		TypeMeta: metaV1.TypeMeta{},
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      cdPipeline,
 			Namespace: namespace,
 		},
-		Spec: v1alpha1.CDPipelineSpec{
+		Spec: cdPipeApi.CDPipelineSpec{
 			InputDockerStreams: []string{dockerImageName},
 			Name:               name,
 		},
 	}
 
 	image := codebaseApi.CodebaseImageStream{
-		TypeMeta: metav1.TypeMeta{},
-		ObjectMeta: metav1.ObjectMeta{
+		TypeMeta: metaV1.TypeMeta{},
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      dockerImageName,
 			Namespace: namespace,
 			Labels:    labels,
@@ -69,12 +70,12 @@ func TestDeleteEnvironmentLabel_VerifiedImageStream(t *testing.T) {
 
 	cisName := createCisName(name, previousStageName, codebase)
 
-	cdPipeline := v1alpha1.CDPipeline{
-		ObjectMeta: metav1.ObjectMeta{
+	cdPipeline := cdPipeApi.CDPipeline{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      cdPipeline,
 			Namespace: namespace,
 		},
-		Spec: v1alpha1.CDPipelineSpec{
+		Spec: cdPipeApi.CDPipelineSpec{
 			InputDockerStreams:    []string{dockerImageName},
 			ApplicationsToPromote: nil,
 			Name:                  name,
@@ -85,7 +86,7 @@ func TestDeleteEnvironmentLabel_VerifiedImageStream(t *testing.T) {
 	labels[createLabelName(name, name)] = labelValue
 
 	image := codebaseApi.CodebaseImageStream{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      dockerImageName,
 			Namespace: namespace,
 			Labels:    labels,
@@ -96,7 +97,7 @@ func TestDeleteEnvironmentLabel_VerifiedImageStream(t *testing.T) {
 	}
 
 	previousImage := codebaseApi.CodebaseImageStream{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      cisName,
 			Namespace: namespace,
 			Labels:    labels,
@@ -132,12 +133,12 @@ func TestDeleteEnvironmentLabel_ApplicationToPromote(t *testing.T) {
 	annotations[previousStageNameAnnotationKey] = previousStageName
 	stage.Annotations = annotations
 
-	cdPipeline := v1alpha1.CDPipeline{
-		ObjectMeta: metav1.ObjectMeta{
+	cdPipeline := cdPipeApi.CDPipeline{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      cdPipeline,
 			Namespace: namespace,
 		},
-		Spec: v1alpha1.CDPipelineSpec{
+		Spec: cdPipeApi.CDPipelineSpec{
 			InputDockerStreams:    []string{dockerImageName},
 			Applications:          []string{codebase, codebaseWithoutPromotion},
 			ApplicationsToPromote: []string{codebase},
@@ -146,7 +147,7 @@ func TestDeleteEnvironmentLabel_ApplicationToPromote(t *testing.T) {
 	}
 
 	image := codebaseApi.CodebaseImageStream{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      dockerImageName,
 			Namespace: namespace,
 			Labels:    labels,
@@ -157,7 +158,7 @@ func TestDeleteEnvironmentLabel_ApplicationToPromote(t *testing.T) {
 	}
 
 	previousImage := codebaseApi.CodebaseImageStream{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      cisName,
 			Namespace: namespace,
 			Labels:    labels,
@@ -182,7 +183,7 @@ func TestDeleteEnvironmentLabel_ApplicationToPromote(t *testing.T) {
 }
 
 func TestServeRequest_Error(t *testing.T) {
-	stage := v1alpha1.Stage{}
+	stage := cdPipeApi.Stage{}
 
 	deleteEnvLabel := DeleteEnvironmentLabelFromCodebaseImageStreams{
 		client: fake.NewClientBuilder().WithScheme(schemeInit(t)).Build(),
@@ -196,12 +197,12 @@ func TestServeRequest_Error(t *testing.T) {
 func TestDeleteEnvironmentLabel_EmptyInputDockerStream(t *testing.T) {
 	stage := createStage(t, 1, cdPipeline)
 
-	cdPipeline := v1alpha1.CDPipeline{
-		ObjectMeta: metav1.ObjectMeta{
+	cdPipeline := cdPipeApi.CDPipeline{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      cdPipeline,
 			Namespace: namespace,
 		},
-		Spec: v1alpha1.CDPipelineSpec{
+		Spec: cdPipeApi.CDPipelineSpec{
 			Name: name,
 		},
 	}
@@ -218,12 +219,12 @@ func TestDeleteEnvironmentLabel_EmptyInputDockerStream(t *testing.T) {
 func TestDeleteEnvironmentLabel_CantGetImageDockerStream(t *testing.T) {
 	stage := createStage(t, 1, cdPipeline)
 
-	cdPipeline := v1alpha1.CDPipeline{
-		ObjectMeta: metav1.ObjectMeta{
+	cdPipeline := cdPipeApi.CDPipeline{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      cdPipeline,
 			Namespace: namespace,
 		},
-		Spec: v1alpha1.CDPipelineSpec{
+		Spec: cdPipeApi.CDPipelineSpec{
 			Name:               name,
 			InputDockerStreams: []string{dockerImageName},
 		},
@@ -246,12 +247,12 @@ func TestSetDeleteEnvironmentLabel_SetEnvLabelForVerifiedImageStreamError(t *tes
 
 	stage := createStage(t, 1, cdPipeline)
 
-	cdPipeline := v1alpha1.CDPipeline{
-		ObjectMeta: metav1.ObjectMeta{
+	cdPipeline := cdPipeApi.CDPipeline{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      cdPipeline,
 			Namespace: namespace,
 		},
-		Spec: v1alpha1.CDPipelineSpec{
+		Spec: cdPipeApi.CDPipelineSpec{
 			InputDockerStreams:    []string{dockerImageName},
 			ApplicationsToPromote: nil,
 			Name:                  name,
@@ -259,7 +260,7 @@ func TestSetDeleteEnvironmentLabel_SetEnvLabelForVerifiedImageStreamError(t *tes
 	}
 
 	image := codebaseApi.CodebaseImageStream{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      dockerImageName,
 			Namespace: namespace,
 			Labels:    labels,
@@ -270,7 +271,7 @@ func TestSetDeleteEnvironmentLabel_SetEnvLabelForVerifiedImageStreamError(t *tes
 	}
 
 	previousImage := codebaseApi.CodebaseImageStream{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      cisName,
 			Namespace: namespace,
 			Labels:    labels,
@@ -290,7 +291,7 @@ func TestSetEnvLabelForVerifiedImageStream_NoAnnotations(t *testing.T) {
 	stage := createStage(t, 0, cdPipeline)
 
 	image := codebaseApi.CodebaseImageStream{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      dockerImageName,
 			Namespace: namespace,
 		},
@@ -312,7 +313,7 @@ func TestSetEnvLabelForVerifiedImageStream_IsNotFoundPreviousImageStream(t *test
 	stage.Annotations = annotations
 
 	image := codebaseApi.CodebaseImageStream{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      dockerImageName,
 			Namespace: namespace,
 		},

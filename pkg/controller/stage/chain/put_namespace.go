@@ -3,18 +3,19 @@ package chain
 import (
 	"context"
 	"fmt"
-	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1alpha1"
-	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/controller/stage/chain/handler"
-	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/controller/stage/chain/util"
-	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/consts"
+
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	v1 "k8s.io/api/core/v1"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
+	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"time"
+
+	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1"
+	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/controller/stage/chain/handler"
+	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/controller/stage/chain/util"
+	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/consts"
 )
 
 type PutNamespace struct {
@@ -58,7 +59,7 @@ func (h PutNamespace) namespaceExists(name string) (bool, error) {
 	if err := h.client.Get(context.TODO(), types.NamespacedName{
 		Name: name,
 	}, ns); err != nil {
-		if k8serrors.IsNotFound(err) {
+		if k8sErrors.IsNotFound(err) {
 			return false, nil
 		}
 		return false, err
@@ -71,7 +72,7 @@ func (h PutNamespace) create(sourceNs, stageName string) error {
 	log := h.log.WithValues("name", name)
 	log.Info("creating namespace")
 	ns := &v1.Namespace{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name: name,
 			Labels: map[string]string{
 				util.TenantLabelName: sourceNs,
@@ -99,7 +100,7 @@ func (h PutNamespace) setFailedStatus(ctx context.Context, stage *cdPipeApi.Stag
 	stage.Status = cdPipeApi.StageStatus{
 		Status:          consts.FailedStatus,
 		Available:       false,
-		LastTimeUpdated: time.Now(),
+		LastTimeUpdated: metaV1.Now(),
 		Username:        stage.Status.Username,
 		Result:          cdPipeApi.Error,
 		DetailedMessage: err.Error(),

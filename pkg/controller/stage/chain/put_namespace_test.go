@@ -3,18 +3,20 @@ package chain
 import (
 	"context"
 	"fmt"
-	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1alpha1"
-	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/consts"
+	"testing"
+
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	utilRuntime "k8s.io/apimachinery/pkg/util/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
-	"testing"
+
+	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1"
+	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/consts"
 )
 
 var (
@@ -28,7 +30,7 @@ func TestPutNamespace_CreateNs(t *testing.T) {
 		log:    logr.DiscardLogger{},
 	}
 	s := &cdPipeApi.Stage{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
 		},
@@ -46,7 +48,7 @@ func TestPutNamespace_CreateNs(t *testing.T) {
 
 func TestPutNamespace_NSExists(t *testing.T) {
 	ns := &v1.Namespace{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name: fmt.Sprintf("%v-%v", namespace, name),
 		},
 	}
@@ -56,7 +58,7 @@ func TestPutNamespace_NSExists(t *testing.T) {
 		log:    logr.DiscardLogger{},
 	}
 	s := &cdPipeApi.Stage{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
 		},
@@ -67,9 +69,9 @@ func TestPutNamespace_NSExists(t *testing.T) {
 
 func TestSetFailedStatus(t *testing.T) {
 	scheme := runtime.NewScheme()
-	utilruntime.Must(cdPipeApi.AddToScheme(scheme))
+	utilRuntime.Must(cdPipeApi.AddToScheme(scheme))
 	s := &cdPipeApi.Stage{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
 		},

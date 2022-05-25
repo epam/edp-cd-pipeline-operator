@@ -7,11 +7,12 @@ import (
 	"strconv"
 	"strings"
 
-	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1alpha1"
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
+
+	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1"
 )
 
 const (
@@ -20,12 +21,12 @@ const (
 	inClusterNamespacePath = "/var/run/secrets/kubernetes.io/serviceaccount/namespace"
 )
 
-func GetCdPipeline(client client.Client, name, namespace string) (*v1alpha1.CDPipeline, error) {
+func GetCdPipeline(client client.Client, name, namespace string) (*cdPipeApi.CDPipeline, error) {
 	nsn := types.NamespacedName{
 		Name:      name,
 		Namespace: namespace,
 	}
-	i := &v1alpha1.CDPipeline{}
+	i := &cdPipeApi.CDPipeline{}
 	if err := client.Get(context.TODO(), nsn, i); err != nil {
 		return nil, err
 	}

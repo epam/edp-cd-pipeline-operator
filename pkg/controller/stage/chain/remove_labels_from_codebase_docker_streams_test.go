@@ -3,24 +3,25 @@ package chain
 import (
 	"testing"
 
-	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1alpha1"
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
+
+	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/cluster"
 )
 
-func createCdPipelineWithAnnotations(t *testing.T) v1alpha1.CDPipeline {
+func createCdPipelineWithAnnotations(t *testing.T) cdPipeApi.CDPipeline {
 	t.Helper()
 	annotations := make(map[string]string)
 	annotations[dockerStreamsBeforeUpdateAnnotationKey] = dockerImageName
 
-	return v1alpha1.CDPipeline{
-		ObjectMeta: metav1.ObjectMeta{
+	return cdPipeApi.CDPipeline{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:        cdPipeline,
 			Namespace:   namespace,
 			Annotations: annotations,
@@ -34,7 +35,7 @@ func createCodebaseImageStreamWithLabels(t *testing.T) codebaseApi.CodebaseImage
 	labels[createLabelName(cdPipeline, name)] = labelValue
 
 	return codebaseApi.CodebaseImageStream{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      dockerImageName,
 			Namespace: namespace,
 			Labels:    labels,

@@ -4,16 +4,17 @@ import (
 	"fmt"
 	"testing"
 
-	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
 	k8sApi "k8s.io/api/rbac/v1"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1alpha1"
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
+
+	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1"
 	edpErr "github.com/epam/edp-cd-pipeline-operator/v2/pkg/error"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/cluster"
 )
@@ -26,14 +27,14 @@ const (
 	previousStageNameAnnotationKey = "deploy.edp.epam.com/previous-stage-name"
 )
 
-func createStage(t *testing.T, order int, cdPipeline string) v1alpha1.Stage {
+func createStage(t *testing.T, order int, cdPipeline string) cdPipeApi.Stage {
 	t.Helper()
-	return v1alpha1.Stage{
-		ObjectMeta: metav1.ObjectMeta{
+	return cdPipeApi.Stage{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
 		},
-		Spec: v1alpha1.StageSpec{
+		Spec: cdPipeApi.StageSpec{
 			Name:       name,
 			Order:      order,
 			CdPipeline: cdPipeline,
@@ -44,7 +45,7 @@ func createStage(t *testing.T, order int, cdPipeline string) v1alpha1.Stage {
 func schemeInit(t *testing.T) *runtime.Scheme {
 	t.Helper()
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(k8sApi.SchemeGroupVersion, &v1alpha1.Stage{}, &v1alpha1.CDPipeline{}, &codebaseApi.CodebaseImageStream{})
+	scheme.AddKnownTypes(k8sApi.SchemeGroupVersion, &cdPipeApi.Stage{}, &cdPipeApi.CDPipeline{}, &codebaseApi.CodebaseImageStream{})
 	return scheme
 }
 
@@ -55,20 +56,20 @@ func TestPutEnvironmentLabelToCodebaseImageStreams_ServeRequest_Success(t *testi
 	stage := createStage(t, 0, cdPipeline)
 	stage.Annotations = annotations
 
-	cdPipeline := v1alpha1.CDPipeline{
-		TypeMeta: metav1.TypeMeta{},
-		ObjectMeta: metav1.ObjectMeta{
+	cdPipeline := cdPipeApi.CDPipeline{
+		TypeMeta: metaV1.TypeMeta{},
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      cdPipeline,
 			Namespace: namespace,
 		},
-		Spec: v1alpha1.CDPipelineSpec{
+		Spec: cdPipeApi.CDPipelineSpec{
 			InputDockerStreams: []string{dockerImageName},
 			Name:               name,
 		},
 	}
 
 	image := codebaseApi.CodebaseImageStream{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      dockerImageName,
 			Namespace: namespace,
 			Labels:    nil,
@@ -97,13 +98,13 @@ func TestPutEnvironmentLabelToCodebaseImageStreams_ServeRequest_PreviousStageIma
 
 	cisName := createCisName(cdPipeline, previousStageName, codebase)
 
-	cdPipeline := v1alpha1.CDPipeline{
-		TypeMeta: metav1.TypeMeta{},
-		ObjectMeta: metav1.ObjectMeta{
+	cdPipeline := cdPipeApi.CDPipeline{
+		TypeMeta: metaV1.TypeMeta{},
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      cdPipeline,
 			Namespace: namespace,
 		},
-		Spec: v1alpha1.CDPipelineSpec{
+		Spec: cdPipeApi.CDPipelineSpec{
 			InputDockerStreams:    []string{dockerImageName},
 			ApplicationsToPromote: []string{codebase},
 			Name:                  name,
@@ -111,7 +112,7 @@ func TestPutEnvironmentLabelToCodebaseImageStreams_ServeRequest_PreviousStageIma
 	}
 
 	image := codebaseApi.CodebaseImageStream{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      dockerImageName,
 			Namespace: namespace,
 			Labels:    nil,
@@ -122,7 +123,7 @@ func TestPutEnvironmentLabelToCodebaseImageStreams_ServeRequest_PreviousStageIma
 	}
 
 	previousImage := codebaseApi.CodebaseImageStream{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      cisName,
 			Namespace: namespace,
 			Labels:    nil,
@@ -157,13 +158,13 @@ func TestPutEnvironmentLabelToCodebaseImageStreams_ServeRequest_CantGetCdPipelin
 func TestPutEnvironmentLabelToCodebaseImageStreams_ServeRequest_EmptyInputDockerStream(t *testing.T) {
 	stage := createStage(t, 0, cdPipeline)
 
-	cdPipeline := v1alpha1.CDPipeline{
-		TypeMeta: metav1.TypeMeta{},
-		ObjectMeta: metav1.ObjectMeta{
+	cdPipeline := cdPipeApi.CDPipeline{
+		TypeMeta: metaV1.TypeMeta{},
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      cdPipeline,
 			Namespace: namespace,
 		},
-		Spec: v1alpha1.CDPipelineSpec{
+		Spec: cdPipeApi.CDPipelineSpec{
 			InputDockerStreams: []string{},
 			Name:               name,
 		},
@@ -181,13 +182,13 @@ func TestPutEnvironmentLabelToCodebaseImageStreams_ServeRequest_EmptyInputDocker
 func TestPutEnvironmentLabelToCodebaseImageStreams_ServeRequest_CantGetImage(t *testing.T) {
 	stage := createStage(t, 0, cdPipeline)
 
-	cdPipeline := v1alpha1.CDPipeline{
-		TypeMeta: metav1.TypeMeta{},
-		ObjectMeta: metav1.ObjectMeta{
+	cdPipeline := cdPipeApi.CDPipeline{
+		TypeMeta: metaV1.TypeMeta{},
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      cdPipeline,
 			Namespace: namespace,
 		},
-		Spec: v1alpha1.CDPipelineSpec{
+		Spec: cdPipeApi.CDPipelineSpec{
 			InputDockerStreams: []string{dockerImageName},
 			Name:               name,
 		},
@@ -209,13 +210,13 @@ func TestPutEnvironmentLabelToCodebaseImageStreams_ServeRequest_CantGetPreviousS
 	stage := createStage(t, 1, cdPipeline)
 	stage.Annotations = annotations
 
-	cdPipeline := v1alpha1.CDPipeline{
-		TypeMeta: metav1.TypeMeta{},
-		ObjectMeta: metav1.ObjectMeta{
+	cdPipeline := cdPipeApi.CDPipeline{
+		TypeMeta: metaV1.TypeMeta{},
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      cdPipeline,
 			Namespace: namespace,
 		},
-		Spec: v1alpha1.CDPipelineSpec{
+		Spec: cdPipeApi.CDPipelineSpec{
 			InputDockerStreams:    []string{dockerImageName},
 			Applications:          []string{codebase},
 			ApplicationsToPromote: []string{codebase},
@@ -224,7 +225,7 @@ func TestPutEnvironmentLabelToCodebaseImageStreams_ServeRequest_CantGetPreviousS
 	}
 
 	image := codebaseApi.CodebaseImageStream{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      dockerImageName,
 			Namespace: namespace,
 			Labels:    nil,

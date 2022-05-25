@@ -5,15 +5,16 @@ import (
 	"os"
 	"testing"
 
-	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/stretchr/testify/assert"
 	k8sApi "k8s.io/api/rbac/v1"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1alpha1"
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
+
+	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1"
 )
 
 const (
@@ -24,10 +25,10 @@ const (
 
 func TestGetCdPipeline_Success(t *testing.T) {
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(k8sApi.SchemeGroupVersion, &v1alpha1.CDPipeline{})
+	scheme.AddKnownTypes(k8sApi.SchemeGroupVersion, &cdPipeApi.CDPipeline{})
 
-	cdPipeline := &v1alpha1.CDPipeline{
-		ObjectMeta: metav1.ObjectMeta{
+	cdPipeline := &cdPipeApi.CDPipeline{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
 		},
@@ -41,7 +42,7 @@ func TestGetCdPipeline_Success(t *testing.T) {
 
 func TestGetCdPipeline_IsNotFound(t *testing.T) {
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(k8sApi.SchemeGroupVersion, &v1alpha1.CDPipeline{})
+	scheme.AddKnownTypes(k8sApi.SchemeGroupVersion, &cdPipeApi.CDPipeline{})
 	client := fake.NewClientBuilder().WithScheme(scheme).Build()
 
 	_, err := GetCdPipeline(client, name, namespace)
@@ -53,7 +54,7 @@ func TestGetCodebaseImageStream_Success(t *testing.T) {
 	scheme.AddKnownTypes(k8sApi.SchemeGroupVersion, &codebaseApi.CodebaseImageStream{})
 
 	cdPipeline := &codebaseApi.CodebaseImageStream{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
 		},

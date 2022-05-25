@@ -20,24 +20,24 @@ import (
 	k8sMockClient "github.com/epam/edp-common/pkg/mock/controller-runtime/client"
 	componentApi "github.com/epam/edp-component-operator/pkg/apis/v1/v1"
 
-	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1alpha1"
+	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1"
 )
 
 func TestPutCodebaseImageStream_ShouldCreateCis(t *testing.T) {
 
-	cdp := &v1alpha1.CDPipeline{
+	cdp := &cdPipeApi.CDPipeline{
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "cdp-name",
 			Namespace: "stub-namespace",
 		},
-		Spec: v1alpha1.CDPipelineSpec{
+		Spec: cdPipeApi.CDPipelineSpec{
 			InputDockerStreams: []string{
 				"cbis-name",
 			},
 		},
 	}
 
-	s := &v1alpha1.Stage{
+	s := &cdPipeApi.Stage{
 		ObjectMeta: metaV1.ObjectMeta{
 			OwnerReferences: []metaV1.OwnerReference{{
 				Kind: "CDPipeline",
@@ -46,7 +46,7 @@ func TestPutCodebaseImageStream_ShouldCreateCis(t *testing.T) {
 			Name:      "stub-stage-name",
 			Namespace: "stub-namespace",
 		},
-		Spec: v1alpha1.StageSpec{
+		Spec: cdPipeApi.StageSpec{
 			Name: "stage-name",
 		},
 	}
@@ -95,24 +95,24 @@ func TestPutCodebaseImageStream_ShouldCreateCis(t *testing.T) {
 }
 
 func TestPutCodebaseImageStream_ShouldNotFindCDPipeline(t *testing.T) {
-	cdp := &v1alpha1.CDPipeline{
+	cdp := &cdPipeApi.CDPipeline{
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "cdp-name",
 			Namespace: "stub-namespace",
 		},
-		Spec: v1alpha1.CDPipelineSpec{
+		Spec: cdPipeApi.CDPipelineSpec{
 			InputDockerStreams: []string{
 				"cbis-name",
 			},
 		},
 	}
 
-	s := &v1alpha1.Stage{
+	s := &cdPipeApi.Stage{
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "stub-stage-name",
 			Namespace: "stub-namespace",
 		},
-		Spec: v1alpha1.StageSpec{
+		Spec: cdPipeApi.StageSpec{
 			Name:       "stage-name",
 			CdPipeline: "non-existing-pipeline",
 		},
@@ -136,24 +136,24 @@ func TestPutCodebaseImageStream_ShouldNotFindCDPipeline(t *testing.T) {
 }
 
 func TestPutCodebaseImageStream_ShouldNotFindEDPComponent(t *testing.T) {
-	cdp := &v1alpha1.CDPipeline{
+	cdp := &cdPipeApi.CDPipeline{
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "cdp-name",
 			Namespace: "stub-namespace",
 		},
-		Spec: v1alpha1.CDPipelineSpec{
+		Spec: cdPipeApi.CDPipelineSpec{
 			InputDockerStreams: []string{
 				"cbis-name",
 			},
 		},
 	}
 
-	s := &v1alpha1.Stage{
+	s := &cdPipeApi.Stage{
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "stub-stage-name",
 			Namespace: "stub-namespace",
 		},
-		Spec: v1alpha1.StageSpec{
+		Spec: cdPipeApi.StageSpec{
 			Name:       "stage-name",
 			CdPipeline: "cdp-name",
 		},
@@ -178,19 +178,19 @@ func TestPutCodebaseImageStream_ShouldNotFindEDPComponent(t *testing.T) {
 
 func TestPutCodebaseImageStream_ShouldNotFindCbis(t *testing.T) {
 
-	cdp := &v1alpha1.CDPipeline{
+	cdp := &cdPipeApi.CDPipeline{
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "cdp-name",
 			Namespace: "stub-namespace",
 		},
-		Spec: v1alpha1.CDPipelineSpec{
+		Spec: cdPipeApi.CDPipelineSpec{
 			InputDockerStreams: []string{
 				"cbis-name",
 			},
 		},
 	}
 
-	s := &v1alpha1.Stage{
+	s := &cdPipeApi.Stage{
 		ObjectMeta: metaV1.ObjectMeta{
 			OwnerReferences: []metaV1.OwnerReference{{
 				Kind: "CDPipeline",
@@ -199,7 +199,7 @@ func TestPutCodebaseImageStream_ShouldNotFindCbis(t *testing.T) {
 			Name:      "stub-stage-name",
 			Namespace: "stub-namespace",
 		},
-		Spec: v1alpha1.StageSpec{
+		Spec: cdPipeApi.StageSpec{
 			Name: "stage-name",
 		},
 	}
@@ -244,19 +244,19 @@ func TestPutCodebaseImageStream_ShouldNotFindCbis(t *testing.T) {
 
 func TestPutCodebaseImageStream_ShouldNotFailWithExistingCbis(t *testing.T) {
 
-	cdp := &v1alpha1.CDPipeline{
+	cdp := &cdPipeApi.CDPipeline{
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "cdp-name",
 			Namespace: "stub-namespace",
 		},
-		Spec: v1alpha1.CDPipelineSpec{
+		Spec: cdPipeApi.CDPipelineSpec{
 			InputDockerStreams: []string{
 				"cbis-name",
 			},
 		},
 	}
 
-	s := &v1alpha1.Stage{
+	s := &cdPipeApi.Stage{
 		ObjectMeta: metaV1.ObjectMeta{
 			OwnerReferences: []metaV1.OwnerReference{{
 				Kind: "CDPipeline",
@@ -265,7 +265,7 @@ func TestPutCodebaseImageStream_ShouldNotFailWithExistingCbis(t *testing.T) {
 			Name:      "stub-stage-name",
 			Namespace: "stub-namespace",
 		},
-		Spec: v1alpha1.StageSpec{
+		Spec: cdPipeApi.StageSpec{
 			Name: "stage-name",
 		},
 	}
@@ -326,19 +326,19 @@ func TestPutCodebaseImageStream_ShouldNotFailWithExistingCbis(t *testing.T) {
 func TestPutCodebaseImageStream_ShouldFailCreatingCbis(t *testing.T) {
 	mc := k8sMockClient.Client{}
 
-	cdp := &v1alpha1.CDPipeline{
+	cdp := &cdPipeApi.CDPipeline{
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "cdp-name",
 			Namespace: "stub-namespace",
 		},
-		Spec: v1alpha1.CDPipelineSpec{
+		Spec: cdPipeApi.CDPipelineSpec{
 			InputDockerStreams: []string{
 				"cbis-name",
 			},
 		},
 	}
 
-	s := &v1alpha1.Stage{
+	s := &cdPipeApi.Stage{
 		ObjectMeta: metaV1.ObjectMeta{
 			OwnerReferences: []metaV1.OwnerReference{{
 				Kind: "CDPipeline",
@@ -347,7 +347,7 @@ func TestPutCodebaseImageStream_ShouldFailCreatingCbis(t *testing.T) {
 			Name:      "stub-stage-name",
 			Namespace: "stub-namespace",
 		},
-		Spec: v1alpha1.StageSpec{
+		Spec: cdPipeApi.StageSpec{
 			Name: "stage-name",
 		},
 	}
@@ -397,7 +397,7 @@ func TestPutCodebaseImageStream_ShouldFailCreatingCbis(t *testing.T) {
 	mc.On("Get", types.NamespacedName{
 		Namespace: "stub-namespace",
 		Name:      "cdp-name",
-	}, &v1alpha1.CDPipeline{}).Return(fakeCl)
+	}, &cdPipeApi.CDPipeline{}).Return(fakeCl)
 
 	mc.On("Get", types.NamespacedName{
 		Namespace: "stub-namespace",

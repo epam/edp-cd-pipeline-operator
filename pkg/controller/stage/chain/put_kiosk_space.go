@@ -3,14 +3,14 @@ package chain
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
+	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1alpha1"
+	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/controller/stage/chain/handler"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/controller/stage/kiosk"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/consts"
@@ -55,7 +55,7 @@ func (h PutKioskSpace) spaceExists(name string) (bool, error) {
 	h.log.Info("checking existence of space cr", "name", name)
 	_, err := h.space.Get(name)
 	if err != nil {
-		if k8serrors.IsNotFound(err) {
+		if k8sErrors.IsNotFound(err) {
 			return false, nil
 		}
 		return false, err
@@ -77,7 +77,7 @@ func (h PutKioskSpace) setFailedStatus(ctx context.Context, stage *cdPipeApi.Sta
 	stage.Status = cdPipeApi.StageStatus{
 		Status:          consts.FailedStatus,
 		Available:       false,
-		LastTimeUpdated: time.Now(),
+		LastTimeUpdated: metaV1.Now(),
 		Username:        stage.Status.Username,
 		Result:          cdPipeApi.Error,
 		DetailedMessage: err.Error(),

@@ -4,12 +4,13 @@ import (
 	"context"
 	"fmt"
 
-	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
 	"github.com/go-logr/logr"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1alpha1"
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
+
+	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/controller/stage/chain/handler"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/controller/stage/chain/util"
 	edpError "github.com/epam/edp-cd-pipeline-operator/v2/pkg/error"
@@ -81,7 +82,7 @@ func (h PutEnvironmentLabelToCodebaseImageStreams) updateLabel(cis *codebaseApi.
 	return nil
 }
 
-func setLabel(meta *v1.ObjectMeta, pipelineName, stageName string) {
+func setLabel(meta *metaV1.ObjectMeta, pipelineName, stageName string) {
 	if meta.Labels == nil {
 		meta.Labels = make(map[string]string)
 	}

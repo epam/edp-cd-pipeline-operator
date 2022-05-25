@@ -4,15 +4,16 @@ import (
 	"encoding/json"
 	"testing"
 
-	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
-	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1alpha1"
 	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1alpha1"
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
+	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1alpha1"
+
+	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/common"
 )
 
@@ -27,40 +28,40 @@ const (
 func putJenkinsJobSchemeInit(t *testing.T) *runtime.Scheme {
 	t.Helper()
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(v1alpha1.SchemeGroupVersion, &v1alpha1.Stage{}, &v1alpha1.CDPipeline{}, &codebaseApi.Codebase{}, &codebaseApi.GitServer{}, &jenkinsApi.JenkinsJob{})
+	scheme.AddKnownTypes(cdPipeApi.SchemeGroupVersion, &cdPipeApi.Stage{}, &cdPipeApi.CDPipeline{}, &codebaseApi.Codebase{}, &codebaseApi.GitServer{}, &jenkinsApi.JenkinsJob{})
 	return scheme
 }
 
-func putJenkinsJobCreateCdPipeline(t *testing.T) *v1alpha1.CDPipeline {
+func putJenkinsJobCreateCdPipeline(t *testing.T) *cdPipeApi.CDPipeline {
 	t.Helper()
-	return &v1alpha1.CDPipeline{
-		ObjectMeta: metav1.ObjectMeta{
+	return &cdPipeApi.CDPipeline{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      cdPipelineName,
 			Namespace: namespace,
 		},
-		Spec: v1alpha1.CDPipelineSpec{
+		Spec: cdPipeApi.CDPipelineSpec{
 			DeploymentType: deploymentType,
 		},
-		Status: v1alpha1.CDPipelineStatus{},
+		Status: cdPipeApi.CDPipelineStatus{},
 	}
 }
 
-func putJenkinsJobCreateStage(t *testing.T) v1alpha1.Stage {
+func putJenkinsJobCreateStage(t *testing.T) cdPipeApi.Stage {
 	t.Helper()
-	return v1alpha1.Stage{
-		ObjectMeta: metav1.ObjectMeta{
+	return cdPipeApi.Stage{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
 		},
-		Spec: v1alpha1.StageSpec{
-			QualityGates: []v1alpha1.QualityGate{
+		Spec: cdPipeApi.StageSpec{
+			QualityGates: []cdPipeApi.QualityGate{
 				{
 					QualityGateType: "autotests",
 				},
 			},
-			Source: v1alpha1.Source{
+			Source: cdPipeApi.Source{
 				Type: "library",
-				Library: v1alpha1.Library{
+				Library: cdPipeApi.Library{
 					Name:   library,
 					Branch: branch,
 				},
@@ -73,7 +74,7 @@ func putJenkinsJobCreateStage(t *testing.T) v1alpha1.Stage {
 func putJenkinsJobCreateCodebase(t *testing.T) *codebaseApi.Codebase {
 	t.Helper()
 	return &codebaseApi.Codebase{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      library,
 			Namespace: namespace,
 		},
@@ -86,7 +87,7 @@ func putJenkinsJobCreateCodebase(t *testing.T) *codebaseApi.Codebase {
 func putJenkinsJobCreateGitServer(t *testing.T) *codebaseApi.GitServer {
 	t.Helper()
 	return &codebaseApi.GitServer{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      gitServer,
 			Namespace: namespace,
 		},
@@ -95,7 +96,7 @@ func putJenkinsJobCreateGitServer(t *testing.T) *codebaseApi.GitServer {
 
 func TestGetQualityGateStagesMethod_ShouldReturnParsedStagesScenarioFirst(t *testing.T) {
 
-	qualityGates := []v1alpha1.QualityGate{
+	qualityGates := []cdPipeApi.QualityGate{
 		{
 			QualityGateType: "autotests",
 			StepName:        "aut1",
@@ -135,7 +136,7 @@ func TestGetQualityGateStagesMethod_ShouldReturnParsedStagesScenarioFirst(t *tes
 }
 
 func TestGetQualityGateStagesMethod_ShouldReturnParsedStagesScenarioSecond(t *testing.T) {
-	qualityGates := []v1alpha1.QualityGate{
+	qualityGates := []cdPipeApi.QualityGate{
 		{
 			QualityGateType: "autotests",
 			StepName:        "aut1",
@@ -181,23 +182,23 @@ func TestGetQualityGateStagesMethod_ShouldReturnParsedStagesAsNilScenarioFirst(t
 }
 
 func TestGetQualityGateStagesMethod_ShouldReturnParsedStagesAsNilScenarioSecond(t *testing.T) {
-	var qualityGates []v1alpha1.QualityGate
+	var qualityGates []cdPipeApi.QualityGate
 	stages, err := getQualityGateStages(qualityGates)
 	assert.NoError(t, err)
 	assert.Nil(t, stages)
 }
 
 func TestCreateJenkinsJobConfig_Success(t *testing.T) {
-	cdPipeline := &v1alpha1.CDPipeline{
-		Spec: v1alpha1.CDPipelineSpec{
+	cdPipeline := &cdPipeApi.CDPipeline{
+		Spec: cdPipeApi.CDPipelineSpec{
 			DeploymentType: deploymentType,
 		},
-		Status: v1alpha1.CDPipelineStatus{},
+		Status: cdPipeApi.CDPipelineStatus{},
 	}
 
-	stage := v1alpha1.Stage{
-		Spec: v1alpha1.StageSpec{
-			QualityGates: []v1alpha1.QualityGate{
+	stage := cdPipeApi.Stage{
+		Spec: cdPipeApi.StageSpec{
+			QualityGates: []cdPipeApi.QualityGate{
 				{
 					QualityGateType: "autotests",
 				},
@@ -246,7 +247,7 @@ func TestTryToUpdateJenkinsJob_Success(t *testing.T) {
 	gitServer := putJenkinsJobCreateGitServer(t)
 
 	jenkinsJob := jenkinsApi.JenkinsJob{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
 		},
@@ -267,8 +268,8 @@ func TestTryToUpdateJenkinsJob_Success(t *testing.T) {
 }
 
 func TestTryToUpdateJenkinsJob_NotFound(t *testing.T) {
-	stage := v1alpha1.Stage{
-		ObjectMeta: metav1.ObjectMeta{
+	stage := cdPipeApi.Stage{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
 		},

@@ -3,14 +3,16 @@ package chain
 import (
 	"context"
 	"fmt"
-	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1alpha1"
+	"testing"
+
 	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
-	"testing"
+
+	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1"
 )
 
 func TestDeleteNamespace_NSDoestExists(t *testing.T) {
@@ -20,7 +22,7 @@ func TestDeleteNamespace_NSDoestExists(t *testing.T) {
 	}
 
 	s := &cdPipeApi.Stage{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
 		},
@@ -39,7 +41,7 @@ func TestDeleteNamespace_NSDoestExists(t *testing.T) {
 func TestDeleteNamespace_DeleteNS(t *testing.T) {
 	n := fmt.Sprintf("%v-%v", namespace, name)
 	ns := &v1.Namespace{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name: n,
 		},
 	}
@@ -50,7 +52,7 @@ func TestDeleteNamespace_DeleteNS(t *testing.T) {
 	}
 
 	s := &cdPipeApi.Stage{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
 		},

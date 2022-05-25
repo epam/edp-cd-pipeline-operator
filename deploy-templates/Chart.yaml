@@ -30,17 +30,17 @@ annotations:
   artifacthub.io/operatorCapabilities: Full Lifecycle
   artifacthub.io/crds: |
     - kind: CDPipeline
-      version: v2.edp.epam.com/v1alpha1
+      version: v2.edp.epam.com/v1
       name: cdpipeline
       displayName: CDPipeline
       description: Predefined configuration for EDP CDPipelines
     - kind: Stage
-      version: v2.edp.epam.com/v1alpha1
+      version: v2.edp.epam.com/v1
       name: stage
       displayName: Stage
       description: CD Stage management
   artifacthub.io/crdsExamples: |
-    - apiVersion: v2.edp.epam.com/v1alpha1
+    - apiVersion: v2.edp.epam.com/v1
       kind: CDPipeline
       metadata:
         name: clone-edp-javascript
@@ -53,7 +53,7 @@ annotations:
         inputDockerStreams:
           - javascript-clone-deploy-edp-clone
         name: clone-edp-javascript
-    - apiVersion: v2.edp.epam.com/v1alpha1
+    - apiVersion: v2.edp.epam.com/v1
       kind: Stage
       metadata:
         name: release-github-javascript-dev
