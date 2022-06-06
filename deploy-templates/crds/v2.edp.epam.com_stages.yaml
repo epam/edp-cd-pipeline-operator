@@ -100,7 +100,7 @@ spec:
                 - type
                 type: object
               triggerType:
-                description: Stage provisioning trigger type. E.g. Manual, Auto
+                description: Stage deployment trigger type. E.g. Manual, Auto
                 type: string
             required:
             - cdPipeline
@@ -161,6 +161,8 @@ spec:
         type: object
     served: true
     storage: true
+    subresources:
+      status: {}
   - deprecated: true
     name: v1alpha1
     schema:
@@ -308,6 +310,8 @@ spec:
         type: object
     served: true
     storage: false
+    subresources:
+      status: {}
 status:
   acceptedNames:
     kind: ""

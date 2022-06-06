@@ -159,7 +159,7 @@ CDPipelineStatus defines the observed state of CDPipeline
         <td><b>last_time_updated</b></td>
         <td>string</td>
         <td>
-          Information when  the last time the action were performed.<br/>
+          Information when the last time the action were performed.<br/>
           <br/>
             <i>Format</i>: date-time<br/>
         </td>
@@ -327,7 +327,7 @@ StageSpec defines the desired state of Stage
         <td><b>triggerType</b></td>
         <td>string</td>
         <td>
-          Stage provisioning trigger type. E.g. Manual, Auto<br/>
+          Stage deployment trigger type. E.g. Manual, Auto<br/>
         </td>
         <td>true</td>
       </tr></tbody>

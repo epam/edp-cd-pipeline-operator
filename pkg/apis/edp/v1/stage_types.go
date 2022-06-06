@@ -116,6 +116,7 @@ type StageStatus struct {
 }
 
 // +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
 // +kubebuilder:storageversion
 
 // Stage is the Schema for the stages API

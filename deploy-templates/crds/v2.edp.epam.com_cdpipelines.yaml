@@ -82,7 +82,7 @@ spec:
                   performed
                 type: string
               last_time_updated:
-                description: Information when  the last time the action were performed.
+                description: Information when the last time the action were performed.
                 format: date-time
                 type: string
               result:

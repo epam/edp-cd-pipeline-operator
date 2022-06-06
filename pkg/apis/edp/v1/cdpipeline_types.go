@@ -58,7 +58,7 @@ type CDPipelineStatus struct {
 	// This flag indicates neither CDPipeline are initialized and ready to work. Defaults to false.
 	Available bool `json:"available"`
 
-	// Information when  the last time the action were performed.
+	// Information when the last time the action were performed.
 	LastTimeUpdated metaV1.Time `json:"last_time_updated"`
 
 	// Specifies a current status of CDPipeline.

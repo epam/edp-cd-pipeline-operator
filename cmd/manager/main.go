@@ -4,14 +4,8 @@ import (
 	"flag"
 	"os"
 
-	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
-	buildInfo "github.com/epam/edp-common/pkg/config"
-	edpCompApi "github.com/epam/edp-component-operator/pkg/apis/v1/v1"
-	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1alpha1"
 	loftKioskApi "github.com/loft-sh/kiosk/pkg/apis/tenancy/v1alpha1"
 	k8sApi "k8s.io/api/rbac/v1"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
@@ -22,6 +16,11 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
+	buildInfo "github.com/epam/edp-common/pkg/config"
+	edpCompApi "github.com/epam/edp-component-operator/pkg/apis/v1/v1"
+	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1alpha1"
 
 	cdPipeApiV1 "github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1"
 	cdPipeApiV1Alpha1 "github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1alpha1"
@@ -115,24 +114,15 @@ func main() {
 		os.Exit(1)
 	}
 
-	cl, err := client.New(mgr.GetConfig(), client.Options{
-		Scheme: mgr.GetScheme(),
-		Mapper: mgr.GetRESTMapper(),
-	})
-	if err != nil {
-		setupLog.Error(err, "unable to create uncached client")
-		os.Exit(1)
-	}
-
 	ctrlLog := ctrl.Log.WithName("controllers")
 
-	cdPipeCtrl := cdpipeline.NewReconcileCDPipeline(cl, mgr.GetScheme(), ctrlLog)
+	cdPipeCtrl := cdpipeline.NewReconcileCDPipeline(mgr.GetClient(), mgr.GetScheme(), ctrlLog)
 	if err := cdPipeCtrl.SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "cd-pipeline")
 		os.Exit(1)
 	}
 
-	if err := stage.NewReconcileStage(cl, mgr.GetScheme(), ctrlLog).SetupWithManager(mgr); err != nil {
+	if err := stage.NewReconcileStage(mgr.GetClient(), mgr.GetScheme(), ctrlLog).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "cd-stage")
 		os.Exit(1)
 	}
