@@ -6,14 +6,14 @@ import (
 
 	loftKioskApi "github.com/loft-sh/kiosk/pkg/apis/tenancy/v1alpha1"
 	k8sApi "k8s.io/api/rbac/v1"
-	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
-	// to ensure that exec-entrypoint and run can make use of them.
-	_ "k8s.io/client-go/plugin/pkg/client/auth"
-
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
+	// to ensure that exec-entrypoint and run can make use of them.
+	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
@@ -114,15 +114,28 @@ func main() {
 		os.Exit(1)
 	}
 
+	// this operator requires access to resources outside his namespace
+	// for example: create a RoleBinding for each stage of each codebase (which are located in separate namespaces)
+	// in order to do so, we want to use separate client for accessing k8s resources
+	// because, client provided by controller manager are scoped only for operator namespace ¯\_(ツ)_/¯
+	cl, err := client.New(mgr.GetConfig(), client.Options{
+		Scheme: mgr.GetScheme(),
+		Mapper: mgr.GetRESTMapper(),
+	})
+	if err != nil {
+		setupLog.Error(err, "unable to create uncached client")
+		os.Exit(1)
+	}
+
 	ctrlLog := ctrl.Log.WithName("controllers")
 
-	cdPipeCtrl := cdpipeline.NewReconcileCDPipeline(mgr.GetClient(), mgr.GetScheme(), ctrlLog)
+	cdPipeCtrl := cdpipeline.NewReconcileCDPipeline(cl, mgr.GetScheme(), ctrlLog)
 	if err := cdPipeCtrl.SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "cd-pipeline")
 		os.Exit(1)
 	}
 
-	if err := stage.NewReconcileStage(mgr.GetClient(), mgr.GetScheme(), ctrlLog).SetupWithManager(mgr); err != nil {
+	if err := stage.NewReconcileStage(cl, mgr.GetScheme(), ctrlLog).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "cd-stage")
 		os.Exit(1)
 	}
