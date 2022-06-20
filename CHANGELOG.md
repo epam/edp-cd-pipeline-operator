@@ -3,6 +3,23 @@
 
 ### Features
 
+- Switch to use V1 version of CD Pipeline and Stage APIs [EPMDEDP-9214](https://jiraeu.epam.com/browse/EPMDEDP-9214)
+- Switch to V1 of edp-component-operator CRDs [EPMDEDP-9747](https://jiraeu.epam.com/browse/EPMDEDP-9747)
+
+### Bug Fixes
+
+- Update SonarQube ignore list [EPMDEDP-9214](https://jiraeu.epam.com/browse/EPMDEDP-9214)
+
+### Routine
+
+- Update current development version [EPMDEDP-8832](https://jiraeu.epam.com/browse/EPMDEDP-8832)
+- Update chart annotation [EPMDEDP-9515](https://jiraeu.epam.com/browse/EPMDEDP-9515)
+
+
+<a name="v2.11.0"></a>
+## [v2.11.0] - 2022-05-25
+### Features
+
 - Update Makefile changelog target [EPMDEDP-8218](https://jiraeu.epam.com/browse/EPMDEDP-8218)
 - Generate CRDs and helm docs automatically [EPMDEDP-8385](https://jiraeu.epam.com/browse/EPMDEDP-8385)
 - Add aplication field to CDPipeline CRD [EPMDEDP-8929](https://jiraeu.epam.com/browse/EPMDEDP-8929)
@@ -104,7 +121,8 @@
 <a name="v2.7.0"></a>
 ## [v2.7.0] - 2021-12-03
 
-[Unreleased]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.10.0...HEAD
+[Unreleased]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.11.0...HEAD
+[v2.11.0]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.10.0...v2.11.0
 [v2.10.0]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.9.0...v2.10.0
 [v2.9.0]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.8.2...v2.9.0
 [v2.8.2]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.8.1...v2.8.2
