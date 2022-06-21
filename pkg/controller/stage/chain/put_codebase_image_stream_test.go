@@ -16,7 +16,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
 	k8sMockClient "github.com/epam/edp-common/pkg/mock/controller-runtime/client"
 	componentApi "github.com/epam/edp-component-operator/pkg/apis/v1/v1"
 
@@ -73,7 +73,7 @@ func TestPutCodebaseImageStream_ShouldCreateCis(t *testing.T) {
 
 	scheme := runtime.NewScheme()
 	scheme.AddKnownTypes(v1.SchemeGroupVersion, cdp, s, ec)
-	scheme.AddKnownTypes(schema.GroupVersion{Group: "v2.edp.epam.com", Version: "v1alpha1"}, cis)
+	scheme.AddKnownTypes(schema.GroupVersion{Group: "v2.edp.epam.com", Version: "v1"}, cis)
 	client := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(cdp, s, ec, cis).Build()
 
 	cisChain := PutCodebaseImageStream{
@@ -226,7 +226,7 @@ func TestPutCodebaseImageStream_ShouldNotFindCbis(t *testing.T) {
 
 	scheme := runtime.NewScheme()
 	scheme.AddKnownTypes(v1.SchemeGroupVersion, cdp, s, ec)
-	scheme.AddKnownTypes(schema.GroupVersion{Group: "v2.edp.epam.com", Version: "v1alpha1"}, cis)
+	scheme.AddKnownTypes(schema.GroupVersion{Group: "v2.edp.epam.com", Version: "v1"}, cis)
 	client := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(cdp, s, ec).Build()
 
 	cisChain := PutCodebaseImageStream{
@@ -302,7 +302,7 @@ func TestPutCodebaseImageStream_ShouldNotFailWithExistingCbis(t *testing.T) {
 
 	scheme := runtime.NewScheme()
 	scheme.AddKnownTypes(v1.SchemeGroupVersion, cdp, s, ec)
-	scheme.AddKnownTypes(schema.GroupVersion{Group: "v2.edp.epam.com", Version: "v1alpha1"}, cis, exsitingCis)
+	scheme.AddKnownTypes(schema.GroupVersion{Group: "v2.edp.epam.com", Version: "v1"}, cis, exsitingCis)
 	client := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(cdp, s, ec, cis, exsitingCis).Build()
 
 	cisChain := PutCodebaseImageStream{
@@ -374,7 +374,7 @@ func TestPutCodebaseImageStream_ShouldFailCreatingCbis(t *testing.T) {
 
 	exsitingCis := &codebaseApi.CodebaseImageStream{
 		TypeMeta: metaV1.TypeMeta{
-			APIVersion: "v2.edp.epam.com/v1alpha1",
+			APIVersion: "v2.edp.epam.com/v1",
 			Kind:       "CodebaseImageStream",
 		},
 		ObjectMeta: metaV1.ObjectMeta{
@@ -389,7 +389,7 @@ func TestPutCodebaseImageStream_ShouldFailCreatingCbis(t *testing.T) {
 
 	scheme := runtime.NewScheme()
 	scheme.AddKnownTypes(v1.SchemeGroupVersion, cdp, s, ec)
-	scheme.AddKnownTypes(schema.GroupVersion{Group: "v2.edp.epam.com", Version: "v1alpha1"}, cis)
+	scheme.AddKnownTypes(schema.GroupVersion{Group: "v2.edp.epam.com", Version: "v1"}, cis)
 	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(cdp, s, ec, cis).Build()
 
 	mockErr := errors.New("fatal")

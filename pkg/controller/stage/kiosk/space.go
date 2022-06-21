@@ -2,14 +2,16 @@ package kiosk
 
 import (
 	"context"
-	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/controller/stage/chain/util"
-	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/common"
+
 	"github.com/go-logr/logr"
 	loftKioskApi "github.com/loft-sh/kiosk/pkg/apis/tenancy/v1alpha1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/controller/stage/chain/util"
+	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/common"
 )
 
 type SpaceManager interface {
@@ -34,7 +36,7 @@ func (s Space) Create(name, account string) error {
 	log := s.Log.WithValues("name", name)
 	log.Info("creating loft kiosk space")
 	space := &loftKioskApi.Space{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name: name,
 			Labels: map[string]string{
 				util.TenantLabelName: account,
@@ -68,7 +70,7 @@ func (s Space) Delete(name string) error {
 	log := s.Log.WithValues("name", name)
 	log.Info("deleting loft kiosk space")
 	if err := s.Client.Delete(context.Background(), &loftKioskApi.Space{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: metaV1.ObjectMeta{
 			Name: name,
 		},
 	}, &client.DeleteOptions{

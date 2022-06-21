@@ -15,10 +15,10 @@ replace (
 
 require (
 	github.com/bndr/gojenkins v0.2.1-0.20181125150310-de43c03cf849
-	github.com/epam/edp-codebase-operator/v2 v2.3.0-95.0.20211130102103-b05e463cf62b
+	github.com/epam/edp-codebase-operator/v2 v2.3.0-95.0.20220620144619-fbabdf9c4409
 	github.com/epam/edp-common v0.0.0-20211206180607-3e1ca60d6e4a
 	github.com/epam/edp-component-operator v0.1.1-0.20220520092339-3063cc593800
-	github.com/epam/edp-jenkins-operator/v2 v2.3.0-130.0.20211129152322-3fdc74f98b19
+	github.com/epam/edp-jenkins-operator/v2 v2.3.0-130.0.20220620155815-23e0ee37a393
 	github.com/go-logr/logr v0.4.0
 	github.com/go-openapi/spec v0.19.5
 	github.com/jarcoal/httpmock v1.0.8

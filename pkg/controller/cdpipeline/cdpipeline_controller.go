@@ -17,7 +17,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1alpha1"
+	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1"
 
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/consts"
@@ -118,7 +118,7 @@ func (r *ReconcileCDPipeline) createJenkinsFolder(ctx context.Context, p cdPipeA
 	log.V(2).Info("start creating JenkinsFolder CR", "name", jfn)
 	jf := &jenkinsApi.JenkinsFolder{
 		TypeMeta: metaV1.TypeMeta{
-			APIVersion: "v2.edp.epam.com/v1alpha1",
+			APIVersion: "v2.edp.epam.com/v1",
 			Kind:       "JenkinsFolder",
 		},
 		ObjectMeta: metaV1.ObjectMeta{

@@ -14,7 +14,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1alpha1"
+	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1"
 
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/finalizer"
@@ -224,7 +224,7 @@ func TestCreateJenkinsFolder_AlreadyExists(t *testing.T) {
 
 	jenkins := &jenkinsApi.JenkinsFolder{
 		TypeMeta: metaV1.TypeMeta{
-			APIVersion: "v2.edp.epam.com/v1alpha1",
+			APIVersion: "v2.edp.epam.com/v1",
 			Kind:       jenkinsKind,
 		},
 		ObjectMeta: metaV1.ObjectMeta{

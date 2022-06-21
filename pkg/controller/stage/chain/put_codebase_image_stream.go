@@ -11,7 +11,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1alpha1"
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
 	componentApi "github.com/epam/edp-component-operator/pkg/apis/v1/v1"
 
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1"
@@ -74,7 +74,7 @@ func (h PutCodebaseImageStream) getDockerRegistryEdpComponent(namespace string) 
 func (h PutCodebaseImageStream) createCodebaseImageStreamIfNotExists(name, imageName, codebaseName, namespace string) error {
 	cis := &codebaseApi.CodebaseImageStream{
 		TypeMeta: metaV1.TypeMeta{
-			APIVersion: "v2.edp.epam.com/v1alpha1",
+			APIVersion: "v2.edp.epam.com/v1",
 			Kind:       "CodebaseImageStream",
 		},
 		ObjectMeta: metaV1.ObjectMeta{

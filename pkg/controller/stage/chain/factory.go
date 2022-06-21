@@ -76,7 +76,7 @@ func createDefDeleteChain(client client.Client) handler.CdStageHandler {
 func getDefChain(client client.Client, triggerType string) handler.CdStageHandler {
 	rbac := rbac.InitRbacManager(client)
 	if consts.AutoDeployTriggerType == triggerType {
-		log = log.WithName("create-chain").WithName("auto-deploy")
+		log := log.WithName("create-chain").WithName("auto-deploy")
 		return PutCodebaseImageStream{
 			next: PutNamespace{
 				next: ConfigureRbac{
@@ -107,7 +107,7 @@ func getDefChain(client client.Client, triggerType string) handler.CdStageHandle
 			log:    log.WithName("put-codebase-image-stream-chain"),
 		}
 	}
-	log = log.WithName("create-chain").WithName("manual-deploy")
+	log := log.WithName("create-chain").WithName("manual-deploy")
 	return PutCodebaseImageStream{
 		next: PutNamespace{
 			next: ConfigureRbac{
@@ -135,7 +135,7 @@ func getKioskChain(client client.Client, triggerType string) handler.CdStageHand
 	space := kiosk.InitSpace(client)
 	rbac := rbac.InitRbacManager(client)
 	if consts.AutoDeployTriggerType == triggerType {
-		log = log.WithName("create-chain").WithName("auto-deploy")
+		log := log.WithName("create-chain").WithName("auto-deploy")
 		return PutCodebaseImageStream{
 			next: PutKioskSpace{
 				next: ConfigureRbac{
@@ -167,7 +167,7 @@ func getKioskChain(client client.Client, triggerType string) handler.CdStageHand
 			log:    log.WithName("put-codebase-image-stream-chain"),
 		}
 	}
-	log = log.WithName("create-chain").WithName("manual-deploy")
+	log := log.WithName("create-chain").WithName("manual-deploy")
 	return PutCodebaseImageStream{
 		next: PutKioskSpace{
 			next: ConfigureRbac{
