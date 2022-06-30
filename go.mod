@@ -1,6 +1,6 @@
 module github.com/epam/edp-cd-pipeline-operator/v2
 
-go 1.17
+go 1.18
 
 replace (
 	github.com/googleapis/gnostic => github.com/googleapis/gnostic v0.4.1
@@ -20,7 +20,6 @@ require (
 	github.com/epam/edp-component-operator v0.1.1-0.20220520092339-3063cc593800
 	github.com/epam/edp-jenkins-operator/v2 v2.3.0-130.0.20220620155815-23e0ee37a393
 	github.com/go-logr/logr v0.4.0
-	github.com/go-openapi/spec v0.19.5
 	github.com/jarcoal/httpmock v1.0.8
 	github.com/loft-sh/kiosk v0.2.4
 	github.com/pkg/errors v0.9.1
@@ -28,7 +27,6 @@ require (
 	k8s.io/api v0.21.0-rc.0
 	k8s.io/apimachinery v0.21.0-rc.0
 	k8s.io/client-go v0.20.2
-	k8s.io/kube-openapi v0.0.0-20210305001622-591a79e4bda7
 	sigs.k8s.io/controller-runtime v0.8.3
 )
 
@@ -57,6 +55,7 @@ require (
 	github.com/go-logr/zapr v0.2.0 // indirect
 	github.com/go-openapi/jsonpointer v0.19.3 // indirect
 	github.com/go-openapi/jsonreference v0.19.3 // indirect
+	github.com/go-openapi/spec v0.19.5 // indirect
 	github.com/go-openapi/swag v0.19.5 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e // indirect
@@ -108,6 +107,7 @@ require (
 	k8s.io/apiserver v0.20.2 // indirect
 	k8s.io/component-base v0.20.2 // indirect
 	k8s.io/klog/v2 v2.8.0 // indirect
+	k8s.io/kube-openapi v0.0.0-20210305001622-591a79e4bda7 // indirect
 	k8s.io/utils v0.0.0-20210111153108-fddb29f9d009 // indirect
 	sigs.k8s.io/apiserver-builder-alpha v1.18.0 // indirect
 	sigs.k8s.io/apiserver-network-proxy/konnectivity-client v0.0.14 // indirect
