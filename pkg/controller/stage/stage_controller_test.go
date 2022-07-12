@@ -8,6 +8,7 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
 	k8sApi "k8s.io/api/rbac/v1"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
@@ -329,7 +330,7 @@ func TestReconcileStage_Reconcile_Success(t *testing.T) {
 		Namespace: namespace,
 		Name:      name,
 	}})
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	previousImageStream, err := cluster.GetCodebaseImageStream(reconcileStage.client, dockerImageName, namespace)
 	assert.NoError(t, err)
@@ -405,11 +406,16 @@ func TestReconcileStage_ReconcileReconcile_SetOwnerRef(t *testing.T) {
 		Namespace: namespace,
 		Name:      name,
 	}})
-	assert.NoError(t, err)
+	require.NoError(t, err)
+
+	expectedLabels := map[string]string{
+		"app.edp.epam.com/cdPipelineName": cdPipeline.Name,
+	}
 
 	stageAfterReconcile := getStage(t, reconcileStage.client, name)
 	assert.Equal(t, cdPipeline.Name, stageAfterReconcile.OwnerReferences[0].Name)
 	assert.Equal(t, consts.FinishedStatus, stageAfterReconcile.Status.Status)
+	assert.Equal(t, expectedLabels, stageAfterReconcile.Labels)
 }
 
 func TestReconcileStage_Reconcile_StageIsNotFound(t *testing.T) {

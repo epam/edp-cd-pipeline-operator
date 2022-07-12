@@ -95,6 +95,10 @@ func (r *ReconcileStage) Reconcile(ctx context.Context, request reconcile.Reques
 		return reconcile.Result{RequeueAfter: 5 * time.Second}, err
 	}
 
+	if err := r.initLabels(ctx, i); err != nil {
+		return reconcile.Result{}, errors.Wrap(err, "fail to init labels for stage")
+	}
+
 	if err := chain.CreateChain(r.client, i.Spec.TriggerType).ServeRequest(i); err != nil {
 		switch errors.Cause(err).(type) {
 		case edpError.CISNotFound:
@@ -176,4 +180,27 @@ func (r *ReconcileStage) setFinishStatus(ctx context.Context, s *cdPipeApi.Stage
 		}
 	}
 	return nil
+}
+
+func (r *ReconcileStage) initLabels(ctx context.Context, s *cdPipeApi.Stage) error {
+	const codebaseTypeLabelName = "app.edp.epam.com/cdPipelineName"
+
+	r.log.Info("Trying to update labels for stage", "name", s.Name)
+
+	originalStage := s.DeepCopy()
+
+	labels := s.GetLabels()
+	if labels == nil {
+		labels = make(map[string]string)
+	}
+
+	if _, ok := labels[codebaseTypeLabelName]; ok {
+		r.log.Info("Stage already has label", "name", s.Name, "label", codebaseTypeLabelName)
+		return nil
+	}
+
+	labels[codebaseTypeLabelName] = s.Spec.CdPipeline
+	s.SetLabels(labels)
+
+	return r.client.Patch(ctx, s, client.MergeFrom(originalStage))
 }
