@@ -16,6 +16,7 @@ import (
 )
 
 const (
+	roleKind                       = "Role"
 	clusterRoleKind                = "ClusterRole"
 	serviceAccountKind             = "ServiceAccount"
 	adminConsoleServiceAccountName = "edp-admin-console"
@@ -24,6 +25,9 @@ const (
 	viewClusterRoleName            = "view"
 	clusterOpenshiftType           = "openshift"
 	groupKind                      = "Group"
+	acViewRoleName                 = "admin-console-view-deployments"
+	acViewRbName                   = "ac-deployments-viewer"
+	jenkinsAdminRbName             = "jenkins-admin"
 )
 
 type ConfigureRbac struct {
@@ -36,19 +40,22 @@ type ConfigureRbac struct {
 type options struct {
 	subjects []k8sApi.Subject
 	rf       k8sApi.RoleRef
+	pr       []k8sApi.PolicyRule
 }
 
 func (h ConfigureRbac) ServeRequest(stage *cdPipeApi.Stage) error {
 	targetNamespace := generateTargetNamespaceName(stage)
 	log := h.log.WithValues("namespace", targetNamespace)
 	log.Info("configuring rbac for newly created namespace")
-	acViewRbName := generateAcViewRbName(targetNamespace)
+
 	acViewOpts := buildAcViewRoleOptions(stage.Namespace)
+	if err := h.createRole(acViewRoleName, targetNamespace, acViewOpts); err != nil {
+		return err
+	}
 	if err := h.createRoleBinding(acViewRbName, targetNamespace, acViewOpts); err != nil {
 		return err
 	}
 
-	jenkinsAdminRbName := generateJenkinsAdminRbName(stage.Namespace)
 	jenkinsAdminOpts := buildJenkinsAdminRoleOptions(stage.Namespace)
 	if err := h.createRoleBinding(jenkinsAdminRbName, targetNamespace, jenkinsAdminOpts); err != nil {
 		return err
@@ -96,6 +103,37 @@ func (h ConfigureRbac) createRoleBinding(rbName, namespace string, opts options)
 	return nil
 }
 
+func (h ConfigureRbac) roleExists(name, namespace string) (bool, error) {
+	log := h.log.WithValues("name", name, "namespace", namespace)
+	log.Info("check existence of role")
+	if _, err := h.rbac.GetRole(name, namespace); err != nil {
+		if k8sErrors.IsNotFound(err) {
+			log.Info("role doesn't exist")
+			return false, nil
+		}
+		return false, err
+	}
+	log.Info("rolebinding exists")
+	return true, nil
+}
+
+func (h ConfigureRbac) createRole(rName, namespace string, opts options) error {
+	exists, err := h.roleExists(rName, namespace)
+	if err != nil {
+		return errors.Wrapf(err, "unable to check existence of %s role", rName)
+	}
+
+	if exists {
+		log.Info("skip creating role as it does exist", "name", rName, "namespace", namespace)
+		return nil
+	}
+
+	if err := h.rbac.CreateRole(rName, namespace, opts.pr); err != nil {
+		return errors.Wrapf(err, "unable to create %s role", rName)
+	}
+	return nil
+}
+
 func buildAcViewRoleOptions(sourceNamespace string) options {
 	return options{
 		subjects: []k8sApi.Subject{
@@ -106,9 +144,16 @@ func buildAcViewRoleOptions(sourceNamespace string) options {
 			},
 		},
 		rf: k8sApi.RoleRef{
-			Name:     fmt.Sprintf("edp-%v-deployment-view", sourceNamespace),
+			Name:     acViewRoleName,
 			APIGroup: k8sApi.GroupName,
-			Kind:     clusterRoleKind,
+			Kind:     roleKind,
+		},
+		pr: []k8sApi.PolicyRule{
+			{
+				Verbs:     []string{"get", "list"},
+				APIGroups: []string{"apps"},
+				Resources: []string{"deployments"},
+			},
 		},
 	}
 }
@@ -169,14 +214,6 @@ func buildViewGroupRoleOptions(sourceNamespace string) options {
 
 func generateTargetNamespaceName(stage *cdPipeApi.Stage) string {
 	return fmt.Sprintf("%s-%s", stage.Namespace, stage.Name)
-}
-
-func generateAcViewRbName(targetNamespace string) string {
-	return fmt.Sprintf("%s-deployment-view", targetNamespace)
-}
-
-func generateJenkinsAdminRbName(namespace string) string {
-	return fmt.Sprintf("%s-admin", namespace)
 }
 
 func generateViewGroupRbName(namespace string) string {

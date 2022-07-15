@@ -342,7 +342,9 @@ func TestReconcileStage_Reconcile_Success(t *testing.T) {
 
 func TestReconcileStage_ReconcileReconcile_SetOwnerRef(t *testing.T) {
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(k8sApi.SchemeGroupVersion, &cdPipeApi.Stage{}, &cdPipeApi.CDPipeline{}, &codebaseApi.CodebaseImageStream{}, &v1.Namespace{}, &componentApi.EDPComponent{}, &k8sApi.RoleBinding{}, &jenkinsApi.JenkinsJob{})
+	scheme.AddKnownTypes(k8sApi.SchemeGroupVersion, &cdPipeApi.Stage{},
+		&cdPipeApi.CDPipeline{}, &codebaseApi.CodebaseImageStream{}, &v1.Namespace{},
+		&componentApi.EDPComponent{}, &k8sApi.RoleBinding{}, &k8sApi.Role{}, &jenkinsApi.JenkinsJob{})
 
 	edpComponent := &componentApi.EDPComponent{
 		TypeMeta: metaV1.TypeMeta{},

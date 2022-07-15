@@ -23,7 +23,7 @@ const (
 func emptyRbacInit(t *testing.T) KubernetesRbac {
 	t.Helper()
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(k8sApi.SchemeGroupVersion, &k8sApi.RoleBinding{})
+	scheme.AddKnownTypes(k8sApi.SchemeGroupVersion, &k8sApi.RoleBinding{}, &k8sApi.Role{})
 	client := fake.NewClientBuilder().WithScheme(scheme).Build()
 
 	return KubernetesRbac{
@@ -46,6 +46,21 @@ func expectedRbacInit(t *testing.T) *k8sApi.RoleBinding {
 		},
 		Subjects: nil,
 		RoleRef:  k8sApi.RoleRef{},
+	}
+}
+
+func expectedRoleInit(t *testing.T) *k8sApi.Role {
+	t.Helper()
+	return &k8sApi.Role{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Role",
+			APIVersion: "rbac.authorization.k8s.io/v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:            name,
+			Namespace:       namespace,
+			ResourceVersion: resourceVersion,
+		},
 	}
 }
 
@@ -89,6 +104,38 @@ func TestGetRoleBinding_Success(t *testing.T) {
 	assert.NoError(t, err)
 
 	createdRbac, err := rbac.GetRoleBinding(name, namespace)
+	assert.NoError(t, err)
+
+	assert.Equal(t, expectedRbac, createdRbac)
+}
+
+func TestCreateRole_Success(t *testing.T) {
+	rbac := emptyRbacInit(t)
+
+	expectedRbac := expectedRoleInit(t)
+
+	err := rbac.CreateRole(name, namespace, nil)
+	assert.NoError(t, err)
+
+	createdRbac := &k8sApi.Role{}
+	err = rbac.client.Get(context.Background(), types.NamespacedName{
+		Namespace: namespace,
+		Name:      name,
+	}, createdRbac)
+	assert.NoError(t, err)
+
+	assert.Equal(t, expectedRbac, createdRbac)
+}
+
+func TestGetRole_Success(t *testing.T) {
+	rbac := emptyRbacInit(t)
+
+	expectedRbac := expectedRoleInit(t)
+
+	err := rbac.CreateRole(name, namespace, nil)
+	assert.NoError(t, err)
+
+	createdRbac, err := rbac.GetRole(name, namespace)
 	assert.NoError(t, err)
 
 	assert.Equal(t, expectedRbac, createdRbac)

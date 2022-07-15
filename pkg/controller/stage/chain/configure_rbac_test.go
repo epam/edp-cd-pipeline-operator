@@ -29,7 +29,7 @@ const (
 func createFakeClient(t *testing.T) client.Client {
 	t.Helper()
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(k8sApi.SchemeGroupVersion, &k8sApi.RoleBinding{})
+	scheme.AddKnownTypes(k8sApi.SchemeGroupVersion, &k8sApi.RoleBinding{}, &k8sApi.Role{})
 	return fake.NewClientBuilder().WithScheme(scheme).Build()
 }
 
@@ -54,7 +54,7 @@ func getConfigureRbac(t *testing.T, configureRbac ConfigureRbac, name, namespace
 
 func TestConfigureRbac_ServeRequest_Success(t *testing.T) {
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(k8sApi.SchemeGroupVersion, &k8sApi.RoleBinding{}, &cdPipeApi.Stage{})
+	scheme.AddKnownTypes(k8sApi.SchemeGroupVersion, &k8sApi.RoleBinding{}, &k8sApi.Role{}, &cdPipeApi.Stage{})
 	fakeClient := fake.NewClientBuilder().WithScheme(scheme).Build()
 	rbacManager := rbac.InitRbacManager(fakeClient)
 	configureRbac := createConfigureRbac(t, fakeClient, rbacManager)
@@ -67,8 +67,6 @@ func TestConfigureRbac_ServeRequest_Success(t *testing.T) {
 	}
 
 	targetNamespace := generateTargetNamespaceName(stage)
-	acViewRbName := generateAcViewRbName(targetNamespace)
-	jenkinsAdminRbName := generateJenkinsAdminRbName(stage.Namespace)
 	viewGroupRbName := generateViewGroupRbName(stage.Namespace)
 
 	err := configureRbac.ServeRequest(stage)
@@ -97,7 +95,7 @@ func TestConfigureRbac_ServeRequest_DifferentPlatformType(t *testing.T) {
 	}()
 
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(k8sApi.SchemeGroupVersion, &k8sApi.RoleBinding{}, &cdPipeApi.Stage{})
+	scheme.AddKnownTypes(k8sApi.SchemeGroupVersion, &k8sApi.RoleBinding{}, &k8sApi.Role{}, &cdPipeApi.Stage{})
 	fakeClient := fake.NewClientBuilder().WithScheme(scheme).Build()
 
 	rbacManager := rbac.InitRbacManager(fakeClient)
@@ -141,6 +139,30 @@ func TestRoleBindingExists_False(t *testing.T) {
 	configureRbac := createConfigureRbac(t, fakeClient, rbacManager)
 
 	exists, err := configureRbac.roleBindingExists(name, namespace)
+	assert.NoError(t, err)
+	assert.False(t, exists)
+}
+
+func TestRoleExists_True(t *testing.T) {
+	fakeClient := createFakeClient(t)
+	rbacManager := rbac.InitRbacManager(fakeClient)
+
+	configureRbac := createConfigureRbac(t, fakeClient, rbacManager)
+
+	err := rbacManager.CreateRole(name, namespace, nil)
+	assert.NoError(t, err)
+	exists, err := configureRbac.roleExists(name, namespace)
+	assert.NoError(t, err)
+	assert.True(t, exists)
+}
+
+func TestRoleExists_False(t *testing.T) {
+	fakeClient := createFakeClient(t)
+	rbacManager := rbac.InitRbacManager(fakeClient)
+
+	configureRbac := createConfigureRbac(t, fakeClient, rbacManager)
+
+	exists, err := configureRbac.roleExists(name, namespace)
 	assert.NoError(t, err)
 	assert.False(t, exists)
 }
@@ -193,6 +215,38 @@ func TestCreateRoleBinding_AlreadyExists(t *testing.T) {
 	roleBinding, err := rbacManager.GetRoleBinding(name, namespace)
 	assert.NoError(t, err)
 	assert.Equal(t, resourceVersion, roleBinding.ResourceVersion)
+}
+
+func TestCreateRole_AlreadyExists(t *testing.T) {
+	options := options{
+		subjects: nil,
+		rf:       k8sApi.RoleRef{},
+		pr:       []k8sApi.PolicyRule{},
+	}
+
+	preCreatedRole := &k8sApi.Role{
+		ObjectMeta: metaV1.ObjectMeta{
+			Name:            name,
+			Namespace:       namespace,
+			ResourceVersion: resourceVersion,
+		},
+		Rules: []k8sApi.PolicyRule{},
+	}
+
+	scheme := runtime.NewScheme()
+	scheme.AddKnownTypes(k8sApi.SchemeGroupVersion, &k8sApi.Role{})
+	fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(preCreatedRole).Build()
+
+	rbacManager := rbac.InitRbacManager(fakeClient)
+
+	configureRbac := createConfigureRbac(t, fakeClient, rbacManager)
+
+	err := configureRbac.createRole(name, namespace, options)
+	assert.Equal(t, err, nil)
+
+	r, err := rbacManager.GetRole(name, namespace)
+	assert.NoError(t, err)
+	assert.Equal(t, resourceVersion, r.ResourceVersion)
 }
 
 func TestBuildJenkinsAdminRoleOptions_Success(t *testing.T) {
@@ -256,9 +310,16 @@ func TestBuildAcViewRoleOptions_Success(t *testing.T) {
 			},
 		},
 		rf: k8sApi.RoleRef{
-			Name:     fmt.Sprintf("edp-%v-deployment-view", namespace),
+			Name:     acViewRoleName,
 			APIGroup: k8sApi.GroupName,
-			Kind:     clusterRoleKind,
+			Kind:     roleKind,
+		},
+		pr: []k8sApi.PolicyRule{
+			{
+				Verbs:     []string{"get", "list"},
+				APIGroups: []string{"apps"},
+				Resources: []string{"deployments"},
+			},
 		},
 	}
 
