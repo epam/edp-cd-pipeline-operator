@@ -25,8 +25,8 @@ annotations:
   artifacthub.io/images: |
     - name: cd-pipeline-operator:2.11.0
       image: epamedp/cd-pipeline-operator:2.11.0
-    - name: alpine:3.15.4
-      image: alpine:3.15.4
+    - name: alpine:3.16.1
+      image: alpine:3.16.1
   artifacthub.io/operatorCapabilities: Full Lifecycle
   artifacthub.io/crds: |
     - kind: CDPipeline
