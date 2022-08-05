@@ -50,7 +50,7 @@ func (h PutEnvironmentLabelToCodebaseImageStreams) ServeRequest(stage *cdPipeApi
 			continue
 		}
 
-		previousStageName, err := util.FindPreviousStageName(stage.GetAnnotations())
+		previousStageName, err := util.FindPreviousStageName(context.TODO(), h.client, stage)
 		if err != nil {
 			return err
 		}

@@ -244,7 +244,7 @@ Stage is the Schema for the stages API
         <td><b><a href="#stagespec">spec</a></b></td>
         <td>object</td>
         <td>
-          StageSpec defines the desired state of Stage<br/>
+          StageSpec defines the desired state of Stage. NOTE: for deleting the stage use stages order - delete only the latest stage.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -263,7 +263,7 @@ Stage is the Schema for the stages API
 
 
 
-StageSpec defines the desired state of Stage
+StageSpec defines the desired state of Stage. NOTE: for deleting the stage use stages order - delete only the latest stage.
 
 <table>
     <thead>
@@ -306,7 +306,7 @@ StageSpec defines the desired state of Stage
         <td><b>order</b></td>
         <td>integer</td>
         <td>
-          The order to lay out Stages<br/>
+          The order to lay out Stages. The order should start from 0, and the next stages should use +1 for the order.<br/>
         </td>
         <td>true</td>
       </tr><tr>

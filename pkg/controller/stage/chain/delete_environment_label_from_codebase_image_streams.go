@@ -89,7 +89,7 @@ func (h DeleteEnvironmentLabelFromCodebaseImageStreams) setEnvLabel(stageName, p
 }
 
 func (h DeleteEnvironmentLabelFromCodebaseImageStreams) setEnvLabelForVerifiedImageStream(stage *cdPipeApi.Stage, stream *codebaseApi.CodebaseImageStream, pipeName, dockerStreamName string) error {
-	previousStageName, err := util.FindPreviousStageName(stage.GetAnnotations())
+	previousStageName, err := util.FindPreviousStageName(context.TODO(), h.client, stage)
 	if err != nil {
 		return err
 	}

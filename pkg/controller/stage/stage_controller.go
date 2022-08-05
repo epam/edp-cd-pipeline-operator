@@ -183,8 +183,6 @@ func (r *ReconcileStage) setFinishStatus(ctx context.Context, s *cdPipeApi.Stage
 }
 
 func (r *ReconcileStage) initLabels(ctx context.Context, s *cdPipeApi.Stage) error {
-	const codebaseTypeLabelName = "app.edp.epam.com/cdPipelineName"
-
 	r.log.Info("Trying to update labels for stage", "name", s.Name)
 
 	originalStage := s.DeepCopy()
@@ -194,12 +192,12 @@ func (r *ReconcileStage) initLabels(ctx context.Context, s *cdPipeApi.Stage) err
 		labels = make(map[string]string)
 	}
 
-	if _, ok := labels[codebaseTypeLabelName]; ok {
-		r.log.Info("Stage already has label", "name", s.Name, "label", codebaseTypeLabelName)
+	if _, ok := labels[cdPipeApi.CodebaseTypeLabelName]; ok {
+		r.log.Info("Stage already has label", "name", s.Name, "label", cdPipeApi.CodebaseTypeLabelName)
 		return nil
 	}
 
-	labels[codebaseTypeLabelName] = s.Spec.CdPipeline
+	labels[cdPipeApi.CodebaseTypeLabelName] = s.Spec.CdPipeline
 	s.SetLabels(labels)
 
 	return r.client.Patch(ctx, s, client.MergeFrom(originalStage))

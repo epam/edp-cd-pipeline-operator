@@ -62,11 +62,11 @@ func TestServeRequest_Success(t *testing.T) {
 }
 
 func TestDeleteEnvironmentLabel_VerifiedImageStream(t *testing.T) {
-	annotations := make(map[string]string)
-	annotations[previousStageNameAnnotationKey] = previousStageName
-
 	stage := createStage(t, 1, cdPipeline)
-	stage.Annotations = annotations
+	prevStage := createStage(t, 0, cdPipeline)
+	prevStage.Name = previousStageName
+	prevStage.Spec.Name = previousStageName
+	prevStage.Labels = map[string]string{cdPipeApi.CodebaseTypeLabelName: cdPipeline}
 
 	cisName := createCisName(name, previousStageName, codebase)
 
@@ -105,7 +105,7 @@ func TestDeleteEnvironmentLabel_VerifiedImageStream(t *testing.T) {
 	}
 
 	deleteEnvLabel := DeleteEnvironmentLabelFromCodebaseImageStreams{
-		client: fake.NewClientBuilder().WithScheme(schemeInit(t)).WithObjects(&stage, &cdPipeline, &image, &previousImage).Build(),
+		client: fake.NewClientBuilder().WithScheme(schemeInit(t)).WithObjects(&stage, &prevStage, &cdPipeline, &image, &previousImage).Build(),
 		log:    logr.DiscardLogger{},
 	}
 
@@ -129,9 +129,10 @@ func TestDeleteEnvironmentLabel_ApplicationToPromote(t *testing.T) {
 	cisName := createCisName(name, previousStageName, codebase)
 
 	stage := createStage(t, 1, cdPipeline)
-	annotations := make(map[string]string)
-	annotations[previousStageNameAnnotationKey] = previousStageName
-	stage.Annotations = annotations
+	prevStage := createStage(t, 0, cdPipeline)
+	prevStage.Name = previousStageName
+	prevStage.Spec.Name = previousStageName
+	prevStage.Labels = map[string]string{cdPipeApi.CodebaseTypeLabelName: cdPipeline}
 
 	cdPipeline := cdPipeApi.CDPipeline{
 		ObjectMeta: metaV1.ObjectMeta{
@@ -166,7 +167,7 @@ func TestDeleteEnvironmentLabel_ApplicationToPromote(t *testing.T) {
 	}
 
 	deleteEnvLabel := DeleteEnvironmentLabelFromCodebaseImageStreams{
-		client: fake.NewClientBuilder().WithScheme(schemeInit(t)).WithObjects(&stage, &cdPipeline, &image, &previousImage).Build(),
+		client: fake.NewClientBuilder().WithScheme(schemeInit(t)).WithObjects(&stage, &prevStage, &cdPipeline, &image, &previousImage).Build(),
 		log:    logr.DiscardLogger{},
 	}
 
@@ -239,7 +240,7 @@ func TestDeleteEnvironmentLabel_CantGetImageDockerStream(t *testing.T) {
 	assert.True(t, k8sErrors.IsNotFound(err))
 }
 
-func TestSetDeleteEnvironmentLabel_SetEnvLabelForVerifiedImageStreamError(t *testing.T) {
+func TestSetDeleteEnvironmentLabel_NoPreviousStageError(t *testing.T) {
 	labels := make(map[string]string)
 	labels[createLabelName(name, name)] = labelValue
 
@@ -284,33 +285,15 @@ func TestSetDeleteEnvironmentLabel_SetEnvLabelForVerifiedImageStreamError(t *tes
 	}
 
 	err := deleteEnvLabel.deleteEnvironmentLabel(&stage)
-	assert.Equal(t, fmt.Errorf("there're no any annotation"), err)
-}
-
-func TestSetEnvLabelForVerifiedImageStream_NoAnnotations(t *testing.T) {
-	stage := createStage(t, 0, cdPipeline)
-
-	image := codebaseApi.CodebaseImageStream{
-		ObjectMeta: metaV1.ObjectMeta{
-			Name:      dockerImageName,
-			Namespace: namespace,
-		},
-	}
-
-	deleteEnvLabel := DeleteEnvironmentLabelFromCodebaseImageStreams{
-		client: fake.NewClientBuilder().WithScheme(schemeInit(t)).WithObjects(&stage, &image).Build(),
-		log:    logr.DiscardLogger{},
-	}
-
-	err := deleteEnvLabel.setEnvLabelForVerifiedImageStream(&stage, &image, name, dockerImageName)
-	assert.Equal(t, fmt.Errorf("there're no any annotation"), err)
+	assert.Equal(t, fmt.Errorf("previous stage not found"), err)
 }
 
 func TestSetEnvLabelForVerifiedImageStream_IsNotFoundPreviousImageStream(t *testing.T) {
-	stage := createStage(t, 0, cdPipeline)
-	annotations := make(map[string]string)
-	annotations[previousStageNameAnnotationKey] = previousStageName
-	stage.Annotations = annotations
+	stage := createStage(t, 1, cdPipeline)
+	prevStage := createStage(t, 0, cdPipeline)
+	prevStage.Name = previousStageName
+	prevStage.Spec.Name = previousStageName
+	prevStage.Labels = map[string]string{cdPipeApi.CodebaseTypeLabelName: cdPipeline}
 
 	image := codebaseApi.CodebaseImageStream{
 		ObjectMeta: metaV1.ObjectMeta{
@@ -320,7 +303,7 @@ func TestSetEnvLabelForVerifiedImageStream_IsNotFoundPreviousImageStream(t *test
 	}
 
 	deleteEnvLabel := DeleteEnvironmentLabelFromCodebaseImageStreams{
-		client: fake.NewClientBuilder().WithScheme(schemeInit(t)).WithObjects(&stage, &image).Build(),
+		client: fake.NewClientBuilder().WithScheme(schemeInit(t)).WithObjects(&stage, &prevStage, &image).Build(),
 		log:    logr.DiscardLogger{},
 	}
 

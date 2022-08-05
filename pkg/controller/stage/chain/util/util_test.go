@@ -1,7 +1,7 @@
 package util
 
 import (
-	"fmt"
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -17,7 +17,6 @@ const (
 	name      = "stub-name"
 	namespace = "stub-namespace"
 	ownerKind = "CDPipeline"
-	stageName = "stub-stage-name"
 )
 
 func TestGetCdPipeline_WithObjectReferences(t *testing.T) {
@@ -83,26 +82,150 @@ func TestGetCdPipeline_WithoutObjectReferences(t *testing.T) {
 }
 
 func TestFindPreviousStageName_Success(t *testing.T) {
-	annotations := make(map[string]string)
-	annotations[previousStageNameAnnotationKey] = stageName
+	scheme := runtime.NewScheme()
+	scheme.AddKnownTypes(k8sApi.SchemeGroupVersion, &cdPipeApi.StageList{}, &cdPipeApi.Stage{})
 
-	previousStageName, err := FindPreviousStageName(annotations)
-	assert.NoError(t, err)
-	assert.Equal(t, stageName, previousStageName)
+	prevStage := &cdPipeApi.Stage{
+		TypeMeta: metaV1.TypeMeta{},
+		ObjectMeta: metaV1.ObjectMeta{
+			Name:      "stage1",
+			Namespace: namespace,
+			Labels:    map[string]string{cdPipeApi.CodebaseTypeLabelName: name},
+		},
+		Spec: cdPipeApi.StageSpec{
+			CdPipeline: name,
+			Order:      0,
+		},
+	}
+
+	stage := &cdPipeApi.Stage{
+		TypeMeta: metaV1.TypeMeta{},
+		ObjectMeta: metaV1.ObjectMeta{
+			Name:      "stage2",
+			Namespace: namespace,
+		},
+		Spec: cdPipeApi.StageSpec{
+			CdPipeline: name,
+			Order:      1,
+		},
+	}
+
+	client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(prevStage).Build()
+
+	stageName, err := FindPreviousStageName(context.Background(), client, stage)
+	if assert.NoError(t, err) {
+		assert.Equal(t, prevStage.Spec.Name, stageName)
+	}
 }
 
-func TestFindPreviousStageName_EmptyAnnotations(t *testing.T) {
-	annotations := make(map[string]string)
+func TestFindPreviousStageName_PrevStageWithoutLabel(t *testing.T) {
+	scheme := runtime.NewScheme()
+	scheme.AddKnownTypes(k8sApi.SchemeGroupVersion, &cdPipeApi.StageList{}, &cdPipeApi.Stage{})
 
-	previousStageName, err := FindPreviousStageName(annotations)
-	assert.Equal(t, err, fmt.Errorf("stage doesnt contain %v annotation", previousStageNameAnnotationKey))
-	assert.Equal(t, "", previousStageName)
+	prevStage := &cdPipeApi.Stage{
+		TypeMeta: metaV1.TypeMeta{},
+		ObjectMeta: metaV1.ObjectMeta{
+			Name:      "stage1",
+			Namespace: namespace,
+		},
+		Spec: cdPipeApi.StageSpec{
+			CdPipeline: name,
+			Order:      0,
+		},
+	}
+
+	stage := &cdPipeApi.Stage{
+		TypeMeta: metaV1.TypeMeta{},
+		ObjectMeta: metaV1.ObjectMeta{
+			Name:      "stage2",
+			Namespace: namespace,
+		},
+		Spec: cdPipeApi.StageSpec{
+			CdPipeline: name,
+			Order:      1,
+		},
+	}
+
+	client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(prevStage).Build()
+
+	_, err := FindPreviousStageName(context.Background(), client, stage)
+	assert.Error(t, err)
 }
 
-func TestFindPreviousStageName_NilMap(t *testing.T) {
-	var annotations map[string]string
+func TestFindPreviousStageName_ForFirstStage(t *testing.T) {
+	scheme := runtime.NewScheme()
+	scheme.AddKnownTypes(k8sApi.SchemeGroupVersion, &cdPipeApi.StageList{}, &cdPipeApi.Stage{})
 
-	previousStageName, err := FindPreviousStageName(annotations)
-	assert.Equal(t, err, fmt.Errorf("there're no any annotation"))
-	assert.Equal(t, "", previousStageName)
+	stage := &cdPipeApi.Stage{
+		TypeMeta: metaV1.TypeMeta{},
+		ObjectMeta: metaV1.ObjectMeta{
+			Name:      "stage2",
+			Namespace: namespace,
+		},
+		Spec: cdPipeApi.StageSpec{
+			CdPipeline: name,
+			Order:      0,
+		},
+	}
+
+	client := fake.NewClientBuilder().WithScheme(scheme).Build()
+
+	_, err := FindPreviousStageName(context.Background(), client, stage)
+	assert.Error(t, err)
+}
+
+func TestFindPreviousStageName_EmptyStages(t *testing.T) {
+	scheme := runtime.NewScheme()
+	scheme.AddKnownTypes(k8sApi.SchemeGroupVersion, &cdPipeApi.StageList{}, &cdPipeApi.Stage{})
+
+	stage := &cdPipeApi.Stage{
+		TypeMeta: metaV1.TypeMeta{},
+		ObjectMeta: metaV1.ObjectMeta{
+			Name:      "stage2",
+			Namespace: namespace,
+		},
+		Spec: cdPipeApi.StageSpec{
+			CdPipeline: name,
+			Order:      1,
+		},
+	}
+
+	client := fake.NewClientBuilder().WithScheme(scheme).Build()
+
+	_, err := FindPreviousStageName(context.Background(), client, stage)
+	assert.Error(t, err)
+}
+
+func TestFindPreviousStageName_PreviousStageNotFound(t *testing.T) {
+	scheme := runtime.NewScheme()
+	scheme.AddKnownTypes(k8sApi.SchemeGroupVersion, &cdPipeApi.StageList{}, &cdPipeApi.Stage{})
+
+	prevStage := &cdPipeApi.Stage{
+		TypeMeta: metaV1.TypeMeta{},
+		ObjectMeta: metaV1.ObjectMeta{
+			Name:      "stage1",
+			Namespace: namespace,
+		},
+		Spec: cdPipeApi.StageSpec{
+			CdPipeline: "another-pipeline",
+			Order:      0,
+		},
+	}
+
+	stage := &cdPipeApi.Stage{
+		TypeMeta: metaV1.TypeMeta{},
+		ObjectMeta: metaV1.ObjectMeta{
+			Name:      "stage2",
+			Namespace: namespace,
+		},
+		Spec: cdPipeApi.StageSpec{
+			CdPipeline: name,
+			Order:      1,
+		},
+	}
+
+	client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(prevStage).Build()
+
+	_, err := FindPreviousStageName(context.Background(), client, stage)
+	assert.Error(t, err)
 }

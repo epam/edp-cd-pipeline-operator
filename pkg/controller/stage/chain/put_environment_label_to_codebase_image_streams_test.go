@@ -20,11 +20,10 @@ import (
 )
 
 const (
-	cdPipeline                     = "stub-cdPipeline-name"
-	dockerImageName                = "docker-image-name"
-	previousStageName              = "previous Stage"
-	codebase                       = "stub-codebase"
-	previousStageNameAnnotationKey = "deploy.edp.epam.com/previous-stage-name"
+	cdPipeline        = "stub-cdPipeline-name"
+	dockerImageName   = "docker-image-name"
+	previousStageName = "previous-stage"
+	codebase          = "stub-codebase"
 )
 
 func createStage(t *testing.T, order int, cdPipeline string) cdPipeApi.Stage {
@@ -45,16 +44,12 @@ func createStage(t *testing.T, order int, cdPipeline string) cdPipeApi.Stage {
 func schemeInit(t *testing.T) *runtime.Scheme {
 	t.Helper()
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(k8sApi.SchemeGroupVersion, &cdPipeApi.Stage{}, &cdPipeApi.CDPipeline{}, &codebaseApi.CodebaseImageStream{})
+	scheme.AddKnownTypes(k8sApi.SchemeGroupVersion, &cdPipeApi.Stage{}, &cdPipeApi.StageList{}, &cdPipeApi.CDPipeline{}, &codebaseApi.CodebaseImageStream{})
 	return scheme
 }
 
 func TestPutEnvironmentLabelToCodebaseImageStreams_ServeRequest_Success(t *testing.T) {
-	annotations := make(map[string]string)
-	annotations[previousStageNameAnnotationKey] = previousStageName
-
 	stage := createStage(t, 0, cdPipeline)
-	stage.Annotations = annotations
 
 	cdPipeline := cdPipeApi.CDPipeline{
 		TypeMeta: metaV1.TypeMeta{},
@@ -90,12 +85,11 @@ func TestPutEnvironmentLabelToCodebaseImageStreams_ServeRequest_Success(t *testi
 }
 
 func TestPutEnvironmentLabelToCodebaseImageStreams_ServeRequest_PreviousStageImage(t *testing.T) {
-	annotations := make(map[string]string)
-	annotations[previousStageNameAnnotationKey] = previousStageName
-
 	stage := createStage(t, 1, cdPipeline)
-	stage.Annotations = annotations
-
+	prevStage := createStage(t, 0, cdPipeline)
+	prevStage.Name = previousStageName
+	prevStage.Spec.Name = previousStageName
+	prevStage.Labels = map[string]string{cdPipeApi.CodebaseTypeLabelName: cdPipeline}
 	cisName := createCisName(cdPipeline, previousStageName, codebase)
 
 	cdPipeline := cdPipeApi.CDPipeline{
@@ -131,7 +125,7 @@ func TestPutEnvironmentLabelToCodebaseImageStreams_ServeRequest_PreviousStageIma
 	}
 
 	putEnvLabel := PutEnvironmentLabelToCodebaseImageStreams{
-		client: fake.NewClientBuilder().WithScheme(schemeInit(t)).WithObjects(&stage, &cdPipeline, &image, &previousImage).Build(),
+		client: fake.NewClientBuilder().WithScheme(schemeInit(t)).WithObjects(&stage, &prevStage, &cdPipeline, &image, &previousImage).Build(),
 		log:    logr.DiscardLogger{},
 	}
 
@@ -204,11 +198,10 @@ func TestPutEnvironmentLabelToCodebaseImageStreams_ServeRequest_CantGetImage(t *
 }
 
 func TestPutEnvironmentLabelToCodebaseImageStreams_ServeRequest_CantGetPreviousStageImage(t *testing.T) {
-	annotations := make(map[string]string)
-	annotations[previousStageNameAnnotationKey] = previousStageName
-
 	stage := createStage(t, 1, cdPipeline)
-	stage.Annotations = annotations
+	prevStage := createStage(t, 0, cdPipeline)
+	prevStage.Name = previousStageName
+	prevStage.Labels = map[string]string{cdPipeApi.CodebaseTypeLabelName: cdPipeline}
 
 	cdPipeline := cdPipeApi.CDPipeline{
 		TypeMeta: metaV1.TypeMeta{},
@@ -236,7 +229,7 @@ func TestPutEnvironmentLabelToCodebaseImageStreams_ServeRequest_CantGetPreviousS
 	}
 
 	putEnvLabel := PutEnvironmentLabelToCodebaseImageStreams{
-		client: fake.NewClientBuilder().WithScheme(schemeInit(t)).WithObjects(&stage, &cdPipeline, &image).Build(),
+		client: fake.NewClientBuilder().WithScheme(schemeInit(t)).WithObjects(&stage, &prevStage, &cdPipeline, &image).Build(),
 		log:    logr.DiscardLogger{},
 	}
 

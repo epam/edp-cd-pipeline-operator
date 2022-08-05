@@ -4,9 +4,12 @@ import (
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const CodebaseTypeLabelName = "app.edp.epam.com/cdPipelineName"
+
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
-// StageSpec defines the desired state of Stage
+// StageSpec defines the desired state of Stage.
+// NOTE: for deleting the stage use stages order - delete only the latest stage.
 type StageSpec struct {
 	// +kubebuilder:validation:MinLength=2
 
@@ -26,7 +29,8 @@ type StageSpec struct {
 	// Stage deployment trigger type. E.g. Manual, Auto
 	TriggerType string `json:"triggerType"`
 
-	// The order to lay out Stages
+	// The order to lay out Stages.
+	// The order should start from 0, and the next stages should use +1 for the order.
 	Order int `json:"order"`
 
 	// A list of quality gates to be processed
