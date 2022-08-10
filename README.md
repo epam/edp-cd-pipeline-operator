@@ -47,8 +47,8 @@ In order to install the CD Pipeline Operator, follow the steps below:
     - chart_version                                 # a version of CD Pipeline operator Helm chart;
     - global.edpName                                # a namespace or a project name (in case of OpenShift);
     - global.platform                               # openshift or kubernetes;
-    - image.name                                    # EDP image. The released image can be found on [Dockerhub](https://hub.docker.com/r/epamedp/cd-pipeline-operator);
-    - image.version                                 # EDP tag. The released image can be found on [Dockerhub](https://hub.docker.com/r/epamedp/cd-pipeline-operator/tags);
+    - image.repository                              # EDP image. The released image can be found on [Dockerhub](https://hub.docker.com/r/epamedp/cd-pipeline-operator);
+    - image.tag                                     # EDP tag. The released image can be found on [Dockerhub](https://hub.docker.com/r/epamedp/cd-pipeline-operator/tags);
     ```
 
 4. Install operator in the <edp_cicd_project> namespace with the helm command; find below the installation command example:

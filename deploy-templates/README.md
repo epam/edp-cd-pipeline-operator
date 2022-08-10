@@ -26,8 +26,8 @@ A Helm chart for EDP CD Pipeline Operator
 | global.edpName | string | `""` |  |
 | global.kioskEnabled | string | `"true"` |  |
 | global.platform | string | `"openshift"` |  |
-| image.name | string | `"epamedp/cd-pipeline-operator"` |  |
-| image.version | string | `nil` |  |
+| image.repository | string | `"epamedp/cd-pipeline-operator"` |  |
+| image.tag | string | `nil` |  |
 | imagePullPolicy | string | `"IfNotPresent"` |  |
 | name | string | `"cd-pipeline-operator"` |  |
 | nodeSelector | object | `{}` |  |
