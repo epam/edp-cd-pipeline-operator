@@ -1,16 +1,21 @@
 global:
+  # -- namespace or a project name (in case of OpenShift)
   edpName: ""
+  # -- platform type that can be "kubernetes" or "openshift"
   platform: "openshift"
   kioskEnabled: "true"
 
+# -- component name
 name: cd-pipeline-operator
 annotations: {}
 nodeSelector: {}
 tolerations: []
 affinity:
 image:
+  # -- EDP cd-pipeline-operator Docker image name. The released image can be found on [Dockerhub](https://hub.docker.com/r/epamedp/cd-pipeline-operator)
   repository: epamedp/cd-pipeline-operator
   # if not defined then .Chart.AppVersion is used
+  # -- EDP cd-pipeline-operator Docker image tag. The released image can be found on [Dockerhub](https://hub.docker.com/r/epamedp/cd-pipeline-operator/tags)
   tag:
 imagePullPolicy: "IfNotPresent"
 

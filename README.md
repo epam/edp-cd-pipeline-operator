@@ -26,42 +26,35 @@ In order to install the CD Pipeline Operator, follow the steps below:
 1. To add the Helm EPAMEDP Charts for local client, run "helm repo add":
 
      ```bash
-     helm repo add epamedp https://chartmuseum.demo.edp-epam.com/
+     helm repo add epamedp https://epam.github.io/edp-helm-charts/stable
      ```
 
 2. Choose available Helm chart version:
 
      ```bash
-     helm search repo epamedp/cd-pipeline-operator
+     helm search repo epamedp/cd-pipeline-operator -l
      NAME                              CHART VERSION   APP VERSION     DESCRIPTION
-     epamedp/cd-pipeline-operator      v2.10.0                          Helm chart for Golang application/service deplo...
+     epamedp/cd-pipeline-operator      2.11.0          2.11.0          A Helm chart for EDP CD Pipeline Operator
+     epamedp/cd-pipeline-operator      2.10.0          2.10.0          A Helm chart for EDP CD Pipeline Operator
      ```
 
    _**NOTE:** It is highly recommended to use the latest released version._
 
-3. Deploy operator:
+3. Full chart parameters available in [deploy-templates/README.md](deploy-templates/README.md).
 
-    Full available chart parameters list:
-
-    ```bash
-    - chart_version                                 # a version of CD Pipeline operator Helm chart;
-    - global.edpName                                # a namespace or a project name (in case of OpenShift);
-    - global.platform                               # openshift or kubernetes;
-    - image.repository                              # EDP image. The released image can be found on [Dockerhub](https://hub.docker.com/r/epamedp/cd-pipeline-operator);
-    - image.tag                                     # EDP tag. The released image can be found on [Dockerhub](https://hub.docker.com/r/epamedp/cd-pipeline-operator/tags);
-    ```
-
-4. Install operator in the <edp_cicd_project> namespace with the helm command; find below the installation command example:
+4. Install operator in the <edp-project> namespace with the helm command; find below the installation command example:
 
     ```bash
-    helm install cd-pipeline-operator epamedp/cd-pipeline-operator --version <chart_version> --namespace <edp_cicd_project> --set name=cd-pipeline-operator --set global.edpName=<edp_cicd_project> --set global.platform=<platform_type>
+    helm install cd-pipeline-operator epamedp/cd-pipeline-operator --version <chart_version> --namespace <edp-project> --set name=cd-pipeline-operator --set global.edpName=<edp-project> --set global.platform=<platform_type>
     ```
 
-5. Check the <edp_cicd_project> namespace that should contain operator deployment with your operator in a running status.
+5. Check the <edp-project> namespace that should contain operator deployment with your operator in a running status.
 
 ## Local Development
 
 In order to develop the operator, first set up a local environment. For details, please refer to the [Developer Guide](https://epam.github.io/edp-install/developer-guide/local-development/) page.
+
+Development versions are also available, please refer to the [snapshot helm chart repository](https://epam.github.io/edp-helm-charts/snapshot/) page.
 
 ### Related Articles
 
