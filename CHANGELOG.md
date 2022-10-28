@@ -2,8 +2,15 @@
 ## [Unreleased]
 
 
+<a name="v2.12.1"></a>
+## [v2.12.1] - 2022-10-03
+### Bug Fixes
+
+- Provide namespace permissions for cd-pipeline operator [EPMDEDP-10661](https://jiraeu.epam.com/browse/EPMDEDP-10661)
+
+
 <a name="v2.12.0"></a>
-## [v2.12.0] - 2022-08-23
+## [v2.12.0] - 2022-08-26
 ### Features
 
 - Download required tools for Makefile targets [EPMDEDP-10105](https://jiraeu.epam.com/browse/EPMDEDP-10105)
@@ -148,7 +155,8 @@
 <a name="v2.7.0"></a>
 ## [v2.7.0] - 2021-12-03
 
-[Unreleased]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.12.0...HEAD
+[Unreleased]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.12.1...HEAD
+[v2.12.1]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.12.0...v2.12.1
 [v2.12.0]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.11.0...v2.12.0
 [v2.11.0]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.10.0...v2.11.0
 [v2.10.0]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.9.0...v2.10.0
