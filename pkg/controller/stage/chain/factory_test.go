@@ -1,9 +1,12 @@
 package chain
 
 import (
-	"github.com/stretchr/testify/assert"
+	"context"
 	"os"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 var (
@@ -33,31 +36,33 @@ func TestKioskEnabled_VarIsTrue(t *testing.T) {
 }
 
 func TestChainCreation_KioskIsDisabled(t *testing.T) {
-	if err := os.Setenv(kioskEnabledEnvVarName, "false"); err != nil {
-		panic(err)
-	}
+	err := os.Setenv(kioskEnabledEnvVarName, "false")
+	require.NoError(t, err)
 
-	defManCh := CreateChain(nil, manualDeploy)
+	fakeClient := createFakeClient(t)
+
+	defManCh := CreateChain(context.Background(), fakeClient, "default", manualDeploy)
 	assert.NotNil(t, defManCh)
 
-	defAutoCh := CreateChain(nil, autoDeploy)
+	defAutoCh := CreateChain(context.Background(), fakeClient, "default", autoDeploy)
 	assert.NotNil(t, defAutoCh)
 
-	deleteCh := CreateDeleteChain(nil)
+	deleteCh := CreateDeleteChain(context.Background(), fakeClient, "default")
 	assert.NotNil(t, deleteCh)
 }
 
 func TestChainCreation_KioskIsEnabled(t *testing.T) {
-	if err := os.Setenv(kioskEnabledEnvVarName, "true"); err != nil {
-		panic(err)
-	}
+	err := os.Setenv(kioskEnabledEnvVarName, "true")
+	require.NoError(t, err)
 
-	defManCh := CreateChain(nil, manualDeploy)
+	fakeClient := createFakeClient(t)
+
+	defManCh := CreateChain(context.Background(), fakeClient, "default", manualDeploy)
 	assert.NotNil(t, defManCh)
 
-	defAutoCh := CreateChain(nil, autoDeploy)
+	defAutoCh := CreateChain(context.Background(), fakeClient, "default", autoDeploy)
 	assert.NotNil(t, defAutoCh)
 
-	deleteCh := CreateDeleteChain(nil)
+	deleteCh := CreateDeleteChain(context.Background(), fakeClient, "default")
 	assert.NotNil(t, deleteCh)
 }

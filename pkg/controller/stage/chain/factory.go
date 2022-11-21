@@ -1,6 +1,7 @@
 package chain
 
 import (
+	"context"
 	"os"
 	"strconv"
 
@@ -11,6 +12,7 @@ import (
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/controller/stage/chain/handler"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/controller/stage/kiosk"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/controller/stage/rbac"
+	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/cluster"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/consts"
 )
 
@@ -24,7 +26,11 @@ func nextServeOrNil(next handler.CdStageHandler, stage *cdPipeApi.Stage) error {
 	return nil
 }
 
-func CreateChain(client client.Client, triggerType string) handler.CdStageHandler {
+func CreateChain(ctx context.Context, client client.Client, namespace, triggerType string) handler.CdStageHandler {
+	if !cluster.JenkinsEnabled(ctx, client, namespace) {
+		return getTektonChain(client, triggerType)
+	}
+
 	if kioskEnabled() {
 		return getKioskChain(client, triggerType)
 	}
@@ -40,7 +46,11 @@ func kioskEnabled() bool {
 	return enabled
 }
 
-func CreateDeleteChain(client client.Client) handler.CdStageHandler {
+func CreateDeleteChain(ctx context.Context, client client.Client, namespace string) handler.CdStageHandler {
+	if !cluster.JenkinsEnabled(ctx, client, namespace) {
+		return getTektonDeleteChain(client)
+	}
+
 	if kioskEnabled() {
 		return createKioskDeleteChain(client)
 	}
@@ -189,5 +199,50 @@ func getKioskChain(client client.Client, triggerType string) handler.CdStageHand
 		},
 		client: client,
 		log:    log.WithName("put-codebase-image-stream-chain"),
+	}
+}
+
+func getTektonChain(client client.Client, triggerType string) handler.CdStageHandler {
+	log.Info("tekton chain is selected")
+
+	if consts.AutoDeployTriggerType == triggerType {
+		return PutCodebaseImageStream{
+			next: RemoveLabelsFromCodebaseDockerStreamsAfterCdPipelineUpdate{
+				client: client,
+				log:    log.WithName("remove-labels-from-codebase-docker-streams-after-cd-pipeline-update"),
+				next: DeleteEnvironmentLabelFromCodebaseImageStreams{
+					client: client,
+					log:    log.WithName("delete-environment-label-from-codebase-image-streams"),
+					next: PutEnvironmentLabelToCodebaseImageStreams{
+						client: client,
+						log:    log.WithName("put-environment-label-to-codebase-image-streams-chain"),
+					},
+				},
+			},
+			client: client,
+			log:    log.WithName("put-codebase-image-stream-chain"),
+		}
+	}
+
+	return PutCodebaseImageStream{
+		next: DeleteEnvironmentLabelFromCodebaseImageStreams{
+			client: client,
+			log:    log.WithName("delete-environment-label-from-codebase-image-streams"),
+		},
+		client: client,
+		log:    log.WithName("put-codebase-image-stream-chain"),
+	}
+}
+
+func getTektonDeleteChain(client client.Client) handler.CdStageHandler {
+	log.Info("tekton deletion chain is selected")
+
+	return DeleteEnvironmentLabelFromCodebaseImageStreams{
+		client: client,
+		log:    log.WithName("delete-environment-label-from-codebase-image-streams"),
+		next: DeleteNamespace{
+			client: client,
+			log:    log.WithName("delete-namespace"),
+		},
 	}
 }

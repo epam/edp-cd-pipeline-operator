@@ -8,6 +8,7 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	k8sApi "k8s.io/api/rbac/v1"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -15,6 +16,8 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+
+	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1"
 
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/controller/stage/rbac"
@@ -54,8 +57,24 @@ func getConfigureRbac(t *testing.T, configureRbac ConfigureRbac, name, namespace
 
 func TestConfigureRbac_ServeRequest_Success(t *testing.T) {
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(k8sApi.SchemeGroupVersion, &k8sApi.RoleBinding{}, &k8sApi.Role{}, &cdPipeApi.Stage{})
-	fakeClient := fake.NewClientBuilder().WithScheme(scheme).Build()
+	err := cdPipeApi.AddToScheme(scheme)
+	require.NoError(t, err)
+
+	err = jenkinsApi.AddToScheme(scheme)
+	require.NoError(t, err)
+
+	err = k8sApi.AddToScheme(scheme)
+	require.NoError(t, err)
+
+	fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&jenkinsApi.Jenkins{
+		TypeMeta: metaV1.TypeMeta{},
+		ObjectMeta: metaV1.ObjectMeta{
+			Name:      "jenkins",
+			Namespace: namespace,
+		},
+		Spec:   jenkinsApi.JenkinsSpec{},
+		Status: jenkinsApi.JenkinsStatus{},
+	}).Build()
 	rbacManager := rbac.InitRbacManager(fakeClient)
 	configureRbac := createConfigureRbac(t, fakeClient, rbacManager)
 
@@ -69,7 +88,7 @@ func TestConfigureRbac_ServeRequest_Success(t *testing.T) {
 	targetNamespace := generateTargetNamespaceName(stage)
 	viewGroupRbName := generateViewGroupRbName(stage.Namespace)
 
-	err := configureRbac.ServeRequest(stage)
+	err = configureRbac.ServeRequest(stage)
 	assert.NoError(t, err)
 
 	_, err = getConfigureRbac(t, configureRbac, acViewRbName, targetNamespace)

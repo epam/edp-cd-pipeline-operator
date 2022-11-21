@@ -20,6 +20,7 @@ import (
 	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1"
 
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1"
+	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/cluster"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/consts"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/finalizer"
 )
@@ -69,8 +70,10 @@ func (r *ReconcileCDPipeline) Reconcile(ctx context.Context, request reconcile.R
 		return reconcile.Result{}, err
 	}
 
-	if err := r.createJenkinsFolder(ctx, *i); err != nil {
-		return reconcile.Result{}, err
+	if cluster.JenkinsEnabled(ctx, r.client, request.Namespace) {
+		if err := r.createJenkinsFolder(ctx, *i); err != nil {
+			return reconcile.Result{}, err
+		}
 	}
 
 	if err := r.setFinishStatus(ctx, i); err != nil {

@@ -99,7 +99,7 @@ func (r *ReconcileStage) Reconcile(ctx context.Context, request reconcile.Reques
 		return reconcile.Result{}, errors.Wrap(err, "fail to init labels for stage")
 	}
 
-	if err := chain.CreateChain(r.client, i.Spec.TriggerType).ServeRequest(i); err != nil {
+	if err := chain.CreateChain(ctx, r.client, request.Namespace, i.Spec.TriggerType).ServeRequest(i); err != nil {
 		switch errors.Cause(err).(type) {
 		case edpError.CISNotFound:
 			log.Error(err, "cis wasn't found. reconcile again...")
@@ -134,7 +134,7 @@ func (r *ReconcileStage) tryToDeleteCDStage(ctx context.Context, stage *cdPipeAp
 		return nil, nil
 	}
 
-	if err := chain.CreateDeleteChain(r.client).ServeRequest(stage); err != nil {
+	if err := chain.CreateDeleteChain(ctx, r.client, stage.Namespace).ServeRequest(stage); err != nil {
 		return &reconcile.Result{}, err
 	}
 

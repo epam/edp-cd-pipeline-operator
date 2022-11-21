@@ -8,6 +8,7 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -68,7 +69,11 @@ func (r *ReconcileCDPipeline) getCdPipeline(t *testing.T) *cdPipeApi.CDPipeline 
 func createScheme(t *testing.T) *runtime.Scheme {
 	t.Helper()
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(cdPipeApi.SchemeGroupVersion, &cdPipeApi.CDPipeline{}, &jenkinsApi.JenkinsFolder{})
+	err := cdPipeApi.AddToScheme(scheme)
+	require.NoError(t, err)
+	err = jenkinsApi.AddToScheme(scheme)
+	require.NoError(t, err)
+
 	return scheme
 }
 
@@ -89,8 +94,14 @@ func TestNewReconcileCDPipeline_Success(t *testing.T) {
 
 func TestReconcile_Success(t *testing.T) {
 	emptyCdPipeline := emptyCdPipelineInit(t)
+	jenkins := &jenkinsApi.Jenkins{
+		ObjectMeta: metaV1.ObjectMeta{
+			Namespace: namespace,
+			Name:      "stub-Jenkins",
+		},
+	}
 	scheme := createScheme(t)
-	client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&emptyCdPipeline).Build()
+	client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&emptyCdPipeline, jenkins).Build()
 
 	reconcileCDPipeline := NewReconcileCDPipeline(client, scheme, logr.DiscardLogger{})
 

@@ -9,7 +9,7 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	k8sApi "k8s.io/api/rbac/v1"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -102,7 +102,14 @@ func TestTryToDeleteCDStage_DeletionTimestampIsZero(t *testing.T) {
 
 func TestTryToDeleteCDStage_Success(t *testing.T) {
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(k8sApi.SchemeGroupVersion, &cdPipeApi.Stage{}, &cdPipeApi.CDPipeline{}, &codebaseApi.CodebaseImageStream{}, &v1.Namespace{})
+	err := cdPipeApi.AddToScheme(scheme)
+	require.NoError(t, err)
+	err = codebaseApi.AddToScheme(scheme)
+	require.NoError(t, err)
+	err = jenkinsApi.AddToScheme(scheme)
+	require.NoError(t, err)
+	err = corev1.AddToScheme(scheme)
+	require.NoError(t, err)
 
 	stage := &cdPipeApi.Stage{
 		TypeMeta: metaV1.TypeMeta{},
@@ -147,7 +154,14 @@ func TestTryToDeleteCDStage_Success(t *testing.T) {
 		},
 	}
 
-	fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(cdPipeline, image, stage).Build()
+	jenkins := &jenkinsApi.Jenkins{
+		ObjectMeta: metaV1.ObjectMeta{
+			Name:      "stub-jenkins-name",
+			Namespace: namespace,
+		},
+	}
+
+	fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(cdPipeline, image, stage, jenkins).Build()
 
 	reconcileStage := ReconcileStage{
 		client: fakeClient,
@@ -155,7 +169,7 @@ func TestTryToDeleteCDStage_Success(t *testing.T) {
 		log:    logr.DiscardLogger{},
 	}
 
-	_, err := reconcileStage.tryToDeleteCDStage(context.Background(), stage)
+	_, err = reconcileStage.tryToDeleteCDStage(context.Background(), stage)
 	assert.NoError(t, err)
 
 	previousImageStream, err := cluster.GetCodebaseImageStream(reconcileStage.client, dockerImageName, namespace)
@@ -168,7 +182,7 @@ func TestTryToDeleteCDStage_Success(t *testing.T) {
 
 func TestSetCDPipelineOwnerRef_Success(t *testing.T) {
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(k8sApi.SchemeGroupVersion, &cdPipeApi.Stage{}, &cdPipeApi.CDPipeline{}, &codebaseApi.CodebaseImageStream{}, &v1.Namespace{})
+	scheme.AddKnownTypes(k8sApi.SchemeGroupVersion, &cdPipeApi.Stage{}, &cdPipeApi.CDPipeline{}, &codebaseApi.CodebaseImageStream{}, &corev1.Namespace{})
 
 	stage := &cdPipeApi.Stage{
 		TypeMeta: metaV1.TypeMeta{},
@@ -213,7 +227,7 @@ func TestSetCDPipelineOwnerRef_Success(t *testing.T) {
 
 func TestSetCDPipelineOwnerRef_OwnerExists(t *testing.T) {
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(k8sApi.SchemeGroupVersion, &cdPipeApi.Stage{}, &cdPipeApi.CDPipeline{}, &codebaseApi.CodebaseImageStream{}, &v1.Namespace{})
+	scheme.AddKnownTypes(k8sApi.SchemeGroupVersion, &cdPipeApi.Stage{}, &cdPipeApi.CDPipeline{}, &codebaseApi.CodebaseImageStream{}, &corev1.Namespace{})
 
 	ownerReference := metaV1.OwnerReference{
 		Kind: consts.CDPipelineKind,
@@ -273,7 +287,16 @@ func TestSetFinishStatus_Success(t *testing.T) {
 
 func TestReconcileStage_Reconcile_Success(t *testing.T) {
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(k8sApi.SchemeGroupVersion, &cdPipeApi.Stage{}, &cdPipeApi.CDPipeline{}, &codebaseApi.CodebaseImageStream{}, &v1.Namespace{})
+	err := cdPipeApi.AddToScheme(scheme)
+	require.NoError(t, err)
+	err = codebaseApi.AddToScheme(scheme)
+	require.NoError(t, err)
+	err = k8sApi.AddToScheme(scheme)
+	require.NoError(t, err)
+	err = jenkinsApi.AddToScheme(scheme)
+	require.NoError(t, err)
+	err = corev1.AddToScheme(scheme)
+	require.NoError(t, err)
 
 	stage := &cdPipeApi.Stage{
 		TypeMeta: metaV1.TypeMeta{},
@@ -318,7 +341,14 @@ func TestReconcileStage_Reconcile_Success(t *testing.T) {
 		},
 	}
 
-	fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(cdPipeline, image, stage).Build()
+	jenkins := &jenkinsApi.Jenkins{
+		ObjectMeta: metaV1.ObjectMeta{
+			Name:      "jenkins",
+			Namespace: namespace,
+		},
+	}
+
+	fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(cdPipeline, image, stage, jenkins).Build()
 
 	reconcileStage := ReconcileStage{
 		client: fakeClient,
@@ -326,7 +356,7 @@ func TestReconcileStage_Reconcile_Success(t *testing.T) {
 		log:    logr.DiscardLogger{},
 	}
 
-	_, err := reconcileStage.Reconcile(context.Background(), reconcile.Request{NamespacedName: types.NamespacedName{
+	_, err = reconcileStage.Reconcile(context.Background(), reconcile.Request{NamespacedName: types.NamespacedName{
 		Namespace: namespace,
 		Name:      name,
 	}})
@@ -343,7 +373,7 @@ func TestReconcileStage_Reconcile_Success(t *testing.T) {
 func TestReconcileStage_ReconcileReconcile_SetOwnerRef(t *testing.T) {
 	scheme := runtime.NewScheme()
 	scheme.AddKnownTypes(k8sApi.SchemeGroupVersion, &cdPipeApi.Stage{},
-		&cdPipeApi.CDPipeline{}, &codebaseApi.CodebaseImageStream{}, &v1.Namespace{},
+		&cdPipeApi.CDPipeline{}, &codebaseApi.CodebaseImageStream{}, &corev1.Namespace{},
 		&componentApi.EDPComponent{}, &k8sApi.RoleBinding{}, &k8sApi.Role{}, &jenkinsApi.JenkinsJob{})
 
 	edpComponent := &componentApi.EDPComponent{
