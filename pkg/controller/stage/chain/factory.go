@@ -16,7 +16,7 @@ import (
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/consts"
 )
 
-var log = ctrl.Log.WithName("jenkins-job")
+var log = ctrl.Log.WithName("stage")
 
 func nextServeOrNil(next handler.CdStageHandler, stage *cdPipeApi.Stage) error {
 	if next != nil {

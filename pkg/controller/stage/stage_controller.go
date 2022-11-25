@@ -10,6 +10,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
+	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/controller/stage/chain"
 	edpError "github.com/epam/edp-cd-pipeline-operator/v2/pkg/error"
@@ -68,6 +69,7 @@ func (r *ReconcileStage) SetupWithManager(mgr ctrl.Manager) error {
 	}
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&cdPipeApi.Stage{}, builder.WithPredicates(p)).
+		Watches(&source.Kind{Type: &cdPipeApi.CDPipeline{}}, NewPipelineEventHandler(r.client, r.log)).
 		Complete(r)
 }
 
