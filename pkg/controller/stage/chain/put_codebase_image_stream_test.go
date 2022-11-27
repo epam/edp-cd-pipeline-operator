@@ -92,6 +92,7 @@ func TestPutCodebaseImageStream_ShouldCreateCis(t *testing.T) {
 		},
 		cisResp)
 	assert.NoError(t, err)
+	assert.Equal(t, cisResp.Spec.ImageName, "stub-url/stub-namespace/cb-name")
 }
 
 func TestPutCodebaseImageStream_ShouldNotFindCDPipeline(t *testing.T) {
@@ -383,7 +384,7 @@ func TestPutCodebaseImageStream_ShouldFailCreatingCbis(t *testing.T) {
 		},
 		Spec: codebaseApi.CodebaseImageStreamSpec{
 			Codebase:  "cb-name",
-			ImageName: "stub-url/stub-namespace",
+			ImageName: "stub-url/stub-namespace/cb-name",
 		},
 	}
 

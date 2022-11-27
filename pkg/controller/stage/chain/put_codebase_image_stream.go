@@ -49,7 +49,7 @@ func (h PutCodebaseImageStream) ServeRequest(stage *cdPipeApi.Stage) error {
 		}
 
 		cisName := fmt.Sprintf("%v-%v-%v-verified", pipe.Name, stage.Spec.Name, stream.Spec.Codebase)
-		image := fmt.Sprintf("%v/%v", registryComponent.Spec.Url, stage.Namespace)
+		image := fmt.Sprintf("%v/%v/%v", registryComponent.Spec.Url, stage.Namespace, stream.Spec.Codebase)
 		if err := h.createCodebaseImageStreamIfNotExists(cisName, image, stream.Spec.Codebase, stage.Namespace); err != nil {
 			return errors.Wrapf(err, "couldn't create %v codebase image stream", cisName)
 		}
