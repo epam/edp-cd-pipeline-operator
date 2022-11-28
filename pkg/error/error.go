@@ -1,7 +1,7 @@
 package error
 
-type CISNotFound string
+type CISNotFoundError string
 
-func (j CISNotFound) Error() string {
+func (j CISNotFoundError) Error() string {
 	return string(j)
 }

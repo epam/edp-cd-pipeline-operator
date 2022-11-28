@@ -13,5 +13,6 @@ func GetPlatformTypeEnv() string {
 	if ok {
 		return pt
 	}
+
 	return PlatformOpenshift
 }

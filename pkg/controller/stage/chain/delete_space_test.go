@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"testing"
 
-	edpLog "github.com/epam/edp-common/pkg/mock"
 	loftKioskApi "github.com/loft-sh/kiosk/pkg/apis/tenancy/v1alpha1"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
@@ -17,10 +16,12 @@ import (
 
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/controller/stage/kiosk"
+	edpLog "github.com/epam/edp-common/pkg/mock"
 )
 
 func emptyStageInit(t *testing.T) *cdPipeApi.Stage {
 	t.Helper()
+
 	return &cdPipeApi.Stage{
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:      name,
@@ -30,12 +31,9 @@ func emptyStageInit(t *testing.T) *cdPipeApi.Stage {
 }
 
 func TestDeleteSpace_DeleteSpaceSuccess(t *testing.T) {
-	log := &edpLog.Logger{}
-
+	logger := &edpLog.Logger{}
 	stage := emptyStageInit(t)
-
 	spaceName := fmt.Sprintf("%s-%s", stage.Namespace, stage.Name)
-
 	space := &loftKioskApi.Space{
 		ObjectMeta: metaV1.ObjectMeta{
 			Name: spaceName,
@@ -47,11 +45,11 @@ func TestDeleteSpace_DeleteSpaceSuccess(t *testing.T) {
 
 	testSpace := kiosk.Space{
 		Client: fake.NewClientBuilder().WithScheme(scheme).WithObjects(space).Build(),
-		Log:    log,
+		Log:    logger,
 	}
 
 	deleteSpaceInstance := DeleteSpace{
-		log:   log,
+		log:   logger,
 		space: testSpace,
 	}
 

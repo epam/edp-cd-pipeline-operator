@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/go-logr/logr"
-	"github.com/pkg/errors"
 	v1 "k8s.io/api/core/v1"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
@@ -24,28 +23,33 @@ type DeleteNamespace struct {
 func (h DeleteNamespace) ServeRequest(stage *cdPipeApi.Stage) error {
 	name := fmt.Sprintf("%v-%v", stage.Namespace, stage.Name)
 	if err := h.delete(name); err != nil {
-		return errors.Wrapf(err, "unable to delete %v namespace", name)
+		return fmt.Errorf("unable to delete %v namespace, name : %w", name, err)
 	}
+
 	return nextServeOrNil(h.next, stage)
 }
 
 func (h DeleteNamespace) delete(name string) error {
-	log := h.log.WithValues("name", name)
-	log.Info("trying to delete namespace")
+	logger := h.log.WithValues("name", name)
+	logger.Info("trying to delete namespace")
+
 	ns := &v1.Namespace{}
 	if err := h.client.Get(context.TODO(), types.NamespacedName{
 		Name: name,
 	}, ns); err != nil {
 		if k8sErrors.IsNotFound(err) {
-			log.Info("namespace doesn't exist")
+			logger.Info("namespace doesn't exist")
 			return nil
 		}
-		return err
+
+		return fmt.Errorf("failed to get namespace: %w", err)
 	}
 
 	if err := h.client.Delete(context.TODO(), ns); err != nil {
-		return err
+		return fmt.Errorf("failed to delete namespace: %w", err)
 	}
-	log.Info("namespace has been deleted")
+
+	logger.Info("namespace has been deleted")
+
 	return nil
 }

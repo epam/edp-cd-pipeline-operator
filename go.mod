@@ -14,13 +14,11 @@ replace (
 )
 
 require (
-	github.com/bndr/gojenkins v0.2.1-0.20181125150310-de43c03cf849
 	github.com/epam/edp-codebase-operator/v2 v2.3.0-95.0.20220620144619-fbabdf9c4409
 	github.com/epam/edp-common v0.0.0-20211206180607-3e1ca60d6e4a
 	github.com/epam/edp-component-operator v0.1.1-0.20220520092339-3063cc593800
 	github.com/epam/edp-jenkins-operator/v2 v2.3.0-130.0.20220620155815-23e0ee37a393
 	github.com/go-logr/logr v0.4.0
-	github.com/jarcoal/httpmock v1.0.8
 	github.com/loft-sh/kiosk v0.2.4
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.7.0
@@ -87,13 +85,15 @@ require (
 	go.uber.org/multierr v1.5.0 // indirect
 	go.uber.org/zap v1.15.0 // indirect
 	golang.org/x/crypto v0.0.0-20210921155107-089bfa567519 // indirect
-	golang.org/x/net v0.0.0-20210928044308-7d9f5e0b762b // indirect
+	golang.org/x/net v0.2.0 // indirect
 	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d // indirect
-	golang.org/x/sync v0.0.0-20201020160332-67f06af15bc9 // indirect
-	golang.org/x/sys v0.0.0-20210615035016-665e8c7367d1 // indirect
-	golang.org/x/term v0.0.0-20210220032956-6a3ed077a48d // indirect
-	golang.org/x/text v0.3.6 // indirect
+	golang.org/x/sync v0.1.0 // indirect
+	golang.org/x/sys v0.2.0 // indirect
+	golang.org/x/term v0.2.0 // indirect
+	golang.org/x/text v0.4.0 // indirect
 	golang.org/x/time v0.0.0-20210220033141-f8bda1e9f3ba // indirect
+	golang.org/x/tools v0.3.0 // indirect
+	golang.org/x/xerrors v0.0.0-20220517211312-f3a8303e98df // indirect
 	gomodules.xyz/jsonpatch/v2 v2.1.0 // indirect
 	google.golang.org/appengine v1.6.6 // indirect
 	google.golang.org/genproto v0.0.0-20201110150050-8816d57aaa9a // indirect

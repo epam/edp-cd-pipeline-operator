@@ -19,13 +19,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
-	componentApi "github.com/epam/edp-component-operator/pkg/apis/v1/v1"
-	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1"
-
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/cluster"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/consts"
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
+	componentApi "github.com/epam/edp-component-operator/pkg/apis/v1/v1"
+	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1"
 )
 
 const (
@@ -37,16 +36,17 @@ const (
 	dockerRegistry  = "docker-registry"
 )
 
-func getStage(t *testing.T, client client.Client, name string) *cdPipeApi.Stage {
+func getStage(t *testing.T, c client.Client, name string) *cdPipeApi.Stage {
 	t.Helper()
+
 	stage := &cdPipeApi.Stage{}
-	err := client.Get(context.Background(), types.NamespacedName{
+	if err := c.Get(context.Background(), types.NamespacedName{
 		Namespace: namespace,
 		Name:      name,
-	}, stage)
-	if err != nil {
+	}, stage); err != nil {
 		t.Fatal(err)
 	}
+
 	return stage
 }
 

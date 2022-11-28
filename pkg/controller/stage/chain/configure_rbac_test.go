@@ -17,10 +17,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1"
-
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/controller/stage/rbac"
+	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1"
 )
 
 const (
@@ -31,27 +30,32 @@ const (
 
 func createFakeClient(t *testing.T) client.Client {
 	t.Helper()
+
 	scheme := runtime.NewScheme()
 	scheme.AddKnownTypes(k8sApi.SchemeGroupVersion, &k8sApi.RoleBinding{}, &k8sApi.Role{})
+
 	return fake.NewClientBuilder().WithScheme(scheme).Build()
 }
 
-func createConfigureRbac(t *testing.T, client client.Client, rbac rbac.RbacManager) ConfigureRbac {
+func createConfigureRbac(t *testing.T, c client.Client, rbacManager rbac.RbacManager) ConfigureRbac {
 	t.Helper()
+
 	return ConfigureRbac{
-		client: client,
+		client: c,
 		log:    logr.DiscardLogger{},
-		rbac:   rbac,
+		rbac:   rbacManager,
 	}
 }
 
 func getConfigureRbac(t *testing.T, configureRbac ConfigureRbac, name, namespace string) (*k8sApi.RoleBinding, error) {
 	t.Helper()
+
 	roleBinding := &k8sApi.RoleBinding{}
 	err := configureRbac.client.Get(context.Background(), types.NamespacedName{
 		Namespace: namespace,
 		Name:      name,
 	}, roleBinding)
+
 	return roleBinding, err
 }
 
@@ -106,8 +110,9 @@ func TestConfigureRbac_ServeRequest_DifferentPlatformType(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unable to set env variable: %v", err)
 	}
+
 	defer func() {
-		err := os.Unsetenv(platformType)
+		err = os.Unsetenv(platformType)
 		if err != nil {
 			t.Fatalf("unable to unset env variable: %v", err)
 		}
@@ -187,7 +192,7 @@ func TestRoleExists_False(t *testing.T) {
 }
 
 func TestCreateRoleBinding_Success(t *testing.T) {
-	options := options{
+	opt := options{
 		subjects: nil,
 		rf:       k8sApi.RoleRef{},
 	}
@@ -197,7 +202,7 @@ func TestCreateRoleBinding_Success(t *testing.T) {
 
 	configureRbac := createConfigureRbac(t, fakeClient, rbacManager)
 
-	err := configureRbac.createRoleBinding(name, namespace, options)
+	err := configureRbac.createRoleBinding(name, namespace, opt)
 	assert.NoError(t, err)
 
 	_, err = rbacManager.GetRoleBinding(name, namespace)
@@ -205,7 +210,7 @@ func TestCreateRoleBinding_Success(t *testing.T) {
 }
 
 func TestCreateRoleBinding_AlreadyExists(t *testing.T) {
-	options := options{
+	opt := options{
 		subjects: nil,
 		rf:       k8sApi.RoleRef{},
 	}
@@ -228,7 +233,7 @@ func TestCreateRoleBinding_AlreadyExists(t *testing.T) {
 
 	configureRbac := createConfigureRbac(t, fakeClient, rbacManager)
 
-	err := configureRbac.createRoleBinding(name, namespace, options)
+	err := configureRbac.createRoleBinding(name, namespace, opt)
 	assert.Equal(t, err, nil)
 
 	roleBinding, err := rbacManager.GetRoleBinding(name, namespace)
@@ -237,7 +242,7 @@ func TestCreateRoleBinding_AlreadyExists(t *testing.T) {
 }
 
 func TestCreateRole_AlreadyExists(t *testing.T) {
-	options := options{
+	opt := options{
 		subjects: nil,
 		rf:       k8sApi.RoleRef{},
 		pr:       []k8sApi.PolicyRule{},
@@ -260,7 +265,7 @@ func TestCreateRole_AlreadyExists(t *testing.T) {
 
 	configureRbac := createConfigureRbac(t, fakeClient, rbacManager)
 
-	err := configureRbac.createRole(name, namespace, options)
+	err := configureRbac.createRole(name, namespace, opt)
 	assert.Equal(t, err, nil)
 
 	r, err := rbacManager.GetRole(name, namespace)
@@ -300,6 +305,7 @@ func TestGetJenkinsAdminRoleSubjects_NotOpenshiftType(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unable to set env variable: %v", err)
 	}
+
 	defer func() {
 		err := os.Unsetenv(platformType)
 		if err != nil {

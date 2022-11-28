@@ -9,14 +9,14 @@ import (
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
-
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/cluster"
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
 )
 
 func createCdPipelineWithAnnotations(t *testing.T) cdPipeApi.CDPipeline {
 	t.Helper()
+
 	annotations := make(map[string]string)
 	annotations[dockerStreamsBeforeUpdateAnnotationKey] = dockerImageName
 
@@ -31,6 +31,7 @@ func createCdPipelineWithAnnotations(t *testing.T) cdPipeApi.CDPipeline {
 
 func createCodebaseImageStreamWithLabels(t *testing.T) codebaseApi.CodebaseImageStream {
 	t.Helper()
+
 	labels := make(map[string]string)
 	labels[createLabelName(cdPipeline, name)] = labelValue
 

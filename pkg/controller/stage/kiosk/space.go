@@ -2,6 +2,7 @@ package kiosk
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/go-logr/logr"
 	loftKioskApi "github.com/loft-sh/kiosk/pkg/apis/tenancy/v1alpha1"
@@ -25,9 +26,9 @@ type Space struct {
 	Log    logr.Logger
 }
 
-func InitSpace(client client.Client) SpaceManager {
+func InitSpace(c client.Client) SpaceManager {
 	return Space{
-		Client: client,
+		Client: c,
 		Log:    ctrl.Log.WithName("space-manager"),
 	}
 }
@@ -35,6 +36,7 @@ func InitSpace(client client.Client) SpaceManager {
 func (s Space) Create(name, account string) error {
 	log := s.Log.WithValues("name", name)
 	log.Info("creating loft kiosk space")
+
 	space := &loftKioskApi.Space{
 		ObjectMeta: metaV1.ObjectMeta{
 			Name: name,
@@ -46,29 +48,36 @@ func (s Space) Create(name, account string) error {
 			Account: account,
 		},
 	}
+
 	if err := s.Client.Create(context.Background(), space); err != nil {
-		return err
+		return fmt.Errorf("failed to create loft kiosk space: %w", err)
 	}
+
 	log.Info("loft kiosk space is created")
+
 	return nil
 }
 
 func (s Space) Get(name string) (*loftKioskApi.Space, error) {
 	log := s.Log.WithValues("name", name)
 	log.Info("getting loft kiosk space resource")
+
 	space := &loftKioskApi.Space{}
 	if err := s.Client.Get(context.Background(), types.NamespacedName{
 		Name: name,
 	}, space); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to retrieve loft kiosk space: %w", err)
 	}
+
 	log.Info("loft kiosk space has been retrieved")
+
 	return space, nil
 }
 
 func (s Space) Delete(name string) error {
 	log := s.Log.WithValues("name", name)
 	log.Info("deleting loft kiosk space")
+
 	if err := s.Client.Delete(context.Background(), &loftKioskApi.Space{
 		ObjectMeta: metaV1.ObjectMeta{
 			Name: name,
@@ -76,8 +85,10 @@ func (s Space) Delete(name string) error {
 	}, &client.DeleteOptions{
 		GracePeriodSeconds: common.GetInt64P(0),
 	}); err != nil {
-		return err
+		return fmt.Errorf("failed to delete loft kiosk space: %w", err)
 	}
+
 	log.Info("loft kiosk space is deleted")
+
 	return nil
 }

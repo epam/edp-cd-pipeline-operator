@@ -6,9 +6,9 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestCISNotFound_Error(t *testing.T) {
+func TestCISNotFoundError_Error(t *testing.T) {
 	testStringValue := "test"
-	cisNotFound := CISNotFound(testStringValue)
+	cisNotFound := CISNotFoundError(testStringValue)
 
 	funcResult := cisNotFound.Error()
 	assert.Equal(t, testStringValue, funcResult)

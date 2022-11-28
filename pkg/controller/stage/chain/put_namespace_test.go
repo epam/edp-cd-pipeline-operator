@@ -69,7 +69,9 @@ func TestPutNamespace_NSExists(t *testing.T) {
 
 func TestSetFailedStatus(t *testing.T) {
 	scheme := runtime.NewScheme()
+
 	utilRuntime.Must(cdPipeApi.AddToScheme(scheme))
+
 	s := &cdPipeApi.Stage{
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:      name,

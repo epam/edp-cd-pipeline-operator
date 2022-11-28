@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/go-logr/logr"
-	"github.com/pkg/errors"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -28,10 +27,11 @@ func (h PutKioskSpace) ServeRequest(stage *cdPipeApi.Stage) error {
 	h.log.Info("try to create namespace", "name", name)
 
 	if err := h.createSpace(name, stage.Namespace); err != nil {
-		if err := h.setFailedStatus(context.Background(), stage, err); err != nil {
-			return errors.Wrapf(err, "unable to update stage %s status", stage.Name)
+		if setErr := h.setFailedStatus(context.Background(), stage, err); setErr != nil {
+			return fmt.Errorf("failed to update stage %s status: %w", stage.Name, err)
 		}
-		return errors.Wrapf(err, "unable to create %s lofk kiosk space cr", name)
+
+		return fmt.Errorf("failed to create %s lofk kiosk space cr: %w", name, err)
 	}
 
 	return nextServeOrNil(h.next, stage)
@@ -48,29 +48,39 @@ func (h PutKioskSpace) createSpace(name, account string) error {
 		return nil
 	}
 
-	return h.space.Create(name, account)
+	err = h.space.Create(name, account)
+	if err != nil {
+		return fmt.Errorf("failed to create kiosk space: %w", err)
+	}
+
+	return nil
 }
 
 func (h PutKioskSpace) spaceExists(name string) (bool, error) {
 	h.log.Info("checking existence of space cr", "name", name)
+
 	_, err := h.space.Get(name)
 	if err != nil {
 		if k8sErrors.IsNotFound(err) {
 			return false, nil
 		}
-		return false, err
+
+		return false, fmt.Errorf("failed to get space: %w", err)
 	}
+
 	return true, nil
 }
 
 func (h PutKioskSpace) setFailedStatus(ctx context.Context, stage *cdPipeApi.Stage, err error) error {
 	updateStatus := func(ctx context.Context, stage *cdPipeApi.Stage) error {
-		if err := h.client.Status().Update(ctx, stage); err != nil {
-			if err := h.client.Update(ctx, stage); err != nil {
-				return err
+		if err = h.client.Status().Update(ctx, stage); err != nil {
+			if err = h.client.Update(ctx, stage); err != nil {
+				return fmt.Errorf("failed to update kiosk space status: %w", err)
 			}
 		}
+
 		h.log.Info("stage status has been updated.", "name", stage.Name)
+
 		return nil
 	}
 
@@ -83,5 +93,6 @@ func (h PutKioskSpace) setFailedStatus(ctx context.Context, stage *cdPipeApi.Sta
 		DetailedMessage: err.Error(),
 		Value:           consts.FailedStatus,
 	}
+
 	return updateStatus(ctx, stage)
 }

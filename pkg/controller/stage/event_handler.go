@@ -13,6 +13,10 @@ import (
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1"
 )
 
+const (
+	clientLimit = 1000
+)
+
 // PipelineEventHandler is a handler for CDPipeline events,
 // which triggers all of its stages of reconciliation.
 // It only triggers stages on the CDPipeline update event,
@@ -23,8 +27,8 @@ type PipelineEventHandler struct {
 }
 
 // NewPipelineEventHandler creates a new PipelineEventHandler.
-func NewPipelineEventHandler(client client.Client, log logr.Logger) *PipelineEventHandler {
-	return &PipelineEventHandler{client: client, log: log}
+func NewPipelineEventHandler(c client.Client, log logr.Logger) *PipelineEventHandler {
+	return &PipelineEventHandler{client: c, log: log}
 }
 
 // Update triggers all stages of the CDPipeline reconciliation.
@@ -46,12 +50,13 @@ func (h *PipelineEventHandler) Update(evt event.UpdateEvent, q workqueue.RateLim
 		stages,
 		client.InNamespace(evt.ObjectNew.GetNamespace()),
 		client.MatchingLabels{cdPipeApi.CodebaseTypeLabelName: evt.ObjectNew.GetName()},
-		client.Limit(1000),
+		client.Limit(clientLimit),
 	); err != nil {
 		h.log.Error(err, "unable to get stages for cd pipeline", "cd pipeline", evt.ObjectNew.GetName())
 		return
 	}
 
+	//nolint
 	for _, stage := range stages.Items {
 		q.Add(reconcile.Request{NamespacedName: types.NamespacedName{
 			Namespace: stage.GetNamespace(),
@@ -60,14 +65,17 @@ func (h *PipelineEventHandler) Update(evt event.UpdateEvent, q workqueue.RateLim
 	}
 }
 
+// nolint
 // Create does nothing, skip event.
 func (h *PipelineEventHandler) Create(evt event.CreateEvent, q workqueue.RateLimitingInterface) {
 }
 
+// nolint
 // Delete does nothing, skip event.
 func (h *PipelineEventHandler) Delete(evt event.DeleteEvent, q workqueue.RateLimitingInterface) {
 }
 
+// nolint
 // Generic does nothing, skip event.
 func (h *PipelineEventHandler) Generic(evt event.GenericEvent, q workqueue.RateLimitingInterface) {
 }

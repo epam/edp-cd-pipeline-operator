@@ -6,7 +6,7 @@ import (
 
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
-// StageSpec defines the desired state of Stage
+// StageSpec defines the desired state of Stage.
 type StageSpec struct {
 	// +kubebuilder:validation:MinLength=2
 
@@ -39,7 +39,7 @@ type StageSpec struct {
 	JobProvisioning string `json:"jobProvisioning"`
 }
 
-// QualityGate defines a single quality for a release
+// QualityGate defines a single quality for a release.
 type QualityGate struct {
 	// A type of quality gate, e.g. "Manual", "Autotests"
 	QualityGateType string `json:"qualityGateType" valid:"Required"`
@@ -60,7 +60,7 @@ type QualityGate struct {
 	BranchName *string `json:"branchName"`
 }
 
-// Source defines a pipeline library
+// Source defines a pipeline library.
 type Source struct {
 	// Type of pipeline library, e.g. default, library
 	Type string `json:"type"`
@@ -71,7 +71,7 @@ type Source struct {
 	Library Library `json:"library,omitempty"`
 }
 
-// Library defines a pipeline library for release process
+// Library defines a pipeline library for release process.
 type Library struct {
 	// A name of a library
 	Name string `json:"name,omitempty"`
@@ -80,7 +80,7 @@ type Library struct {
 	Branch string `json:"branch,omitempty"`
 }
 
-// StageStatus defines the observed state of Stage
+// StageStatus defines the observed state of Stage.
 type StageStatus struct {
 	// This flag indicates neither Stage are initialized and ready to work. Defaults to false.
 	Available bool `json:"available"`
@@ -119,7 +119,7 @@ type StageStatus struct {
 // +kubebuilder:subresource:status
 // +kubebuilder:deprecatedversion
 
-// Stage is the Schema for the stages API
+// Stage is the Schema for the stages API.
 type Stage struct {
 	metaV1.TypeMeta   `json:",inline"`
 	metaV1.ObjectMeta `json:"metadata,omitempty"`
@@ -128,13 +128,14 @@ type Stage struct {
 	Status StageStatus `json:"status,omitempty"`
 }
 
+// nolint:gocritic
 func (in Stage) IsFirst() bool {
 	return in.Spec.Order == 0
 }
 
 // +kubebuilder:object:root=true
 
-// StageList contains a list of Stage
+// StageList contains a list of Stage.
 type StageList struct {
 	metaV1.TypeMeta `json:",inline"`
 	metaV1.ListMeta `json:"metadata,omitempty"`

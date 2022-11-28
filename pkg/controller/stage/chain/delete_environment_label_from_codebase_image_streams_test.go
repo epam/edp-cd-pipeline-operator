@@ -10,11 +10,10 @@ import (
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
-
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1"
 	edpErr "github.com/epam/edp-cd-pipeline-operator/v2/pkg/error"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/cluster"
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
 )
 
 const (
@@ -285,7 +284,7 @@ func TestSetDeleteEnvironmentLabel_NoPreviousStageError(t *testing.T) {
 	}
 
 	err := deleteEnvLabel.deleteEnvironmentLabel(&stage)
-	assert.Equal(t, fmt.Errorf("previous stage not found"), err)
+	assert.Contains(t, err.Error(), "previous stage not found")
 }
 
 func TestSetEnvLabelForVerifiedImageStream_IsNotFoundPreviousImageStream(t *testing.T) {
@@ -310,5 +309,5 @@ func TestSetEnvLabelForVerifiedImageStream_IsNotFoundPreviousImageStream(t *test
 	cisName := createCisName(name, previousStageName, image.Spec.Codebase)
 
 	err := deleteEnvLabel.setEnvLabelForVerifiedImageStream(&stage, &image, name, dockerImageName)
-	assert.Equal(t, edpErr.CISNotFound(fmt.Sprintf("codebase image stream %s is not found", cisName)), err)
+	assert.Equal(t, edpErr.CISNotFoundError(fmt.Sprintf("codebase image stream %s is not found", cisName)), err)
 }

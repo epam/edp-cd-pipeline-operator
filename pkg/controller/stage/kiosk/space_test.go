@@ -26,6 +26,7 @@ const (
 
 func expectedSpaceInit(t *testing.T) *loftKioskApi.Space {
 	t.Helper()
+
 	return &loftKioskApi.Space{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Space",
@@ -46,6 +47,7 @@ func expectedSpaceInit(t *testing.T) *loftKioskApi.Space {
 
 func emptySpaceInit(t *testing.T) Space {
 	t.Helper()
+
 	scheme := runtime.NewScheme()
 	scheme.AddKnownTypes(v1.SchemeGroupVersion, &loftKioskApi.Space{})
 	client := fake.NewClientBuilder().WithScheme(scheme).Build()

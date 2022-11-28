@@ -14,12 +14,14 @@ func TestGetPlatformTypeEnv_Success(t *testing.T) {
 	if err != nil {
 		t.Fatalf("cannot set an env variable: %v", err)
 	}
+
 	defer func() {
 		err := os.Unsetenv(platformType)
 		if err != nil {
 			t.Fatalf("cannot unset an env variable: %v", err)
 		}
 	}()
+
 	platformType := GetPlatformTypeEnv()
 	assert.Equal(t, stubPlatformType, platformType)
 }
@@ -29,6 +31,7 @@ func TestGetPlatformTypeEnv_PlatformTypeIsNotSet(t *testing.T) {
 	if err != nil {
 		t.Fatalf("cannot unset an env variable: %v", err)
 	}
+
 	platformType := GetPlatformTypeEnv()
 	assert.Equal(t, PlatformOpenshift, platformType)
 }

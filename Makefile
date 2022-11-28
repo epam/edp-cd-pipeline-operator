@@ -67,8 +67,13 @@ fmt:  ## Run go fmt
 vet:  ## Run go vet
 	go vet ./...
 
-lint: ## Run go lint
-	exit 0
+lint: golangci-lint ## Run go lint
+	${GOLANGCILINT} run -v -c .golangci.yaml ./...
+
+GOLANGCILINT = ${CURRENT_DIR}/bin/golangci-lint
+.PHONY: golangci-lint
+golangci-lint: ## Download golangci-lint locally if necessary.
+	$(call go-get-tool,$(GOLANGCILINT),github.com/golangci/golangci-lint/cmd/golangci-lint,v1.50.1)
 
 ##@ Build
 

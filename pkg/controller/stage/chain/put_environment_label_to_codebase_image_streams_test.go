@@ -12,11 +12,10 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
-
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1"
 	edpErr "github.com/epam/edp-cd-pipeline-operator/v2/pkg/error"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/cluster"
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
 )
 
 const (
@@ -28,6 +27,7 @@ const (
 
 func createStage(t *testing.T, order int, cdPipeline string) cdPipeApi.Stage {
 	t.Helper()
+
 	return cdPipeApi.Stage{
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:      name,
@@ -43,8 +43,10 @@ func createStage(t *testing.T, order int, cdPipeline string) cdPipeApi.Stage {
 
 func schemeInit(t *testing.T) *runtime.Scheme {
 	t.Helper()
+
 	scheme := runtime.NewScheme()
 	scheme.AddKnownTypes(k8sApi.SchemeGroupVersion, &cdPipeApi.Stage{}, &cdPipeApi.StageList{}, &cdPipeApi.CDPipeline{}, &codebaseApi.CodebaseImageStream{})
+
 	return scheme
 }
 
@@ -80,6 +82,8 @@ func TestPutEnvironmentLabelToCodebaseImageStreams_ServeRequest_Success(t *testi
 	assert.NoError(t, err)
 
 	imageStream, err := cluster.GetCodebaseImageStream(putEnvLabel.client, dockerImageName, namespace)
+	assert.NoError(t, err)
+
 	_, ok := imageStream.Labels[createLabelName(cdPipeline.Name, stage.Name)]
 	assert.True(t, ok)
 }
@@ -133,6 +137,8 @@ func TestPutEnvironmentLabelToCodebaseImageStreams_ServeRequest_PreviousStageIma
 	assert.NoError(t, err)
 
 	imageStream, err := cluster.GetCodebaseImageStream(putEnvLabel.client, cisName, namespace)
+	assert.NoError(t, err)
+
 	_, ok := imageStream.Labels[createLabelName(cdPipeline.Name, stage.Name)]
 	assert.True(t, ok)
 }
@@ -234,5 +240,5 @@ func TestPutEnvironmentLabelToCodebaseImageStreams_ServeRequest_CantGetPreviousS
 	}
 
 	err := putEnvLabel.ServeRequest(&stage)
-	assert.Equal(t, edpErr.CISNotFound(fmt.Sprintf("couldn't get %v codebase image stream", dockerImageName)), err)
+	assert.Equal(t, edpErr.CISNotFoundError(fmt.Sprintf("couldn't get %v codebase image stream", dockerImageName)), err)
 }

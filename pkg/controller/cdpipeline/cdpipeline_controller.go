@@ -6,7 +6,6 @@ import (
 	"reflect"
 
 	"github.com/go-logr/logr"
-	"github.com/pkg/errors"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -17,17 +16,16 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1"
-
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/cluster"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/consts"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/finalizer"
+	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1"
 )
 
-func NewReconcileCDPipeline(client client.Client, scheme *runtime.Scheme, log logr.Logger) *ReconcileCDPipeline {
+func NewReconcileCDPipeline(c client.Client, scheme *runtime.Scheme, log logr.Logger) *ReconcileCDPipeline {
 	return &ReconcileCDPipeline{
-		client: client,
+		client: c,
 		scheme: scheme,
 		log:    log.WithName("cd-pipeline"),
 	}
@@ -44,14 +42,26 @@ const foregroundDeletionFinalizerName = "foregroundDeletion"
 func (r *ReconcileCDPipeline) SetupWithManager(mgr ctrl.Manager) error {
 	p := predicate.Funcs{
 		UpdateFunc: func(e event.UpdateEvent) bool {
-			oo := e.ObjectOld.(*cdPipeApi.CDPipeline)
-			no := e.ObjectNew.(*cdPipeApi.CDPipeline)
+			oo, ok := e.ObjectOld.(*cdPipeApi.CDPipeline)
+			if !ok {
+				return false
+			}
+			no, ok := e.ObjectNew.(*cdPipeApi.CDPipeline)
+			if !ok {
+				return false
+			}
+
 			return !reflect.DeepEqual(oo.Spec, no.Spec)
 		},
 	}
-	return ctrl.NewControllerManagedBy(mgr).
+
+	if err := ctrl.NewControllerManagedBy(mgr).
 		For(&cdPipeApi.CDPipeline{}, builder.WithPredicates(p)).
-		Complete(r)
+		Complete(r); err != nil {
+		return fmt.Errorf("failed to create controller manager: %w", err)
+	}
+
+	return nil
 }
 
 func (r *ReconcileCDPipeline) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
@@ -63,7 +73,8 @@ func (r *ReconcileCDPipeline) Reconcile(ctx context.Context, request reconcile.R
 		if k8sErrors.IsNotFound(err) {
 			return reconcile.Result{}, nil
 		}
-		return reconcile.Result{}, err
+
+		return reconcile.Result{}, fmt.Errorf("failed to get pipeline: %w", err)
 	}
 
 	if err := r.addFinalizer(ctx, i); err != nil {
@@ -71,7 +82,7 @@ func (r *ReconcileCDPipeline) Reconcile(ctx context.Context, request reconcile.R
 	}
 
 	if cluster.JenkinsEnabled(ctx, r.client, request.Namespace, log) {
-		if err := r.createJenkinsFolder(ctx, *i); err != nil {
+		if err := r.createJenkinsFolder(ctx, i); err != nil {
 			return reconcile.Result{}, err
 		}
 	}
@@ -79,7 +90,9 @@ func (r *ReconcileCDPipeline) Reconcile(ctx context.Context, request reconcile.R
 	if err := r.setFinishStatus(ctx, i); err != nil {
 		return reconcile.Result{}, err
 	}
+
 	log.V(2).Info("Reconciling of CD Pipeline has been finished")
+
 	return reconcile.Result{}, nil
 }
 
@@ -87,12 +100,15 @@ func (r *ReconcileCDPipeline) addFinalizer(ctx context.Context, pipeline *cdPipe
 	if !pipeline.GetDeletionTimestamp().IsZero() {
 		return nil
 	}
+
 	if !finalizer.ContainsString(pipeline.ObjectMeta.Finalizers, foregroundDeletionFinalizerName) {
 		pipeline.ObjectMeta.Finalizers = append(pipeline.ObjectMeta.Finalizers, foregroundDeletionFinalizerName)
 	}
+
 	if err := r.client.Update(ctx, pipeline); err != nil {
-		return err
+		return fmt.Errorf("failed to update pipeline: %w", err)
 	}
+
 	return nil
 }
 
@@ -108,17 +124,19 @@ func (r *ReconcileCDPipeline) setFinishStatus(ctx context.Context, p *cdPipeApi.
 	}
 
 	if err := r.client.Status().Update(ctx, p); err != nil {
-		if err := r.client.Update(ctx, p); err != nil {
-			return err
+		if err = r.client.Update(ctx, p); err != nil {
+			return fmt.Errorf("failed to update pipeline status: %w", err)
 		}
 	}
+
 	return nil
 }
 
-func (r *ReconcileCDPipeline) createJenkinsFolder(ctx context.Context, p cdPipeApi.CDPipeline) error {
+func (r *ReconcileCDPipeline) createJenkinsFolder(ctx context.Context, p *cdPipeApi.CDPipeline) error {
 	jfn := fmt.Sprintf("%v-%v", p.Name, "cd-pipeline")
 	log := r.log.WithValues("Jenkins folder name", jfn)
 	log.V(2).Info("start creating JenkinsFolder CR", "name", jfn)
+
 	jf := &jenkinsApi.JenkinsFolder{
 		TypeMeta: metaV1.TypeMeta{
 			APIVersion: "v2.edp.epam.com/v1",
@@ -134,8 +152,11 @@ func (r *ReconcileCDPipeline) createJenkinsFolder(ctx context.Context, p cdPipeA
 			log.V(2).Info("jenkins folder cr already exists", "name", jfn)
 			return nil
 		}
-		return errors.Wrapf(err, "couldn't create jenkins folder %v", jfn)
+
+		return fmt.Errorf("failed to reate jenkins folder %v: %w", jfn, err)
 	}
+
 	log.Info("JenkinsFolder CR has been created", "name", jfn)
+
 	return nil
 }

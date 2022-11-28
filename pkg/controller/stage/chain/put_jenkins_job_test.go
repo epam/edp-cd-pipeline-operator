@@ -10,11 +10,10 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
-	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1"
-
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/common"
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
+	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1"
 )
 
 const (
@@ -27,13 +26,16 @@ const (
 
 func putJenkinsJobSchemeInit(t *testing.T) *runtime.Scheme {
 	t.Helper()
+
 	scheme := runtime.NewScheme()
 	scheme.AddKnownTypes(cdPipeApi.SchemeGroupVersion, &cdPipeApi.Stage{}, &cdPipeApi.CDPipeline{}, &codebaseApi.Codebase{}, &codebaseApi.GitServer{}, &jenkinsApi.JenkinsJob{})
+
 	return scheme
 }
 
 func putJenkinsJobCreateCdPipeline(t *testing.T) *cdPipeApi.CDPipeline {
 	t.Helper()
+
 	return &cdPipeApi.CDPipeline{
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:      cdPipelineName,
@@ -46,9 +48,10 @@ func putJenkinsJobCreateCdPipeline(t *testing.T) *cdPipeApi.CDPipeline {
 	}
 }
 
-func putJenkinsJobCreateStage(t *testing.T) cdPipeApi.Stage {
+func putJenkinsJobCreateStage(t *testing.T) *cdPipeApi.Stage {
 	t.Helper()
-	return cdPipeApi.Stage{
+
+	return &cdPipeApi.Stage{
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
@@ -73,6 +76,7 @@ func putJenkinsJobCreateStage(t *testing.T) cdPipeApi.Stage {
 
 func putJenkinsJobCreateCodebase(t *testing.T) *codebaseApi.Codebase {
 	t.Helper()
+
 	return &codebaseApi.Codebase{
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:      library,
@@ -86,6 +90,7 @@ func putJenkinsJobCreateCodebase(t *testing.T) *codebaseApi.Codebase {
 
 func putJenkinsJobCreateGitServer(t *testing.T) *codebaseApi.GitServer {
 	t.Helper()
+
 	return &codebaseApi.GitServer{
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:      gitServer,
@@ -95,7 +100,6 @@ func putJenkinsJobCreateGitServer(t *testing.T) *codebaseApi.GitServer {
 }
 
 func TestGetQualityGateStagesMethod_ShouldReturnParsedStagesScenarioFirst(t *testing.T) {
-
 	qualityGates := []cdPipeApi.QualityGate{
 		{
 			QualityGateType: "autotests",
@@ -128,9 +132,11 @@ func TestGetQualityGateStagesMethod_ShouldReturnParsedStagesScenarioFirst(t *tes
 			BranchName:      common.GetStringP("master"),
 		},
 	}
+
 	stages, err := getQualityGateStages(qualityGates)
 	assert.NoError(t, err)
 	assert.NotNil(t, stages)
+
 	expected := "[{\"name\":\"autotests\",\"step_name\":\"aut1\"},{\"name\":\"autotests\",\"step_name\":\"aut2\"},{\"name\":\"autotests\",\"step_name\":\"aut3\"},{\"name\":\"autotests\",\"step_name\":\"aut4\"}],{\"name\":\"manual\",\"step_name\":\"man1\"}"
 	assert.Equal(t, expected, *stages)
 }
@@ -168,9 +174,11 @@ func TestGetQualityGateStagesMethod_ShouldReturnParsedStagesScenarioSecond(t *te
 			BranchName:      common.GetStringP("master"),
 		},
 	}
+
 	stages, err := getQualityGateStages(qualityGates)
 	assert.NoError(t, err)
 	assert.NotNil(t, stages)
+
 	expected := "[{\"name\":\"autotests\",\"step_name\":\"aut1\"},{\"name\":\"autotests\",\"step_name\":\"aut3\"},{\"name\":\"autotests\",\"step_name\":\"aut4\"}],{\"name\":\"manual\",\"step_name\":\"man1\"},{\"name\":\"autotests\",\"step_name\":\"aut2\"}"
 	assert.Equal(t, expected, *stages)
 }
@@ -196,7 +204,7 @@ func TestCreateJenkinsJobConfig_Success(t *testing.T) {
 		Status: cdPipeApi.CDPipelineStatus{},
 	}
 
-	stage := cdPipeApi.Stage{
+	stage := &cdPipeApi.Stage{
 		Spec: cdPipeApi.StageSpec{
 			QualityGates: []cdPipeApi.QualityGate{
 				{
@@ -207,7 +215,7 @@ func TestCreateJenkinsJobConfig_Success(t *testing.T) {
 	}
 
 	putJenkinsJob := PutJenkinsJob{
-		client: fake.NewClientBuilder().WithScheme(putJenkinsJobSchemeInit(t)).WithObjects(cdPipeline, &stage).Build(),
+		client: fake.NewClientBuilder().WithScheme(putJenkinsJobSchemeInit(t)).WithObjects(cdPipeline, stage).Build(),
 		log:    logr.DiscardLogger{},
 	}
 
@@ -227,7 +235,7 @@ func TestCreateJenkinsJobConfig_WithLibraryParams(t *testing.T) {
 	gitServer := putJenkinsJobCreateGitServer(t)
 
 	putJenkinsJob := PutJenkinsJob{
-		client: fake.NewClientBuilder().WithScheme(putJenkinsJobSchemeInit(t)).WithObjects(cdPipeline, &stage, codeBase, gitServer).Build(),
+		client: fake.NewClientBuilder().WithScheme(putJenkinsJobSchemeInit(t)).WithObjects(cdPipeline, stage, codeBase, gitServer).Build(),
 		log:    logr.DiscardLogger{},
 	}
 
@@ -254,7 +262,7 @@ func TestTryToUpdateJenkinsJob_Success(t *testing.T) {
 	}
 
 	putJenkinsJob := PutJenkinsJob{
-		client: fake.NewClientBuilder().WithScheme(putJenkinsJobSchemeInit(t)).WithObjects(cdPipeline, &stage, codeBase, gitServer, &jenkinsJob).Build(),
+		client: fake.NewClientBuilder().WithScheme(putJenkinsJobSchemeInit(t)).WithObjects(cdPipeline, stage, codeBase, gitServer, &jenkinsJob).Build(),
 		log:    logr.DiscardLogger{},
 	}
 
@@ -268,7 +276,7 @@ func TestTryToUpdateJenkinsJob_Success(t *testing.T) {
 }
 
 func TestTryToUpdateJenkinsJob_NotFound(t *testing.T) {
-	stage := cdPipeApi.Stage{
+	stage := &cdPipeApi.Stage{
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
@@ -278,7 +286,7 @@ func TestTryToUpdateJenkinsJob_NotFound(t *testing.T) {
 	jenkinsJob := jenkinsApi.JenkinsJob{}
 
 	putJenkinsJob := PutJenkinsJob{
-		client: fake.NewClientBuilder().WithScheme(putJenkinsJobSchemeInit(t)).WithObjects(&stage, &jenkinsJob).Build(),
+		client: fake.NewClientBuilder().WithScheme(putJenkinsJobSchemeInit(t)).WithObjects(stage, &jenkinsJob).Build(),
 		log:    logr.DiscardLogger{},
 	}
 
@@ -293,11 +301,17 @@ func TestTryToCreateJenkinsJobConfig_Success(t *testing.T) {
 	gitServer := putJenkinsJobCreateGitServer(t)
 
 	putJenkinsJob := PutJenkinsJob{
-		client: fake.NewClientBuilder().WithScheme(putJenkinsJobSchemeInit(t)).WithObjects(cdPipeline, &stage, codeBase, gitServer).Build(),
-		log:    logr.DiscardLogger{},
+		client: fake.NewClientBuilder().
+			WithScheme(putJenkinsJobSchemeInit(t)).
+			WithObjects(cdPipeline, stage, codeBase, gitServer).
+			Build(),
+		log: logr.DiscardLogger{},
 	}
 
-	err := putJenkinsJob.tryToCreateJenkinsJob(stage)
+	if err := putJenkinsJob.tryToCreateJenkinsJob(stage); err != nil {
+		t.Fatal(err)
+	}
+
 	jenkinsJobAfterUpdate, err := putJenkinsJob.getJenkinsJob(name, namespace)
 	assert.NoError(t, err)
 	assert.NotNil(t, jenkinsJobAfterUpdate.Spec.Job.Config)
@@ -311,11 +325,13 @@ func TestPutJenkinsJob_ServeRequest_Success(t *testing.T) {
 	gitServer := putJenkinsJobCreateGitServer(t)
 
 	putJenkinsJob := PutJenkinsJob{
-		client: fake.NewClientBuilder().WithScheme(putJenkinsJobSchemeInit(t)).WithObjects(cdPipeline, &stage, codeBase, gitServer).Build(),
+		client: fake.NewClientBuilder().WithScheme(putJenkinsJobSchemeInit(t)).WithObjects(cdPipeline, stage, codeBase, gitServer).Build(),
 		log:    logr.DiscardLogger{},
 	}
+	if err := putJenkinsJob.ServeRequest(stage); err != nil {
+		t.Fatal(err)
+	}
 
-	err := putJenkinsJob.ServeRequest(&stage)
 	jenkinsJobAfterUpdate, err := putJenkinsJob.getJenkinsJob(name, namespace)
 	assert.NoError(t, err)
 	assert.NotNil(t, jenkinsJobAfterUpdate.Spec.Job.Config)

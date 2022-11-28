@@ -6,7 +6,7 @@ import (
 
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
-// CDPipelineSpec defines the desired state of CDPipeline
+// CDPipelineSpec defines the desired state of CDPipeline.
 type CDPipelineSpec struct {
 	// +kubebuilder:validation:MinLength=2
 
@@ -53,7 +53,7 @@ const (
 	Error Result = "error"
 )
 
-// CDPipelineStatus defines the observed state of CDPipeline
+// CDPipelineStatus defines the observed state of CDPipeline.
 type CDPipelineStatus struct {
 	// This flag indicates neither CDPipeline are initialized and ready to work. Defaults to false.
 	Available bool `json:"available"`
@@ -88,7 +88,7 @@ type CDPipelineStatus struct {
 // +kubebuilder:subresource:status
 // +kubebuilder:deprecatedversion
 
-// CDPipeline is the Schema for the cdpipelines API
+// CDPipeline is the Schema for the cdpipelines API.
 type CDPipeline struct {
 	metaV1.TypeMeta   `json:",inline"`
 	metaV1.ObjectMeta `json:"metadata,omitempty"`
@@ -99,7 +99,7 @@ type CDPipeline struct {
 
 // +kubebuilder:object:root=true
 
-// CDPipelineList contains a list of CDPipeline
+// CDPipelineList contains a list of CDPipeline.
 type CDPipelineList struct {
 	metaV1.TypeMeta `json:",inline"`
 	metaV1.ListMeta `json:"metadata,omitempty"`

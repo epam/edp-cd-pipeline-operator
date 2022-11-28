@@ -7,19 +7,17 @@ import (
 	"strings"
 
 	"github.com/go-logr/logr"
-	"github.com/pkg/errors"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
-	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1"
-
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/controller/stage/chain/handler"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/controller/stage/chain/util"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/common"
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
+	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1"
 )
 
 type PutJenkinsJob struct {
@@ -42,20 +40,24 @@ const (
 )
 
 func (h PutJenkinsJob) ServeRequest(stage *cdPipeApi.Stage) error {
-	log := h.log.WithValues("stage name", stage.Name)
-	log.Info("start creating jenkins job cr.")
-	if err := h.tryToUpdateJenkinsJobConfig(*stage); err != nil {
-		return errors.Wrapf(err, "failed to update %v JenkinsJob CR config", stage.Name)
+	logger := h.log.WithValues("stage name", stage.Name)
+	logger.Info("start creating jenkins job cr.")
+
+	if err := h.tryToUpdateJenkinsJobConfig(stage); err != nil {
+		return fmt.Errorf("failed to update %v JenkinsJob CR config: %w", stage.Name, err)
 	}
-	if err := h.tryToCreateJenkinsJob(*stage); err != nil {
-		return errors.Wrapf(err, "failed to create %v JenkinsJob CR", stage.Name)
+
+	if err := h.tryToCreateJenkinsJob(stage); err != nil {
+		return fmt.Errorf("failed to create %v JenkinsJob CR: %w", stage.Name, err)
 	}
-	log.Info("jenkins job cr has been created")
+
+	logger.Info("jenkins job cr has been created")
+
 	return nextServeOrNil(h.next, stage)
 }
 
-func (h PutJenkinsJob) tryToCreateJenkinsJob(stage cdPipeApi.Stage) error {
-	h.log.Info("start creating JenkinsJob CR", "name", stage.Name)
+func (h PutJenkinsJob) tryToCreateJenkinsJob(stage *cdPipeApi.Stage) error {
+	h.log.Info("start creating JenkinsJob CR", crNameLogKey, stage.Name)
 
 	jc, err := h.createJenkinsJobConfig(stage)
 	if err != nil {
@@ -84,48 +86,55 @@ func (h PutJenkinsJob) tryToCreateJenkinsJob(stage cdPipeApi.Stage) error {
 			Action: cdPipeApi.AcceptJenkinsJob,
 		},
 	}
-	if err := h.client.Create(context.TODO(), jj); err != nil {
+	if err = h.client.Create(context.TODO(), jj); err != nil {
 		if k8sErrors.IsAlreadyExists(err) {
-			h.log.Info("jenkins job already exists. skip creating...", "name", stage.Name)
+			h.log.Info("jenkins job already exists. skip creating...", crNameLogKey, stage.Name)
 			return nil
 		}
-		return errors.Wrapf(err, "couldn't create jenkins job %v", jj.Name)
+
+		return fmt.Errorf("failed to create jenkins job %v: %w", jj.Name, err)
 	}
-	h.log.Info("JenkinsJob has been created", "name", stage.Name)
+
+	h.log.Info("JenkinsJob has been created", crNameLogKey, stage.Name)
+
 	return nil
 }
 
-func (h PutJenkinsJob) tryToUpdateJenkinsJobConfig(stage cdPipeApi.Stage) error {
+func (h PutJenkinsJob) tryToUpdateJenkinsJobConfig(stage *cdPipeApi.Stage) error {
 	jenkinsJob, err := h.getJenkinsJob(stage.Name, stage.Namespace)
 	if k8sErrors.IsNotFound(err) {
-		h.log.Info("jenkins job does not exists. skip updating...", "name", stage.Name)
+		h.log.Info("jenkins job does not exists. skip updating...", crNameLogKey, stage.Name)
 		return nil
 	}
+
 	if err != nil {
 		return err
 	}
+
 	jc, err := h.createJenkinsJobConfig(stage)
 	if err != nil {
 		return err
 	}
 
 	jenkinsJob.Spec.Job.Config = string(jc)
-	if err := h.client.Update(context.TODO(), jenkinsJob); err != nil {
-		return err
+	if err = h.client.Update(context.TODO(), jenkinsJob); err != nil {
+		return fmt.Errorf("failed to  update jenkins job config: %w", err)
 	}
-	h.log.Info("JenkinsJob config has been updated...", "name", stage.Name)
+
+	h.log.Info("JenkinsJob config has been updated...", crNameLogKey, stage.Name)
+
 	return nil
 }
 
-func (h PutJenkinsJob) createJenkinsJobConfig(stage cdPipeApi.Stage) ([]byte, error) {
+func (h PutJenkinsJob) createJenkinsJobConfig(stage *cdPipeApi.Stage) ([]byte, error) {
 	qgStages, err := getQualityGateStages(stage.Spec.QualityGates)
 	if err != nil {
-		return nil, errors.Wrap(err, "couldn't parse quality gate stages")
+		return nil, fmt.Errorf("failed to parse quality gate stages: %w", err)
 	}
 
-	dt, err := h.getDeploymentType(&stage)
+	dt, err := h.getDeploymentType(stage)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to get deploymentType value")
+		return nil, fmt.Errorf("failed to get deploymentType value: %w", err)
 	}
 
 	jpm := map[string]string{
@@ -139,7 +148,9 @@ func (h PutJenkinsJob) createJenkinsJobConfig(stage cdPipeApi.Stage) ([]byte, er
 	}
 
 	if stage.Spec.Source.Type == "library" {
-		library, err := h.setLibraryParams(stage)
+		var library map[string]string
+
+		library, err = h.setLibraryParams(stage)
 		if err == nil {
 			jpm["LIBRARY_URL"] = library["url"]
 			jpm["LIBRARY_BRANCH"] = library["branch"]
@@ -152,16 +163,18 @@ func (h PutJenkinsJob) createJenkinsJobConfig(stage cdPipeApi.Stage) ([]byte, er
 
 	jc, err := json.Marshal(jpm)
 	if err != nil {
-		return nil, errors.Wrapf(err, "Can't marshal parameters %v into json string", jpm)
+		return nil, fmt.Errorf("failed to marshal parameters %v into json string: %w", jpm, err)
 	}
+
 	return jc, nil
 }
 
 func (h PutJenkinsJob) getDeploymentType(stage *cdPipeApi.Stage) (*string, error) {
 	p, err := util.GetCdPipeline(h.client, stage)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to get pipeline: %w", err)
 	}
+
 	return common.GetStringP(p.Spec.DeploymentType), nil
 }
 
@@ -170,17 +183,24 @@ func getQualityGateStages(qualityGates []cdPipeApi.QualityGate) (*string, error)
 		return nil, nil
 	}
 
-	var stages []interface{}
-	isPreviousStageAutotest := false
+	var (
+		stages                  []interface{}
+		isPreviousStageAutotest bool
+	)
+
 	for _, qg := range qualityGates {
 		if qg.QualityGateType == qualityGateAutotestType {
 			handleAutotestStage(qg, isPreviousStageAutotest, &stages)
 			isPreviousStageAutotest = true
+
 			continue
 		}
+
 		handleManualStage(qg, &stages)
+
 		isPreviousStageAutotest = false
 	}
+
 	return getStagesInJson(stages)
 }
 
@@ -189,15 +209,18 @@ func getStagesInJson(stages []interface{}) (*string, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return common.GetStringP(modifyQualityGateStagesJson(string(jsonStages))), nil
 }
 
 func modifyQualityGateStagesJson(qgStages string) string {
 	qgStages = strings.TrimPrefix(qgStages, "[")
 	qgStages = strings.TrimSuffix(qgStages, "]")
+
 	return qgStages
 }
 
+// nolint
 func handleAutotestStage(qg cdPipeApi.QualityGate, isPreviousStageAutotest bool, result *[]interface{}) {
 	if isPreviousStageAutotest {
 		handlePreviousAutotestStage(qg, result)
@@ -209,6 +232,7 @@ func handleAutotestStage(qg cdPipeApi.QualityGate, isPreviousStageAutotest bool,
 	})
 }
 
+// nolint
 func handlePreviousAutotestStage(qg cdPipeApi.QualityGate, result *[]interface{}) {
 	switch old := (*result)[len(*result)-1].(type) {
 	case []qualityGate:
@@ -231,19 +255,21 @@ func handleManualStage(qg cdPipeApi.QualityGate, result *[]interface{}) {
 	})
 }
 
-func (h PutJenkinsJob) setLibraryParams(stage cdPipeApi.Stage) (map[string]string, error) {
+func (h PutJenkinsJob) setLibraryParams(stage *cdPipeApi.Stage) (map[string]string, error) {
 	cb, err := h.getLibraryParams(stage.Spec.Source.Library.Name, stage.Namespace)
 	if err != nil {
 		h.log.Error(err, "couldn't retrieve parameters for pipeline's library, default source type will be used",
 			"Library name", stage.Spec.Source.Library.Name)
 		return nil, err
 	}
+
 	gs, err := h.getGitServerParams(cb.Spec.GitServer, stage.Namespace)
 	if err != nil {
 		h.log.Error(err, "couldn't retrieve parameters for git server, default source type will be used",
 			"Git server", cb.Spec.GitServer)
 		return nil, err
 	}
+
 	return map[string]string{
 		"url": fmt.Sprintf("ssh://%v@%v:%v%v", gs.Spec.GitUser, gs.Spec.GitHost, gs.Spec.SshPort,
 			getPathToRepository(string(cb.Spec.Strategy), stage.Spec.Source.Library.Name, cb.Spec.GitUrlPath)),
@@ -254,26 +280,26 @@ func (h PutJenkinsJob) setLibraryParams(stage cdPipeApi.Stage) (map[string]strin
 }
 
 func (h PutJenkinsJob) getLibraryParams(name, ns string) (*codebaseApi.Codebase, error) {
-	nsn := types.NamespacedName{
+	i := &codebaseApi.Codebase{}
+	if err := h.client.Get(context.TODO(), types.NamespacedName{
 		Namespace: ns,
 		Name:      name,
+	}, i); err != nil {
+		return nil, fmt.Errorf("failed to get library params: %w", err)
 	}
-	i := &codebaseApi.Codebase{}
-	if err := h.client.Get(context.TODO(), nsn, i); err != nil {
-		return nil, err
-	}
+
 	return i, nil
 }
 
-func (h PutJenkinsJob) getGitServerParams(name string, ns string) (*codebaseApi.GitServer, error) {
-	nsn := types.NamespacedName{
+func (h PutJenkinsJob) getGitServerParams(name, ns string) (*codebaseApi.GitServer, error) {
+	i := &codebaseApi.GitServer{}
+	if err := h.client.Get(context.TODO(), types.NamespacedName{
 		Namespace: ns,
 		Name:      name,
+	}, i); err != nil {
+		return nil, fmt.Errorf("failed to get git server params: %w", err)
 	}
-	i := &codebaseApi.GitServer{}
-	if err := h.client.Get(context.TODO(), nsn, i); err != nil {
-		return nil, err
-	}
+
 	return i, nil
 }
 
@@ -281,6 +307,7 @@ func getPathToRepository(strategy, name string, url *string) string {
 	if strategy == "import" {
 		return *url
 	}
+
 	return "/" + name
 }
 
@@ -288,17 +315,18 @@ func getAutoDeployStatus(tt string) string {
 	if tt == autoDeployTriggerType {
 		return "true"
 	}
+
 	return "false"
 }
 
 func (h PutJenkinsJob) getJenkinsJob(name, namespace string) (*jenkinsApi.JenkinsJob, error) {
-	nsn := types.NamespacedName{
+	jj := &jenkinsApi.JenkinsJob{}
+	if err := h.client.Get(context.TODO(), types.NamespacedName{
 		Name:      name,
 		Namespace: namespace,
+	}, jj); err != nil {
+		return nil, fmt.Errorf("failed to jenkins job: %w", err)
 	}
-	jj := &jenkinsApi.JenkinsJob{}
-	if err := h.client.Get(context.TODO(), nsn, jj); err != nil {
-		return nil, err
-	}
+
 	return jj, nil
 }

@@ -15,10 +15,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1"
-
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/finalizer"
+	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1"
 )
 
 const (
@@ -27,9 +26,10 @@ const (
 	jenkinsKind = "JenkinsFolder"
 )
 
-func emptyCdPipelineInit(t *testing.T) cdPipeApi.CDPipeline {
+func emptyCdPipelineInit(t *testing.T) *cdPipeApi.CDPipeline {
 	t.Helper()
-	return cdPipeApi.CDPipeline{
+
+	return &cdPipeApi.CDPipeline{
 		TypeMeta: metaV1.TypeMeta{},
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:      name,
@@ -42,35 +42,40 @@ func emptyCdPipelineInit(t *testing.T) cdPipeApi.CDPipeline {
 
 func (r *ReconcileCDPipeline) getJenkinsFolder(t *testing.T) *jenkinsApi.JenkinsFolder {
 	t.Helper()
+
 	createdJenkins := &jenkinsApi.JenkinsFolder{}
-	err := r.client.Get(context.Background(), types.NamespacedName{
+	if err := r.client.Get(context.Background(), types.NamespacedName{
 		Namespace: namespace,
 		Name:      fmt.Sprintf("%s-%s", name, "cd-pipeline"),
-	}, createdJenkins)
-	if err != nil {
+	}, createdJenkins); err != nil {
 		t.Fatalf("cannot find jenkins folder: %v", err)
 	}
+
 	return createdJenkins
 }
 
 func (r *ReconcileCDPipeline) getCdPipeline(t *testing.T) *cdPipeApi.CDPipeline {
 	t.Helper()
+
 	cdPipeline := &cdPipeApi.CDPipeline{}
-	err := r.client.Get(context.Background(), types.NamespacedName{
+	if err := r.client.Get(context.Background(), types.NamespacedName{
 		Namespace: namespace,
 		Name:      name,
-	}, cdPipeline)
-	if err != nil {
+	}, cdPipeline); err != nil {
 		t.Fatalf("cannot find jenkins folder: %v", err)
 	}
+
 	return cdPipeline
 }
 
 func createScheme(t *testing.T) *runtime.Scheme {
 	t.Helper()
+
 	scheme := runtime.NewScheme()
+
 	err := cdPipeApi.AddToScheme(scheme)
 	require.NoError(t, err)
+
 	err = jenkinsApi.AddToScheme(scheme)
 	require.NoError(t, err)
 
@@ -101,7 +106,7 @@ func TestReconcile_Success(t *testing.T) {
 		},
 	}
 	scheme := createScheme(t)
-	client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&emptyCdPipeline, jenkins).Build()
+	client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(emptyCdPipeline, jenkins).Build()
 
 	reconcileCDPipeline := NewReconcileCDPipeline(client, scheme, logr.DiscardLogger{})
 
@@ -145,11 +150,12 @@ func TestReconcile_GetCdPipelineError(t *testing.T) {
 		Namespace: namespace,
 		Name:      name,
 	}})
-	assert.True(t, runtime.IsNotRegisteredError(err))
+	assert.Contains(t, err.Error(), "no kind is registered")
 }
 
 func TestAddFinalizer_DeletionTimestampNotZero(t *testing.T) {
 	var finalizerArray []string
+
 	timeToDelete := &metaV1.Time{Time: time.Now().UTC()}
 
 	cdPipeline := cdPipeApi.CDPipeline{
@@ -205,11 +211,11 @@ func TestAddFinalizer_DeletionTimestampIsZero(t *testing.T) {
 func TestSetFinishStatus_Success(t *testing.T) {
 	cdPipeline := emptyCdPipelineInit(t)
 	scheme := createScheme(t)
-	client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&cdPipeline).Build()
+	client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(cdPipeline).Build()
 
 	reconcileCdPipeline := NewReconcileCDPipeline(client, scheme, logr.DiscardLogger{})
 
-	err := reconcileCdPipeline.setFinishStatus(context.Background(), &cdPipeline)
+	err := reconcileCdPipeline.setFinishStatus(context.Background(), cdPipeline)
 	assert.NoError(t, err)
 
 	clientCdPipeline := reconcileCdPipeline.getCdPipeline(t)
@@ -219,7 +225,7 @@ func TestSetFinishStatus_Success(t *testing.T) {
 func TestCreateJenkinsFolder_Success(t *testing.T) {
 	cdPipeline := emptyCdPipelineInit(t)
 	scheme := createScheme(t)
-	client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&cdPipeline).Build()
+	client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(cdPipeline).Build()
 
 	reconcileCdPipeline := NewReconcileCDPipeline(client, scheme, logr.DiscardLogger{})
 
@@ -248,7 +254,7 @@ func TestCreateJenkinsFolder_AlreadyExists(t *testing.T) {
 	}
 
 	scheme := createScheme(t)
-	client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&cdPipeline, jenkins).Build()
+	client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(cdPipeline, jenkins).Build()
 
 	reconcileCdPipeline := NewReconcileCDPipeline(client, scheme, logr.DiscardLogger{})
 

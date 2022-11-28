@@ -3,23 +3,22 @@ package cluster
 import (
 	"context"
 	"fmt"
-	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1"
-	"github.com/go-logr/logr"
-	"github.com/stretchr/testify/require"
 	"os"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"testing"
 
+	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	k8sApi "k8s.io/api/rbac/v1"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
-
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1"
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
+	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1"
 )
 
 const (
@@ -39,18 +38,18 @@ func TestGetCdPipeline_Success(t *testing.T) {
 		},
 	}
 
-	client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(cdPipeline).Build()
+	c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(cdPipeline).Build()
 
-	_, err := GetCdPipeline(client, name, namespace)
+	_, err := GetCdPipeline(c, name, namespace)
 	assert.NoError(t, err)
 }
 
 func TestGetCdPipeline_IsNotFound(t *testing.T) {
 	scheme := runtime.NewScheme()
 	scheme.AddKnownTypes(k8sApi.SchemeGroupVersion, &cdPipeApi.CDPipeline{})
-	client := fake.NewClientBuilder().WithScheme(scheme).Build()
+	c := fake.NewClientBuilder().WithScheme(scheme).Build()
 
-	_, err := GetCdPipeline(client, name, namespace)
+	_, err := GetCdPipeline(c, name, namespace)
 	assert.True(t, k8sErrors.IsNotFound(err))
 }
 
@@ -65,18 +64,18 @@ func TestGetCodebaseImageStream_Success(t *testing.T) {
 		},
 	}
 
-	client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(cdPipeline).Build()
+	c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(cdPipeline).Build()
 
-	_, err := GetCodebaseImageStream(client, name, namespace)
+	_, err := GetCodebaseImageStream(c, name, namespace)
 	assert.NoError(t, err)
 }
 
 func TestGetCodebaseImageStream_isNotFound(t *testing.T) {
 	scheme := runtime.NewScheme()
 	scheme.AddKnownTypes(k8sApi.SchemeGroupVersion, &codebaseApi.CodebaseImageStream{})
-	client := fake.NewClientBuilder().WithScheme(scheme).Build()
+	c := fake.NewClientBuilder().WithScheme(scheme).Build()
 
-	_, err := GetCodebaseImageStream(client, name, namespace)
+	_, err := GetCodebaseImageStream(c, name, namespace)
 	assert.True(t, k8sErrors.IsNotFound(err))
 }
 
@@ -85,6 +84,7 @@ func TestGetWatchNamespace_Success(t *testing.T) {
 	if err != nil {
 		t.Fatalf("cannot set env variable: %v", err)
 	}
+
 	defer func() {
 		err = os.Unsetenv(watchNamespaceEnvVar)
 		if err != nil {
@@ -108,6 +108,7 @@ func TestGetDebugMode_Success(t *testing.T) {
 	if err != nil {
 		t.Fatalf("cannot set env variable: %v", err)
 	}
+
 	defer func() {
 		err = os.Unsetenv(debugModeEnvVar)
 		if err != nil {
@@ -125,6 +126,7 @@ func TestGetDebugMode_CantRead(t *testing.T) {
 	if err != nil {
 		t.Fatalf("cannot set env variable: %v", err)
 	}
+
 	defer func() {
 		err = os.Unsetenv(debugModeEnvVar)
 		if err != nil {

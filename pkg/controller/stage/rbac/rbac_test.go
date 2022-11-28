@@ -22,6 +22,7 @@ const (
 
 func emptyRbacInit(t *testing.T) KubernetesRbac {
 	t.Helper()
+
 	scheme := runtime.NewScheme()
 	scheme.AddKnownTypes(k8sApi.SchemeGroupVersion, &k8sApi.RoleBinding{}, &k8sApi.Role{})
 	client := fake.NewClientBuilder().WithScheme(scheme).Build()
@@ -34,6 +35,7 @@ func emptyRbacInit(t *testing.T) KubernetesRbac {
 
 func expectedRbacInit(t *testing.T) *k8sApi.RoleBinding {
 	t.Helper()
+
 	return &k8sApi.RoleBinding{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "RoleBinding",
@@ -51,6 +53,7 @@ func expectedRbacInit(t *testing.T) *k8sApi.RoleBinding {
 
 func expectedRoleInit(t *testing.T) *k8sApi.Role {
 	t.Helper()
+
 	return &k8sApi.Role{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Role",

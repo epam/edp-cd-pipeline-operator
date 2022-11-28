@@ -3,7 +3,6 @@ package chain
 import (
 	"context"
 	"fmt"
-	"strings"
 	"testing"
 
 	"github.com/go-logr/logr"
@@ -27,8 +26,10 @@ const (
 
 func kioskSpaceScheme(t *testing.T) *runtime.Scheme {
 	t.Helper()
+
 	scheme := runtime.NewScheme()
 	scheme.AddKnownTypes(v1.SchemeGroupVersion, &loftKioskApi.Space{}, &cdPipeApi.Stage{})
+
 	return scheme
 }
 
@@ -147,7 +148,7 @@ func TestPutKioskSpace_ServeRequest_Success(t *testing.T) {
 	err := putKioskSpace.ServeRequest(stage)
 	assert.NoError(t, err)
 
-	name := fmt.Sprintf("%s-%s", stage.Namespace, stage.Name)
+	name = fmt.Sprintf("%s-%s", stage.Namespace, stage.Name)
 
 	space, err := spaceManager.Get(name)
 	assert.NoError(t, err)
@@ -170,7 +171,7 @@ func TestPutKioskSpace_ServeRequest_Error(t *testing.T) {
 	}
 
 	err := putKioskSpace.ServeRequest(emptyStage)
-	assert.True(t, strings.Contains(err.Error(), "unable to create"))
+	assert.Contains(t, err.Error(), "failed to create")
 
 	stage := &cdPipeApi.Stage{}
 	err = putKioskSpace.client.Get(context.Background(), types.NamespacedName{

@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/go-logr/logr"
-	"github.com/pkg/errors"
 	k8sApi "k8s.io/api/rbac/v1"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -28,6 +27,8 @@ const (
 	acViewRoleName                 = "admin-console-view-deployments"
 	acViewRbName                   = "ac-deployments-viewer"
 	jenkinsAdminRbName             = "jenkins-admin"
+	crNameLogKey                   = "name"
+	namespaceLogKey                = "namespace"
 )
 
 type ConfigureRbac struct {
@@ -45,13 +46,14 @@ type options struct {
 
 func (h ConfigureRbac) ServeRequest(stage *cdPipeApi.Stage) error {
 	targetNamespace := generateTargetNamespaceName(stage)
-	log := h.log.WithValues("namespace", targetNamespace)
-	log.Info("configuring rbac for newly created namespace")
+	logger := h.log.WithValues(namespaceLogKey, targetNamespace)
+	logger.Info("configuring rbac for newly created namespace")
 
 	acViewOpts := buildAcViewRoleOptions(stage.Namespace)
 	if err := h.createRole(acViewRoleName, targetNamespace, acViewOpts); err != nil {
 		return err
 	}
+
 	if err := h.createRoleBinding(acViewRbName, targetNamespace, acViewOpts); err != nil {
 		return err
 	}
@@ -64,73 +66,88 @@ func (h ConfigureRbac) ServeRequest(stage *cdPipeApi.Stage) error {
 	if helper.GetPlatformTypeEnv() == clusterOpenshiftType {
 		viewGroupRbName := generateViewGroupRbName(stage.Namespace)
 		viewGroupOpts := buildViewGroupRoleOptions(stage.Namespace)
+
 		if err := h.createRoleBinding(viewGroupRbName, targetNamespace, viewGroupOpts); err != nil {
 			return err
 		}
 	}
-	log.Info("rbac has been configured.")
+
+	logger.Info("rbac has been configured.")
+
 	return nextServeOrNil(h.next, stage)
 }
 
 func (h ConfigureRbac) roleBindingExists(name, namespace string) (bool, error) {
-	log := h.log.WithValues("name", name, "namespace", namespace)
-	log.Info("check existence of rolebinding")
+	logger := h.log.WithValues(crNameLogKey, name, namespaceLogKey, namespace)
+	logger.Info("check existence of rolebinding")
+
 	if _, err := h.rbac.GetRoleBinding(name, namespace); err != nil {
 		if k8sErrors.IsNotFound(err) {
-			log.Info("rolebinding doesn't exist")
+			logger.Info("rolebinding doesn't exist")
 			return false, nil
 		}
-		return false, err
+
+		return false, fmt.Errorf("failed to get role binding: %w", err)
 	}
-	log.Info("rolebinding exists")
+
+	logger.Info("rolebinding exists")
+
 	return true, nil
 }
 
+// nolint
 func (h ConfigureRbac) createRoleBinding(rbName, namespace string, opts options) error {
 	exists, err := h.roleBindingExists(rbName, namespace)
 	if err != nil {
-		return errors.Wrapf(err, "unable to check existence of %s rolebinding", rbName)
+		return fmt.Errorf("failed to to check existence of %s rolebinding: %w", rbName, err)
 	}
 
 	if exists {
-		log.Info("skip creating rolebinding as it does exist", "name", rbName, "namespace", namespace)
+		log.Info("skip creating rolebinding as it does exist", crNameLogKey, rbName, namespaceLogKey, namespace)
 		return nil
 	}
 
-	if err := h.rbac.CreateRoleBinding(rbName, namespace, opts.subjects, opts.rf); err != nil {
-		return errors.Wrapf(err, "unable to create %s rolebinding", rbName)
+	if err = h.rbac.CreateRoleBinding(rbName, namespace, opts.subjects, opts.rf); err != nil {
+		return fmt.Errorf("failed to create %s rolebinding: %w", rbName, err)
 	}
+
 	return nil
 }
 
 func (h ConfigureRbac) roleExists(name, namespace string) (bool, error) {
-	log := h.log.WithValues("name", name, "namespace", namespace)
-	log.Info("check existence of role")
+	logger := h.log.WithValues(crNameLogKey, name, namespaceLogKey, namespace)
+	logger.Info("check existence of role")
+
 	if _, err := h.rbac.GetRole(name, namespace); err != nil {
 		if k8sErrors.IsNotFound(err) {
 			log.Info("role doesn't exist")
 			return false, nil
 		}
-		return false, err
+
+		return false, fmt.Errorf("failed to get role: %w", err)
 	}
-	log.Info("rolebinding exists")
+
+	logger.Info("rolebinding exists")
+
 	return true, nil
 }
 
+// nolint
 func (h ConfigureRbac) createRole(rName, namespace string, opts options) error {
 	exists, err := h.roleExists(rName, namespace)
 	if err != nil {
-		return errors.Wrapf(err, "unable to check existence of %s role", rName)
+		return fmt.Errorf("failed to check existence of %s role: %w", rName, err)
 	}
 
 	if exists {
-		log.Info("skip creating role as it does exist", "name", rName, "namespace", namespace)
+		log.Info("skip creating role as it does exist", crNameLogKey, rName, namespaceLogKey, namespace)
 		return nil
 	}
 
 	if err := h.rbac.CreateRole(rName, namespace, opts.pr); err != nil {
-		return errors.Wrapf(err, "unable to create %s role", rName)
+		return fmt.Errorf("failed to create %s role: %w", rName, err)
 	}
+
 	return nil
 }
 
@@ -179,6 +196,7 @@ func getJenkinsAdminRoleSubjects(sourceNamespace string) []k8sApi.Subject {
 			},
 		}
 	}
+
 	return []k8sApi.Subject{
 		{
 			Kind: groupKind,

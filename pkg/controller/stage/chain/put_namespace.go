@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/go-logr/logr"
-	"github.com/pkg/errors"
 	v1 "k8s.io/api/core/v1"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -26,13 +25,14 @@ type PutNamespace struct {
 
 func (h PutNamespace) ServeRequest(stage *cdPipeApi.Stage) error {
 	name := fmt.Sprintf("%v-%v", stage.Namespace, stage.Name)
-	h.log.Info("try to put namespace", "name", name)
+	h.log.Info("try to put namespace", crNameLogKey, name)
 
 	if err := h.createNamespace(stage.Namespace, stage.Name); err != nil {
-		if err := h.setFailedStatus(context.Background(), stage, err); err != nil {
-			return errors.Wrapf(err, "unable to update stage %v status", stage.Name)
+		if err = h.setFailedStatus(context.Background(), stage, err); err != nil {
+			return fmt.Errorf("failed to update stage %v status: %w", stage.Name, err)
 		}
-		return errors.Wrapf(err, "unable to create %v namespace", name)
+
+		return fmt.Errorf("failed to create %v namespace: %w", name, err)
 	}
 
 	return nextServeOrNil(h.next, stage)
@@ -40,13 +40,14 @@ func (h PutNamespace) ServeRequest(stage *cdPipeApi.Stage) error {
 
 func (h PutNamespace) createNamespace(sourceNs, stageName string) error {
 	name := fmt.Sprintf("%v-%v", sourceNs, stageName)
+
 	exists, err := h.namespaceExists(name)
 	if err != nil {
 		return err
 	}
 
 	if exists {
-		log.Info("namespace already exists. skip creating", "name", name)
+		log.Info("namespace already exists. skip creating", crNameLogKey, name)
 		return nil
 	}
 
@@ -54,23 +55,27 @@ func (h PutNamespace) createNamespace(sourceNs, stageName string) error {
 }
 
 func (h PutNamespace) namespaceExists(name string) (bool, error) {
-	h.log.Info("checking existence of namespace", "name", name)
-	ns := &v1.Namespace{}
+	h.log.Info("checking existence of namespace", crNameLogKey, name)
+
 	if err := h.client.Get(context.TODO(), types.NamespacedName{
 		Name: name,
-	}, ns); err != nil {
+	}, &v1.Namespace{}); err != nil {
 		if k8sErrors.IsNotFound(err) {
 			return false, nil
 		}
-		return false, err
+
+		return false, fmt.Errorf("failed to get namespace: %w", err)
 	}
+
 	return true, nil
 }
 
 func (h PutNamespace) create(sourceNs, stageName string) error {
 	name := fmt.Sprintf("%v-%v", sourceNs, stageName)
-	log := h.log.WithValues("name", name)
-	log.Info("creating namespace")
+
+	logger := h.log.WithValues(crNameLogKey, name)
+	logger.Info("creating namespace")
+
 	ns := &v1.Namespace{
 		ObjectMeta: metaV1.ObjectMeta{
 			Name: name,
@@ -80,20 +85,24 @@ func (h PutNamespace) create(sourceNs, stageName string) error {
 		},
 	}
 	if err := h.client.Create(context.TODO(), ns); err != nil {
-		return err
+		return fmt.Errorf("failed to create namespace: %w", err)
 	}
-	log.Info("namespace is created")
+
+	logger.Info("namespace is created")
+
 	return nil
 }
 
 func (h PutNamespace) setFailedStatus(ctx context.Context, stage *cdPipeApi.Stage, err error) error {
 	updateStatus := func(ctx context.Context, stage *cdPipeApi.Stage) error {
-		if err := h.client.Status().Update(ctx, stage); err != nil {
-			if err := h.client.Update(ctx, stage); err != nil {
-				return err
+		if err = h.client.Status().Update(ctx, stage); err != nil {
+			if err = h.client.Update(ctx, stage); err != nil {
+				return fmt.Errorf("failed to update namespace status: %w", err)
 			}
 		}
-		h.log.Info("stage status has been updated.", "name", stage.Name)
+
+		h.log.Info("stage status has been updated.", crNameLogKey, stage.Name)
+
 		return nil
 	}
 
@@ -106,5 +115,6 @@ func (h PutNamespace) setFailedStatus(ctx context.Context, stage *cdPipeApi.Stag
 		DetailedMessage: err.Error(),
 		Value:           consts.FailedStatus,
 	}
+
 	return updateStatus(ctx, stage)
 }
