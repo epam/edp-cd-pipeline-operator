@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1"
+	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/require"
 	"os"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -199,7 +200,7 @@ func TestJenkinsEnabled(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(tt.args.k8sObjects...).Build()
-			got := JenkinsEnabled(context.Background(), fakeClient, tt.args.namespace)
+			got := JenkinsEnabled(context.Background(), fakeClient, tt.args.namespace, logr.Discard())
 			assert.Equal(t, tt.want, got)
 		})
 	}

@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -78,10 +79,12 @@ func RunningInCluster() bool {
 }
 
 // JenkinsEnabled returns true if jenkins is enabled in the namespace.
-func JenkinsEnabled(ctx context.Context, k8sClient client.Reader, namespace string) bool {
+func JenkinsEnabled(ctx context.Context, k8sClient client.Reader, namespace string, log logr.Logger) bool {
 	jenkinsList := &jenkinsApi.JenkinsList{}
 
 	if err := k8sClient.List(ctx, jenkinsList, &client.ListOptions{Namespace: namespace}); err != nil {
+		log.Error(err, "unable to get jenkins list")
+
 		return false
 	}
 

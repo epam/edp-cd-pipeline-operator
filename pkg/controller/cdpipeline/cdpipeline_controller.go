@@ -70,7 +70,7 @@ func (r *ReconcileCDPipeline) Reconcile(ctx context.Context, request reconcile.R
 		return reconcile.Result{}, err
 	}
 
-	if cluster.JenkinsEnabled(ctx, r.client, request.Namespace) {
+	if cluster.JenkinsEnabled(ctx, r.client, request.Namespace, log) {
 		if err := r.createJenkinsFolder(ctx, *i); err != nil {
 			return reconcile.Result{}, err
 		}

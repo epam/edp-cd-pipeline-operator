@@ -27,7 +27,7 @@ func nextServeOrNil(next handler.CdStageHandler, stage *cdPipeApi.Stage) error {
 }
 
 func CreateChain(ctx context.Context, client client.Client, namespace, triggerType string) handler.CdStageHandler {
-	if !cluster.JenkinsEnabled(ctx, client, namespace) {
+	if !cluster.JenkinsEnabled(ctx, client, namespace, log) {
 		return getTektonChain(client, triggerType)
 	}
 
@@ -47,7 +47,7 @@ func kioskEnabled() bool {
 }
 
 func CreateDeleteChain(ctx context.Context, client client.Client, namespace string) handler.CdStageHandler {
-	if !cluster.JenkinsEnabled(ctx, client, namespace) {
+	if !cluster.JenkinsEnabled(ctx, client, namespace, log) {
 		return getTektonDeleteChain(client)
 	}
 
