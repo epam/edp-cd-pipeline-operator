@@ -1,17 +1,28 @@
 <a name="unreleased"></a>
 ## [Unreleased]
 
+
+<a name="v2.13.0"></a>
+## [v2.13.0] - 2022-12-06
 ### Features
 
 - Added a stub linter [EPMDEDP-10536](https://jiraeu.epam.com/browse/EPMDEDP-10536)
+- Align operator logic to work with tekton [EPMDEDP-11052](https://jiraeu.epam.com/browse/EPMDEDP-11052)
 
 ### Bug Fixes
 
 - Provide namespace permissions for cd-pipeline operator [EPMDEDP-10661](https://jiraeu.epam.com/browse/EPMDEDP-10661)
+- Reconcile stages when a new application was added to cdpipeline [EPMDEDP-11055](https://jiraeu.epam.com/browse/EPMDEDP-11055)
+- Add access to jenkins resource [EPMDEDP-11093](https://jiraeu.epam.com/browse/EPMDEDP-11093)
+
+### Code Refactoring
+
+- Align ImageName in verified CBIS [EPMDEDP-11081](https://jiraeu.epam.com/browse/EPMDEDP-11081)
 
 ### Routine
 
 - Update current development version [EPMDEDP-10274](https://jiraeu.epam.com/browse/EPMDEDP-10274)
+- Update current development version [EPMDEDP-10805](https://jiraeu.epam.com/browse/EPMDEDP-10805)
 
 
 <a name="v2.12.1"></a>
@@ -167,7 +178,8 @@
 <a name="v2.7.0"></a>
 ## [v2.7.0] - 2021-12-03
 
-[Unreleased]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.12.1...HEAD
+[Unreleased]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.13.0...HEAD
+[v2.13.0]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.12.1...v2.13.0
 [v2.12.1]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.12.0...v2.12.1
 [v2.12.0]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.11.0...v2.12.0
 [v2.11.0]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.10.0...v2.11.0
