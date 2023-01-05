@@ -176,8 +176,17 @@ func TestTryToDeleteCDStage_Success(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Empty(t, previousImageStream.Labels)
 
-	stageAfterReconcile := getStage(t, reconcileStage.client, name)
-	assert.Empty(t, stageAfterReconcile.Finalizers)
+	_ = &cdPipeApi.Stage{}
+	err = fakeClient.Get(
+		context.Background(),
+		types.NamespacedName{
+			Namespace: namespace,
+			Name:      name,
+		},
+		stage,
+	)
+	require.Error(t, err)
+	assert.True(t, k8sErrors.IsNotFound(err))
 }
 
 func TestSetCDPipelineOwnerRef_Success(t *testing.T) {
@@ -189,9 +198,6 @@ func TestSetCDPipelineOwnerRef_Success(t *testing.T) {
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
-			DeletionTimestamp: &metaV1.Time{
-				Time: time.Now().UTC(),
-			},
 		},
 		Spec: cdPipeApi.StageSpec{
 			Name:       name,
@@ -366,8 +372,17 @@ func TestReconcileStage_Reconcile_Success(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Empty(t, previousImageStream.Labels)
 
-	stageAfterReconcile := getStage(t, reconcileStage.client, name)
-	assert.Empty(t, stageAfterReconcile.Finalizers)
+	_ = &cdPipeApi.Stage{}
+	err = fakeClient.Get(
+		context.Background(),
+		types.NamespacedName{
+			Namespace: namespace,
+			Name:      name,
+		},
+		stage,
+	)
+	require.Error(t, err)
+	assert.True(t, k8sErrors.IsNotFound(err))
 }
 
 func TestReconcileStage_ReconcileReconcile_SetOwnerRef(t *testing.T) {
