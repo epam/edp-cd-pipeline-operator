@@ -18,7 +18,7 @@ spec:
   - name: v1
     schema:
       openAPIV3Schema:
-        description: CDPipeline is the Schema for the cdpipelines API
+        description: CDPipeline is the Schema for the cdpipelines API.
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -33,7 +33,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: CDPipelineSpec defines the desired state of CDPipeline
+            description: CDPipelineSpec defines the desired state of CDPipeline.
             properties:
               applications:
                 description: A list of applications included in CDPipeline.
@@ -68,7 +68,7 @@ spec:
             - name
             type: object
           status:
-            description: CDPipelineStatus defines the observed state of CDPipeline
+            description: CDPipelineStatus defines the observed state of CDPipeline.
             properties:
               action:
                 description: The last Action was performed.
@@ -119,7 +119,7 @@ spec:
     name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: CDPipeline is the Schema for the cdpipelines API
+        description: CDPipeline is the Schema for the cdpipelines API.
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -134,7 +134,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: CDPipelineSpec defines the desired state of CDPipeline
+            description: CDPipelineSpec defines the desired state of CDPipeline.
             properties:
               applications:
                 description: A list of applications included in CDPipeline.
@@ -169,7 +169,7 @@ spec:
             - name
             type: object
           status:
-            description: CDPipelineStatus defines the observed state of CDPipeline
+            description: CDPipelineStatus defines the observed state of CDPipeline.
             properties:
               action:
                 description: The last Action was performed.

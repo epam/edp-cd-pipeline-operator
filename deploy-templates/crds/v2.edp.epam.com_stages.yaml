@@ -18,7 +18,7 @@ spec:
   - name: v1
     schema:
       openAPIV3Schema:
-        description: Stage is the Schema for the stages API
+        description: Stage is the Schema for the stages API.
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -58,7 +58,7 @@ spec:
               qualityGates:
                 description: A list of quality gates to be processed
                 items:
-                  description: QualityGate defines a single quality for a release
+                  description: QualityGate defines a single quality for a release.
                   properties:
                     autotestName:
                       description: A name of autotests to run with quality gate
@@ -115,7 +115,7 @@ spec:
             - triggerType
             type: object
           status:
-            description: StageStatus defines the observed state of Stage
+            description: StageStatus defines the observed state of Stage.
             properties:
               action:
                 description: The last Action was performed.
@@ -169,7 +169,7 @@ spec:
     name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: Stage is the Schema for the stages API
+        description: Stage is the Schema for the stages API.
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -184,7 +184,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: StageSpec defines the desired state of Stage
+            description: StageSpec defines the desired state of Stage.
             properties:
               cdPipeline:
                 description: Name of CD pipeline which this Stage will be linked to.
@@ -207,7 +207,7 @@ spec:
               qualityGates:
                 description: A list of quality gates to be processed
                 items:
-                  description: QualityGate defines a single quality for a release
+                  description: QualityGate defines a single quality for a release.
                   properties:
                     autotestName:
                       description: A name of autotests to run with quality gate
@@ -264,7 +264,7 @@ spec:
             - triggerType
             type: object
           status:
-            description: StageStatus defines the observed state of Stage
+            description: StageStatus defines the observed state of Stage.
             properties:
               action:
                 description: The last Action was performed.

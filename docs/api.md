@@ -24,7 +24,7 @@ Resource Types:
 
 
 
-CDPipeline is the Schema for the cdpipelines API
+CDPipeline is the Schema for the cdpipelines API.
 
 <table>
     <thead>
@@ -56,14 +56,14 @@ CDPipeline is the Schema for the cdpipelines API
         <td><b><a href="#cdpipelinespec">spec</a></b></td>
         <td>object</td>
         <td>
-          CDPipelineSpec defines the desired state of CDPipeline<br/>
+          CDPipelineSpec defines the desired state of CDPipeline.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b><a href="#cdpipelinestatus">status</a></b></td>
         <td>object</td>
         <td>
-          CDPipelineStatus defines the observed state of CDPipeline<br/>
+          CDPipelineStatus defines the observed state of CDPipeline.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -75,7 +75,7 @@ CDPipeline is the Schema for the cdpipelines API
 
 
 
-CDPipelineSpec defines the desired state of CDPipeline
+CDPipelineSpec defines the desired state of CDPipeline.
 
 <table>
     <thead>
@@ -130,7 +130,7 @@ CDPipelineSpec defines the desired state of CDPipeline
 
 
 
-CDPipelineStatus defines the observed state of CDPipeline
+CDPipelineStatus defines the observed state of CDPipeline.
 
 <table>
     <thead>
@@ -212,7 +212,7 @@ CDPipelineStatus defines the observed state of CDPipeline
 
 
 
-Stage is the Schema for the stages API
+Stage is the Schema for the stages API.
 
 <table>
     <thead>
@@ -251,7 +251,7 @@ Stage is the Schema for the stages API
         <td><b><a href="#stagestatus">status</a></b></td>
         <td>object</td>
         <td>
-          StageStatus defines the observed state of Stage<br/>
+          StageStatus defines the observed state of Stage.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -339,7 +339,7 @@ StageSpec defines the desired state of Stage. NOTE: for deleting the stage use s
 
 
 
-QualityGate defines a single quality for a release
+QualityGate defines a single quality for a release.
 
 <table>
     <thead>
@@ -455,7 +455,7 @@ A reference to a non default source library
 
 
 
-StageStatus defines the observed state of Stage
+StageStatus defines the observed state of Stage.
 
 <table>
     <thead>
@@ -555,7 +555,7 @@ Resource Types:
 
 
 
-CDPipeline is the Schema for the cdpipelines API
+CDPipeline is the Schema for the cdpipelines API.
 
 <table>
     <thead>
@@ -587,14 +587,14 @@ CDPipeline is the Schema for the cdpipelines API
         <td><b><a href="#cdpipelinespec-1">spec</a></b></td>
         <td>object</td>
         <td>
-          CDPipelineSpec defines the desired state of CDPipeline<br/>
+          CDPipelineSpec defines the desired state of CDPipeline.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b><a href="#cdpipelinestatus-1">status</a></b></td>
         <td>object</td>
         <td>
-          CDPipelineStatus defines the observed state of CDPipeline<br/>
+          CDPipelineStatus defines the observed state of CDPipeline.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -606,7 +606,7 @@ CDPipeline is the Schema for the cdpipelines API
 
 
 
-CDPipelineSpec defines the desired state of CDPipeline
+CDPipelineSpec defines the desired state of CDPipeline.
 
 <table>
     <thead>
@@ -661,7 +661,7 @@ CDPipelineSpec defines the desired state of CDPipeline
 
 
 
-CDPipelineStatus defines the observed state of CDPipeline
+CDPipelineStatus defines the observed state of CDPipeline.
 
 <table>
     <thead>
@@ -743,7 +743,7 @@ CDPipelineStatus defines the observed state of CDPipeline
 
 
 
-Stage is the Schema for the stages API
+Stage is the Schema for the stages API.
 
 <table>
     <thead>
@@ -775,14 +775,14 @@ Stage is the Schema for the stages API
         <td><b><a href="#stagespec-1">spec</a></b></td>
         <td>object</td>
         <td>
-          StageSpec defines the desired state of Stage<br/>
+          StageSpec defines the desired state of Stage.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b><a href="#stagestatus-1">status</a></b></td>
         <td>object</td>
         <td>
-          StageStatus defines the observed state of Stage<br/>
+          StageStatus defines the observed state of Stage.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -794,7 +794,7 @@ Stage is the Schema for the stages API
 
 
 
-StageSpec defines the desired state of Stage
+StageSpec defines the desired state of Stage.
 
 <table>
     <thead>
@@ -870,7 +870,7 @@ StageSpec defines the desired state of Stage
 
 
 
-QualityGate defines a single quality for a release
+QualityGate defines a single quality for a release.
 
 <table>
     <thead>
@@ -986,7 +986,7 @@ A reference to a non default source library
 
 
 
-StageStatus defines the observed state of Stage
+StageStatus defines the observed state of Stage.
 
 <table>
     <thead>

@@ -6,9 +6,6 @@ import (
 
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
-	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
-	// to ensure that exec-entrypoint and run can make use of them.
-	loftKioskApi "github.com/loft-sh/kiosk/pkg/apis/tenancy/v1alpha1"
 	k8sApi "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -70,7 +67,6 @@ func main() {
 	utilruntime.Must(codebaseApi.AddToScheme(scheme))
 	utilruntime.Must(edpCompApi.AddToScheme(scheme))
 	utilruntime.Must(jenkinsApi.AddToScheme(scheme))
-	utilruntime.Must(loftKioskApi.AddToScheme(scheme))
 	utilruntime.Must(k8sApi.AddToScheme(scheme))
 
 	v := buildInfo.Get()

@@ -5,11 +5,9 @@ import (
 	"testing"
 
 	"github.com/go-logr/logr"
-	loftKioskApi "github.com/loft-sh/kiosk/pkg/apis/tenancy/v1alpha1"
 	"github.com/stretchr/testify/assert"
-	v1 "k8s.io/api/core/v1"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -24,32 +22,32 @@ const (
 	resourceVersion = "1"
 )
 
-func expectedSpaceInit(t *testing.T) *loftKioskApi.Space {
+func expectedSpaceInit(t *testing.T) *unstructured.Unstructured {
 	t.Helper()
 
-	return &loftKioskApi.Space{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "Space",
-			APIVersion: "v1",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name: name,
-			Labels: map[string]string{
+	space := &unstructured.Unstructured{}
+	space.Object = map[string]interface{}{
+		"kind":       "Space",
+		"apiVersion": "tenancy.kiosk.sh/v1alpha1",
+		"metadata": map[string]interface{}{
+			"name": name,
+			"labels": map[string]interface{}{
 				util.TenantLabelName: account,
 			},
-			ResourceVersion: resourceVersion,
+			"resourceVersion": resourceVersion,
 		},
-		Spec: loftKioskApi.SpaceSpec{
-			Account: account,
+		"spec": map[string]interface{}{
+			"account": account,
 		},
 	}
+
+	return space
 }
 
 func emptySpaceInit(t *testing.T) Space {
 	t.Helper()
 
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(v1.SchemeGroupVersion, &loftKioskApi.Space{})
 	client := fake.NewClientBuilder().WithScheme(scheme).Build()
 
 	return Space{
@@ -79,7 +77,11 @@ func TestSpace_CreateSuccess(t *testing.T) {
 	err := space.Create(name, account)
 	assert.NoError(t, err)
 
-	emptySpace := &loftKioskApi.Space{}
+	emptySpace := &unstructured.Unstructured{}
+	emptySpace.Object = map[string]interface{}{
+		"kind":       "Space",
+		"apiVersion": "tenancy.kiosk.sh/v1alpha1",
+	}
 
 	err = space.Client.Get(context.Background(), types.NamespacedName{
 		Name: name,

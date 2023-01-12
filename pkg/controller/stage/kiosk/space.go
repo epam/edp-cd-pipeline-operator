@@ -5,8 +5,7 @@ import (
 	"fmt"
 
 	"github.com/go-logr/logr"
-	loftKioskApi "github.com/loft-sh/kiosk/pkg/apis/tenancy/v1alpha1"
-	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -15,9 +14,11 @@ import (
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/common"
 )
 
+const crdNameKey = "name"
+
 type SpaceManager interface {
 	Create(name, account string) error
-	Get(name string) (*loftKioskApi.Space, error)
+	Get(name string) (*unstructured.Unstructured, error)
 	Delete(name string) error
 }
 
@@ -34,18 +35,21 @@ func InitSpace(c client.Client) SpaceManager {
 }
 
 func (s Space) Create(name, account string) error {
-	log := s.Log.WithValues("name", name)
+	log := s.Log.WithValues(crdNameKey, name)
 	log.Info("creating loft kiosk space")
 
-	space := &loftKioskApi.Space{
-		ObjectMeta: metaV1.ObjectMeta{
-			Name: name,
-			Labels: map[string]string{
+	space := &unstructured.Unstructured{}
+	space.Object = map[string]interface{}{
+		"kind":       "Space",
+		"apiVersion": "tenancy.kiosk.sh/v1alpha1",
+		"metadata": map[string]interface{}{
+			crdNameKey: name,
+			"labels": map[string]interface{}{
 				util.TenantLabelName: account,
 			},
 		},
-		Spec: loftKioskApi.SpaceSpec{
-			Account: account,
+		"spec": map[string]interface{}{
+			"account": account,
 		},
 	}
 
@@ -58,11 +62,16 @@ func (s Space) Create(name, account string) error {
 	return nil
 }
 
-func (s Space) Get(name string) (*loftKioskApi.Space, error) {
-	log := s.Log.WithValues("name", name)
+func (s Space) Get(name string) (*unstructured.Unstructured, error) {
+	log := s.Log.WithValues(crdNameKey, name)
 	log.Info("getting loft kiosk space resource")
 
-	space := &loftKioskApi.Space{}
+	space := &unstructured.Unstructured{}
+	space.Object = map[string]interface{}{
+		"kind":       "Space",
+		"apiVersion": "tenancy.kiosk.sh/v1alpha1",
+	}
+
 	if err := s.Client.Get(context.Background(), types.NamespacedName{
 		Name: name,
 	}, space); err != nil {
@@ -75,16 +84,25 @@ func (s Space) Get(name string) (*loftKioskApi.Space, error) {
 }
 
 func (s Space) Delete(name string) error {
-	log := s.Log.WithValues("name", name)
+	log := s.Log.WithValues(crdNameKey, name)
 	log.Info("deleting loft kiosk space")
 
-	if err := s.Client.Delete(context.Background(), &loftKioskApi.Space{
-		ObjectMeta: metaV1.ObjectMeta{
-			Name: name,
+	space := &unstructured.Unstructured{}
+	space.Object = map[string]interface{}{
+		"kind":       "Space",
+		"apiVersion": "tenancy.kiosk.sh/v1alpha1",
+		"metadata": map[string]interface{}{
+			crdNameKey: name,
 		},
-	}, &client.DeleteOptions{
-		GracePeriodSeconds: common.GetInt64P(0),
-	}); err != nil {
+	}
+
+	if err := s.Client.Delete(
+		context.Background(),
+		space,
+		&client.DeleteOptions{
+			GracePeriodSeconds: common.GetInt64P(0),
+		},
+	); err != nil {
 		return fmt.Errorf("failed to delete loft kiosk space: %w", err)
 	}
 

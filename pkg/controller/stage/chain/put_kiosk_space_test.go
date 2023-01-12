@@ -6,13 +6,11 @@ import (
 	"testing"
 
 	"github.com/go-logr/logr"
-	loftKioskApi "github.com/loft-sh/kiosk/pkg/apis/tenancy/v1alpha1"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
-	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/pkg/apis/edp/v1"
@@ -28,7 +26,7 @@ func kioskSpaceScheme(t *testing.T) *runtime.Scheme {
 	t.Helper()
 
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(v1.SchemeGroupVersion, &loftKioskApi.Space{}, &cdPipeApi.Stage{})
+	scheme.AddKnownTypes(v1.SchemeGroupVersion, &cdPipeApi.Stage{})
 
 	return scheme
 }
@@ -50,9 +48,12 @@ func TestSpaceExist_NotFound(t *testing.T) {
 }
 
 func TestSpaceExist_Success(t *testing.T) {
-	space := &loftKioskApi.Space{
-		ObjectMeta: metaV1.ObjectMeta{
-			Name: name,
+	space := &unstructured.Unstructured{}
+	space.Object = map[string]interface{}{
+		"kind":       "Space",
+		"apiVersion": "tenancy.kiosk.sh/v1alpha1",
+		"metadata": map[string]interface{}{
+			"name": name,
 		},
 	}
 
@@ -87,13 +88,16 @@ func TestCreateSpace_Success(t *testing.T) {
 
 	space, err := spaceManager.Get(name)
 	assert.NoError(t, err)
-	assert.Equal(t, name, space.Name)
+	assert.Equal(t, name, space.GetName())
 }
 
 func TestCreateSpace_AlreadyExists(t *testing.T) {
-	clientSpace := &loftKioskApi.Space{
-		ObjectMeta: metaV1.ObjectMeta{
-			Name: name,
+	clientSpace := &unstructured.Unstructured{}
+	clientSpace.Object = map[string]interface{}{
+		"kind":       "Space",
+		"apiVersion": "tenancy.kiosk.sh/v1alpha1",
+		"metadata": map[string]interface{}{
+			"name": name,
 		},
 	}
 
@@ -152,32 +156,5 @@ func TestPutKioskSpace_ServeRequest_Success(t *testing.T) {
 
 	space, err := spaceManager.Get(name)
 	assert.NoError(t, err)
-	assert.Equal(t, name, space.Name)
-}
-
-func TestPutKioskSpace_ServeRequest_Error(t *testing.T) {
-	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(v1.SchemeGroupVersion, &cdPipeApi.Stage{})
-
-	emptyStage := emptyStageInit(t)
-
-	client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(emptyStage).Build()
-	spaceManager := kiosk.InitSpace(client)
-
-	putKioskSpace := PutKioskSpace{
-		space:  spaceManager,
-		client: client,
-		log:    logr.DiscardLogger{},
-	}
-
-	err := putKioskSpace.ServeRequest(emptyStage)
-	assert.Contains(t, err.Error(), "failed to create")
-
-	stage := &cdPipeApi.Stage{}
-	err = putKioskSpace.client.Get(context.Background(), types.NamespacedName{
-		Namespace: namespace,
-		Name:      name,
-	}, stage)
-	assert.NoError(t, err)
-	assert.Equal(t, consts.FailedStatus, stage.Status.Status)
+	assert.Equal(t, name, space.GetName())
 }

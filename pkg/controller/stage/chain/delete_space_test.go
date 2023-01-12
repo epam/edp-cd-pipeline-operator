@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"testing"
 
-	loftKioskApi "github.com/loft-sh/kiosk/pkg/apis/tenancy/v1alpha1"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
@@ -34,14 +34,17 @@ func TestDeleteSpace_DeleteSpaceSuccess(t *testing.T) {
 	logger := &edpLog.Logger{}
 	stage := emptyStageInit(t)
 	spaceName := fmt.Sprintf("%s-%s", stage.Namespace, stage.Name)
-	space := &loftKioskApi.Space{
-		ObjectMeta: metaV1.ObjectMeta{
-			Name: spaceName,
+	space := &unstructured.Unstructured{}
+	space.Object = map[string]interface{}{
+		"kind":       "Space",
+		"apiVersion": "v1",
+		"spec": map[string]interface{}{
+			"name": spaceName,
 		},
 	}
 
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(v1.SchemeGroupVersion, &loftKioskApi.Space{}, &cdPipeApi.Stage{})
+	scheme.AddKnownTypes(v1.SchemeGroupVersion, &cdPipeApi.Stage{})
 
 	testSpace := kiosk.Space{
 		Client: fake.NewClientBuilder().WithScheme(scheme).WithObjects(space).Build(),
@@ -56,7 +59,11 @@ func TestDeleteSpace_DeleteSpaceSuccess(t *testing.T) {
 	err := deleteSpaceInstance.ServeRequest(stage)
 	assert.NoError(t, err)
 
-	emptySpace := &loftKioskApi.Space{}
+	emptySpace := &unstructured.Unstructured{}
+	emptySpace.Object = map[string]interface{}{
+		"kind":       "Space",
+		"apiVersion": "v1",
+	}
 	err = testSpace.Client.Get(context.Background(), types.NamespacedName{
 		Name: spaceName,
 	}, emptySpace)
@@ -69,7 +76,7 @@ func TestDeleteSpace_SpaceDoesntExist(t *testing.T) {
 	log := &edpLog.Logger{}
 
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(v1.SchemeGroupVersion, &loftKioskApi.Space{}, &cdPipeApi.Stage{})
+	scheme.AddKnownTypes(v1.SchemeGroupVersion, &cdPipeApi.Stage{})
 
 	testSpace := kiosk.Space{
 		Client: fake.NewClientBuilder().WithScheme(scheme).Build(),

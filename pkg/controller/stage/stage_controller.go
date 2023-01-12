@@ -113,7 +113,8 @@ func (r *ReconcileStage) Reconcile(ctx context.Context, request reconcile.Reques
 		return reconcile.Result{}, fmt.Errorf("failed to init labels for stage: %w", err)
 	}
 
-	if err = chain.CreateChain(ctx, r.client, request.Namespace, i.Spec.TriggerType).ServeRequest(i); err != nil {
+	if err = chain.CreateChain(ctx, r.client, request.Namespace, i.Spec.TriggerType).
+		ServeRequest(i); err != nil {
 		var e edpError.CISNotFoundError
 		if errors.As(err, &e) {
 			log.Error(err, "cis wasn't found. reconcile again...")
