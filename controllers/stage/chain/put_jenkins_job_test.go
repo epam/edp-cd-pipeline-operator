@@ -12,7 +12,7 @@ import (
 
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/common"
-	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1"
 )
 

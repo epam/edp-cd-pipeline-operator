@@ -11,7 +11,7 @@ import (
 
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/cluster"
-	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 )
 
 func createCdPipelineWithAnnotations(t *testing.T) cdPipeApi.CDPipeline {

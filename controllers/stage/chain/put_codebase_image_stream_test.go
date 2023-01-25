@@ -17,9 +17,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
-	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 	k8sMockClient "github.com/epam/edp-common/pkg/mock/controller-runtime/client"
-	componentApi "github.com/epam/edp-component-operator/pkg/apis/v1/v1"
+	componentApi "github.com/epam/edp-component-operator/api/v1"
 )
 
 func TestPutCodebaseImageStream_ShouldCreateCis(t *testing.T) {

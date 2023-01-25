@@ -14,8 +14,8 @@ import (
 	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/stage/chain/handler"
 	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/stage/chain/util"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/cluster"
-	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
-	componentApi "github.com/epam/edp-component-operator/pkg/apis/v1/v1"
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
+	componentApi "github.com/epam/edp-component-operator/api/v1"
 )
 
 type PutCodebaseImageStream struct {

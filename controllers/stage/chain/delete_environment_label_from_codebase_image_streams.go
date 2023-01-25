@@ -15,7 +15,7 @@ import (
 	edpErr "github.com/epam/edp-cd-pipeline-operator/v2/pkg/error"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/cluster"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/finalizer"
-	codebaseApi "github.com/epam/edp-codebase-operator/v2/pkg/apis/edp/v1"
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 )
 
 type DeleteEnvironmentLabelFromCodebaseImageStreams struct {
