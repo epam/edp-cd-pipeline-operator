@@ -1,4 +1,4 @@
-package helper
+package platform
 
 import (
 	"os"
@@ -34,4 +34,42 @@ func TestGetPlatformTypeEnv_PlatformTypeIsNotSet(t *testing.T) {
 
 	platformType := GetPlatformTypeEnv()
 	assert.Equal(t, PlatformOpenshift, platformType)
+}
+
+func TestIsKubernetes(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name   string
+		setEnv func(t *testing.T)
+		want   bool
+	}{
+		{
+			name: "platform type is kubernetes",
+			setEnv: func(t *testing.T) {
+				t.Setenv(platformType, PlatformKubernetes)
+			},
+			want: true,
+		},
+		{
+			name: "platform type is openshift",
+			setEnv: func(t *testing.T) {
+				t.Setenv(platformType, PlatformOpenshift)
+			},
+			want: false,
+		},
+		{
+			name: "platform type is not set",
+			want: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.setEnv != nil {
+				tt.setEnv(t)
+			}
+
+			assert.Equal(t, IsKubernetes(), tt.want)
+		})
+	}
 }

@@ -14,7 +14,6 @@ import (
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
 	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/stage/chain/handler"
 	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/stage/chain/util"
-	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/consts"
 )
 
 type PutNamespace struct {
@@ -24,15 +23,11 @@ type PutNamespace struct {
 }
 
 func (h PutNamespace) ServeRequest(stage *cdPipeApi.Stage) error {
-	name := fmt.Sprintf("%v-%v", stage.Namespace, stage.Name)
+	name := util.GenerateNamespaceName(stage)
 	h.log.Info("try to put namespace", crNameLogKey, name)
 
 	if err := h.createNamespace(stage.Namespace, stage.Name); err != nil {
-		if err = h.setFailedStatus(context.Background(), stage, err); err != nil {
-			return fmt.Errorf("failed to update stage %v status: %w", stage.Name, err)
-		}
-
-		return fmt.Errorf("failed to create %v namespace: %w", name, err)
+		return fmt.Errorf("failed to create %s namespace: %w", name, err)
 	}
 
 	return nextServeOrNil(h.next, stage)
@@ -91,30 +86,4 @@ func (h PutNamespace) create(sourceNs, stageName string) error {
 	logger.Info("namespace is created")
 
 	return nil
-}
-
-func (h PutNamespace) setFailedStatus(ctx context.Context, stage *cdPipeApi.Stage, err error) error {
-	updateStatus := func(ctx context.Context, stage *cdPipeApi.Stage) error {
-		if err = h.client.Status().Update(ctx, stage); err != nil {
-			if err = h.client.Update(ctx, stage); err != nil {
-				return fmt.Errorf("failed to update namespace status: %w", err)
-			}
-		}
-
-		h.log.Info("stage status has been updated.", crNameLogKey, stage.Name)
-
-		return nil
-	}
-
-	stage.Status = cdPipeApi.StageStatus{
-		Status:          consts.FailedStatus,
-		Available:       false,
-		LastTimeUpdated: metaV1.Now(),
-		Username:        stage.Status.Username,
-		Result:          cdPipeApi.Error,
-		DetailedMessage: err.Error(),
-		Value:           consts.FailedStatus,
-	}
-
-	return updateStatus(ctx, stage)
 }

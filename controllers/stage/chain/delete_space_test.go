@@ -2,7 +2,6 @@ package chain
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -15,6 +14,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
+	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/stage/chain/util"
 	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/stage/kiosk"
 	commonmock "github.com/epam/edp-common/pkg/mock"
 )
@@ -33,7 +33,7 @@ func emptyStageInit(t *testing.T) *cdPipeApi.Stage {
 func TestDeleteSpace_DeleteSpaceSuccess(t *testing.T) {
 	logger := commonmock.NewLogr()
 	stage := emptyStageInit(t)
-	spaceName := fmt.Sprintf("%s-%s", stage.Namespace, stage.Name)
+	spaceName := util.GenerateNamespaceName(stage)
 	space := &unstructured.Unstructured{}
 	space.Object = map[string]interface{}{
 		"kind":       "Space",

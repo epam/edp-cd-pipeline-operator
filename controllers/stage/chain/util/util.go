@@ -57,3 +57,8 @@ func FindPreviousStageName(ctx context.Context, k8sClient client.Client, stage *
 
 	return "", errors.New("previous stage not found")
 }
+
+// GenerateNamespaceName generates namespace name based on stage name and namespace.
+func GenerateNamespaceName(stage *cdPipeApi.Stage) string {
+	return fmt.Sprintf("%s-%s", stage.Namespace, stage.Name)
+}

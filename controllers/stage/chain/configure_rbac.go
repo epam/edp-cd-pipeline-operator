@@ -10,8 +10,9 @@ import (
 
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
 	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/stage/chain/handler"
+	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/stage/chain/util"
 	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/stage/rbac"
-	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/platform/helper"
+	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/platform"
 )
 
 const (
@@ -45,7 +46,7 @@ type options struct {
 }
 
 func (h ConfigureRbac) ServeRequest(stage *cdPipeApi.Stage) error {
-	targetNamespace := generateTargetNamespaceName(stage)
+	targetNamespace := util.GenerateNamespaceName(stage)
 	logger := h.log.WithValues(namespaceLogKey, targetNamespace)
 	logger.Info("configuring rbac for newly created namespace")
 
@@ -63,7 +64,7 @@ func (h ConfigureRbac) ServeRequest(stage *cdPipeApi.Stage) error {
 		return err
 	}
 
-	if helper.GetPlatformTypeEnv() == clusterOpenshiftType {
+	if platform.GetPlatformTypeEnv() == clusterOpenshiftType {
 		viewGroupRbName := generateViewGroupRbName(stage.Namespace)
 		viewGroupOpts := buildViewGroupRoleOptions(stage.Namespace)
 
@@ -187,7 +188,7 @@ func buildJenkinsAdminRoleOptions(sourceNamespace string) options {
 }
 
 func getJenkinsAdminRoleSubjects(sourceNamespace string) []k8sApi.Subject {
-	if helper.GetPlatformTypeEnv() != clusterOpenshiftType {
+	if platform.GetPlatformTypeEnv() != clusterOpenshiftType {
 		return []k8sApi.Subject{
 			{
 				Kind:      serviceAccountKind,
@@ -228,10 +229,6 @@ func buildViewGroupRoleOptions(sourceNamespace string) options {
 			Kind:     clusterRoleKind,
 		},
 	}
-}
-
-func generateTargetNamespaceName(stage *cdPipeApi.Stage) string {
-	return fmt.Sprintf("%s-%s", stage.Namespace, stage.Name)
 }
 
 func generateViewGroupRbName(namespace string) string {

@@ -1,4 +1,4 @@
-package helper
+package platform
 
 import "os"
 
@@ -15,4 +15,9 @@ func GetPlatformTypeEnv() string {
 	}
 
 	return PlatformOpenshift
+}
+
+// IsKubernetes returns true if platform type is kubernetes.
+func IsKubernetes() bool {
+	return GetPlatformTypeEnv() == PlatformKubernetes
 }

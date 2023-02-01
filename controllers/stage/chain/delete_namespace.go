@@ -12,6 +12,7 @@ import (
 
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
 	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/stage/chain/handler"
+	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/stage/chain/util"
 )
 
 type DeleteNamespace struct {
@@ -21,7 +22,7 @@ type DeleteNamespace struct {
 }
 
 func (h DeleteNamespace) ServeRequest(stage *cdPipeApi.Stage) error {
-	name := fmt.Sprintf("%v-%v", stage.Namespace, stage.Name)
+	name := util.GenerateNamespaceName(stage)
 	if err := h.delete(name); err != nil {
 		return fmt.Errorf("unable to delete %v namespace, name : %w", name, err)
 	}

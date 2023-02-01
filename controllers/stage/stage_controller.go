@@ -34,6 +34,7 @@ const (
 	envLabelDeletionFinalizer       = "envLabelDeletion"
 	const15Requeue                  = 15 * time.Second
 	const5Requeue                   = 5 * time.Second
+	nameLogKey                      = "name"
 )
 
 func NewReconcileStage(c client.Client, scheme *runtime.Scheme, log logr.Logger) *ReconcileStage {
@@ -117,15 +118,18 @@ func (r *ReconcileStage) Reconcile(ctx context.Context, request reconcile.Reques
 		return reconcile.Result{}, fmt.Errorf("failed to init labels for stage: %w", err)
 	}
 
-	if err = chain.CreateChain(ctx, r.client, request.Namespace, i.Spec.TriggerType).
-		ServeRequest(i); err != nil {
+	if err = chain.CreateChain(ctx, r.client, request.Namespace, i.Spec.TriggerType).ServeRequest(i); err != nil {
 		var e edpError.CISNotFoundError
 		if errors.As(err, &e) {
 			log.Error(err, "cis wasn't found. reconcile again...")
 			return reconcile.Result{RequeueAfter: const15Requeue}, nil
 		}
 
-		return reconcile.Result{RequeueAfter: const15Requeue}, fmt.Errorf("failed to create chain: %w", err)
+		if statusErr := r.setFailedStatus(ctx, i, err); err != nil {
+			return reconcile.Result{}, statusErr
+		}
+
+		return reconcile.Result{RequeueAfter: const15Requeue}, fmt.Errorf("failed to handle the chain: %w", err)
 	}
 
 	if err := r.setFinishStatus(ctx, i); err != nil {
@@ -169,7 +173,7 @@ func (r *ReconcileStage) tryToDeleteCDStage(ctx context.Context, stage *cdPipeAp
 
 func (r *ReconcileStage) setCDPipelineOwnerRef(ctx context.Context, s *cdPipeApi.Stage) error {
 	if ow := helper.GetOwnerReference(consts.CDPipelineKind, s.GetOwnerReferences()); ow != nil {
-		r.log.V(2).Info("CD Pipeline owner ref already exists", "name", ow.Name)
+		r.log.V(2).Info("CD Pipeline owner ref already exists", nameLogKey, ow.Name)
 		return nil
 	}
 
@@ -209,8 +213,28 @@ func (r *ReconcileStage) setFinishStatus(ctx context.Context, s *cdPipeApi.Stage
 	return nil
 }
 
+func (r *ReconcileStage) setFailedStatus(ctx context.Context, stage *cdPipeApi.Stage, err error) error {
+	stage.Status = cdPipeApi.StageStatus{
+		Status:          consts.FailedStatus,
+		Available:       false,
+		LastTimeUpdated: metaV1.Now(),
+		Username:        stage.Status.Username,
+		Result:          cdPipeApi.Error,
+		DetailedMessage: err.Error(),
+		Value:           consts.FailedStatus,
+	}
+
+	if err = r.client.Status().Update(ctx, stage); err != nil {
+		return fmt.Errorf("failed to update stage status: %w", err)
+	}
+
+	r.log.Info("Stage status has been updated.", nameLogKey, stage.Name)
+
+	return nil
+}
+
 func (r *ReconcileStage) initLabels(ctx context.Context, s *cdPipeApi.Stage) error {
-	r.log.Info("Trying to update labels for stage", "name", s.Name)
+	r.log.Info("Trying to update labels for stage", nameLogKey, s.Name)
 
 	originalStage := s.DeepCopy()
 
@@ -220,7 +244,7 @@ func (r *ReconcileStage) initLabels(ctx context.Context, s *cdPipeApi.Stage) err
 	}
 
 	if _, ok := labels[cdPipeApi.CodebaseTypeLabelName]; ok {
-		r.log.Info("Stage already has label", "name", s.Name, "label", cdPipeApi.CodebaseTypeLabelName)
+		r.log.Info("Stage already has label", nameLogKey, s.Name, "label", cdPipeApi.CodebaseTypeLabelName)
 		return nil
 	}
 

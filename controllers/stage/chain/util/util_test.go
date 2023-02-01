@@ -229,3 +229,29 @@ func TestFindPreviousStageName_PreviousStageNotFound(t *testing.T) {
 	_, err := FindPreviousStageName(context.Background(), client, stage)
 	assert.Error(t, err)
 }
+
+func TestGenerateNamespaceName(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name  string
+		stage *cdPipeApi.Stage
+		want  string
+	}{
+		{
+			name: "should generate namespace name",
+			stage: &cdPipeApi.Stage{
+				ObjectMeta: metaV1.ObjectMeta{
+					Name:      "stage1",
+					Namespace: "default",
+				},
+			},
+			want: "default-stage1",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.want, GenerateNamespaceName(tt.stage))
+		})
+	}
+}

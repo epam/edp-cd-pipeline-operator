@@ -97,7 +97,7 @@ func createDefDeleteChain(c client.Client) handler.CdStageHandler {
 	return DeleteEnvironmentLabelFromCodebaseImageStreams{
 		client: c,
 		log:    log.WithName(deleteEnvironmentLabelFromCodebaseImageStream),
-		next: DeleteNamespace{
+		next: DelegateNamespaceDeletion{
 			client: c,
 			log:    logger.WithName("delete-namespace"),
 		},
@@ -111,7 +111,7 @@ func getDefChain(c client.Client, triggerType string) handler.CdStageHandler {
 		logger := log.WithName(createChain).WithName("auto-deploy")
 
 		return PutCodebaseImageStream{
-			next: PutNamespace{
+			next: DelegateNamespaceCreation{
 				next: ConfigureRbac{
 					next: PutJenkinsJob{
 						client: c,
@@ -144,7 +144,7 @@ func getDefChain(c client.Client, triggerType string) handler.CdStageHandler {
 	logger := log.WithName(createChain).WithName("manual-deploy")
 
 	return PutCodebaseImageStream{
-		next: PutNamespace{
+		next: DelegateNamespaceCreation{
 			next: ConfigureRbac{
 				next: PutJenkinsJob{
 					client: c,
@@ -273,7 +273,7 @@ func getTektonDeleteChain(c client.Client) handler.CdStageHandler {
 	return DeleteEnvironmentLabelFromCodebaseImageStreams{
 		client: c,
 		log:    log.WithName(deleteEnvironmentLabelFromCodebaseImageStream),
-		next: DeleteNamespace{
+		next: DelegateNamespaceDeletion{
 			client: c,
 			log:    log.WithName("delete-namespace"),
 		},

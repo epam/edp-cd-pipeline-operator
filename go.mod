@@ -15,6 +15,7 @@ require (
 	github.com/epam/edp-component-operator v0.12.0
 	github.com/epam/edp-jenkins-operator/v2 v2.13.2
 	github.com/go-logr/logr v1.2.3
+	github.com/openshift/api v3.9.0+incompatible
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.8.1
 	k8s.io/api v0.26.1

@@ -2,7 +2,6 @@ package chain
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	"github.com/go-logr/logr"
@@ -14,6 +13,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
+	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/stage/chain/util"
 	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/stage/kiosk"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/consts"
 )
@@ -152,7 +152,7 @@ func TestPutKioskSpace_ServeRequest_Success(t *testing.T) {
 	err := putKioskSpace.ServeRequest(stage)
 	assert.NoError(t, err)
 
-	name = fmt.Sprintf("%s-%s", stage.Namespace, stage.Name)
+	name = util.GenerateNamespaceName(stage)
 
 	space, err := spaceManager.Get(name)
 	assert.NoError(t, err)

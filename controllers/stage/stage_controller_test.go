@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
+	projectApi "github.com/openshift/api/project/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -110,6 +111,7 @@ func TestTryToDeleteCDStage_Success(t *testing.T) {
 	require.NoError(t, err)
 	err = corev1.AddToScheme(scheme)
 	require.NoError(t, err)
+	require.NoError(t, projectApi.AddToScheme(scheme))
 
 	stage := &cdPipeApi.Stage{
 		TypeMeta: metaV1.TypeMeta{},
@@ -303,6 +305,7 @@ func TestReconcileStage_Reconcile_Success(t *testing.T) {
 	require.NoError(t, err)
 	err = corev1.AddToScheme(scheme)
 	require.NoError(t, err)
+	require.NoError(t, projectApi.AddToScheme(scheme))
 
 	stage := &cdPipeApi.Stage{
 		TypeMeta: metaV1.TypeMeta{},

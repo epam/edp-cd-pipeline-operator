@@ -18,6 +18,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
+	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/stage/chain/util"
 	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/stage/rbac"
 	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1"
 )
@@ -89,7 +90,7 @@ func TestConfigureRbac_ServeRequest_Success(t *testing.T) {
 		},
 	}
 
-	targetNamespace := generateTargetNamespaceName(stage)
+	targetNamespace := util.GenerateNamespaceName(stage)
 	viewGroupRbName := generateViewGroupRbName(stage.Namespace)
 
 	err = configureRbac.ServeRequest(stage)
@@ -133,7 +134,7 @@ func TestConfigureRbac_ServeRequest_DifferentPlatformType(t *testing.T) {
 		},
 	}
 
-	targetNamespace := generateTargetNamespaceName(stage)
+	targetNamespace := util.GenerateNamespaceName(stage)
 	viewGroupRbName := generateViewGroupRbName(stage.Namespace)
 
 	err = configureRbac.ServeRequest(stage)
