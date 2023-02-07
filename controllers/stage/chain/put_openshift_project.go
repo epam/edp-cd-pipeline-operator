@@ -29,7 +29,7 @@ func (c PutOpenshiftProject) ServeRequest(stage *cdPipeApi.Stage) error {
 
 	logger.Info("Try to create project")
 
-	project := &projectApi.Project{
+	project := &projectApi.ProjectRequest{
 		ObjectMeta: metaV1.ObjectMeta{
 			Name: projectName,
 			Labels: map[string]string{

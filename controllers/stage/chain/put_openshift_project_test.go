@@ -45,7 +45,7 @@ func TestPutOpenshiftProject_ServeRequest(t *testing.T) {
 					t,
 					c.Get(
 						context.Background(),
-						types.NamespacedName{Name: util.GenerateNamespaceName(s)}, &projectApi.Project{},
+						types.NamespacedName{Name: util.GenerateNamespaceName(s)}, &projectApi.ProjectRequest{},
 					),
 				)
 			},
@@ -59,7 +59,7 @@ func TestPutOpenshiftProject_ServeRequest(t *testing.T) {
 				},
 			},
 			objects: []client.Object{
-				&projectApi.Project{
+				&projectApi.ProjectRequest{
 					ObjectMeta: metaV1.ObjectMeta{
 						Name: util.GenerateNamespaceName(&cdPipeApi.Stage{
 							ObjectMeta: metaV1.ObjectMeta{
@@ -76,7 +76,7 @@ func TestPutOpenshiftProject_ServeRequest(t *testing.T) {
 					t,
 					c.Get(
 						context.Background(),
-						types.NamespacedName{Name: util.GenerateNamespaceName(s)}, &projectApi.Project{},
+						types.NamespacedName{Name: util.GenerateNamespaceName(s)}, &projectApi.ProjectRequest{},
 					),
 				)
 			},

@@ -27,6 +27,7 @@ func TestDelegateNamespaceDeletion_ServeRequest(t *testing.T) {
 		name        string
 		stage       *cdPipeApi.Stage
 		platformEnv string
+		objects     []client.Object
 		wantErr     require.ErrorAssertionFunc
 		wantAssert  func(t *testing.T, c client.Client, s *cdPipeApi.Stage)
 	}{
@@ -37,6 +38,18 @@ func TestDelegateNamespaceDeletion_ServeRequest(t *testing.T) {
 				ObjectMeta: metaV1.ObjectMeta{
 					Name:      "stage-1",
 					Namespace: "default",
+				},
+			},
+			objects: []client.Object{
+				&projectApi.Project{
+					ObjectMeta: metaV1.ObjectMeta{
+						Name: util.GenerateNamespaceName(&cdPipeApi.Stage{
+							ObjectMeta: metaV1.ObjectMeta{
+								Name:      "stage-1",
+								Namespace: "default",
+							},
+						}),
+					},
 				},
 			},
 			wantErr: require.NoError,
@@ -58,6 +71,18 @@ func TestDelegateNamespaceDeletion_ServeRequest(t *testing.T) {
 					Namespace: "default",
 				},
 			},
+			objects: []client.Object{
+				&corev1.Namespace{
+					ObjectMeta: metaV1.ObjectMeta{
+						Name: util.GenerateNamespaceName(&cdPipeApi.Stage{
+							ObjectMeta: metaV1.ObjectMeta{
+								Name:      "stage-1",
+								Namespace: "default",
+							},
+						}),
+					},
+				},
+			},
 			wantErr: require.NoError,
 			wantAssert: func(t *testing.T, c client.Client, s *cdPipeApi.Stage) {
 				require.NoError(t,
@@ -74,6 +99,18 @@ func TestDelegateNamespaceDeletion_ServeRequest(t *testing.T) {
 				ObjectMeta: metaV1.ObjectMeta{
 					Name:      "stage-1",
 					Namespace: "default",
+				},
+			},
+			objects: []client.Object{
+				&projectApi.Project{
+					ObjectMeta: metaV1.ObjectMeta{
+						Name: util.GenerateNamespaceName(&cdPipeApi.Stage{
+							ObjectMeta: metaV1.ObjectMeta{
+								Name:      "stage-1",
+								Namespace: "default",
+							},
+						}),
+					},
 				},
 			},
 			wantErr: require.NoError,
@@ -93,7 +130,7 @@ func TestDelegateNamespaceDeletion_ServeRequest(t *testing.T) {
 			t.Setenv("PLATFORM_TYPE", tt.platformEnv)
 
 			c := DelegateNamespaceDeletion{
-				client: fake.NewClientBuilder().WithScheme(scheme).Build(),
+				client: fake.NewClientBuilder().WithScheme(scheme).WithObjects(tt.objects...).Build(),
 				log:    logr.Discard(),
 			}
 

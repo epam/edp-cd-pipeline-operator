@@ -44,7 +44,7 @@ func TestDelegateNamespaceCreation_ServeRequest(t *testing.T) {
 				require.NoError(t,
 					c.Get(
 						context.Background(),
-						client.ObjectKey{Name: util.GenerateNamespaceName(s)}, &projectApi.Project{},
+						client.ObjectKey{Name: util.GenerateNamespaceName(s)}, &projectApi.ProjectRequest{},
 					),
 				)
 			},
@@ -81,7 +81,7 @@ func TestDelegateNamespaceCreation_ServeRequest(t *testing.T) {
 				require.NoError(t,
 					c.Get(
 						context.Background(),
-						client.ObjectKey{Name: util.GenerateNamespaceName(s)}, &projectApi.Project{},
+						client.ObjectKey{Name: util.GenerateNamespaceName(s)}, &projectApi.ProjectRequest{},
 					),
 				)
 			},
