@@ -3,7 +3,7 @@ global:
   edpName: ""
   # -- platform type that can be "kubernetes" or "openshift"
   platform: "openshift"
-  kioskEnabled: "true"
+  kioskEnabled: true
 
 # -- component name
 name: cd-pipeline-operator
