@@ -6,9 +6,8 @@ import (
 
 	"github.com/go-logr/logr"
 	projectApi "github.com/openshift/api/project/v1"
-	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
@@ -26,62 +25,30 @@ type PutOpenshiftProject struct {
 // ServeRequest creates a project for a stage.
 func (c PutOpenshiftProject) ServeRequest(stage *cdPipeApi.Stage) error {
 	projectName := util.GenerateNamespaceName(stage)
+	logger := c.log.WithValues(crNameLogKey, projectName)
 
-	c.log.Info("Try to create project", crNameLogKey, projectName)
-
-	ctx := context.TODO()
-	if err := c.createProject(ctx, projectName, stage.Namespace); err != nil {
-		return fmt.Errorf("failed to create %s project: %w", projectName, err)
-	}
-
-	return nextServeOrNil(c.next, stage)
-}
-
-func (c PutOpenshiftProject) createProject(ctx context.Context, name, sourceNs string) error {
-	exists, err := c.projectExists(ctx, name)
-	if err != nil {
-		return err
-	}
-
-	if exists {
-		log.Info("Project already exists, skip creating", crNameLogKey, name)
-		return nil
-	}
-
-	return c.create(ctx, name, sourceNs)
-}
-
-func (c PutOpenshiftProject) projectExists(ctx context.Context, name string) (bool, error) {
-	c.log.Info("Checking if project exists", crNameLogKey, name)
-
-	if err := c.client.Get(ctx, types.NamespacedName{Name: name}, &projectApi.Project{}); err != nil {
-		if k8sErrors.IsNotFound(err) {
-			return false, nil
-		}
-
-		return false, fmt.Errorf("failed to get project: %w", err)
-	}
-
-	return true, nil
-}
-
-func (c PutOpenshiftProject) create(ctx context.Context, name, sourceNs string) error {
-	logger := c.log.WithValues(crNameLogKey, name)
-	logger.Info("Creating project")
+	logger.Info("Try to create project")
 
 	project := &projectApi.Project{
 		ObjectMeta: metaV1.ObjectMeta{
-			Name: name,
+			Name: projectName,
 			Labels: map[string]string{
-				util.TenantLabelName: sourceNs,
+				util.TenantLabelName: stage.Namespace,
 			},
 		},
 	}
-	if err := c.client.Create(ctx, project); err != nil {
+
+	if err := c.client.Create(context.TODO(), project); err != nil {
+		if apierrors.IsAlreadyExists(err) {
+			logger.Info("Project already exists")
+
+			return nil
+		}
+
 		return fmt.Errorf("failed to create project: %w", err)
 	}
 
 	logger.Info("Project has been created")
 
-	return nil
+	return nextServeOrNil(c.next, stage)
 }
