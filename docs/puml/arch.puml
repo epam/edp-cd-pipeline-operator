@@ -2,21 +2,21 @@
 
 skinparam class {
     BackgroundColor #white
-	BackgroundColor<<wip>> LightGoldenRodYellow
-	BackgroundColor<<tbd>> Khaki
+    BackgroundColor<<autodeploy>> LightGoldenRodYellow
+    BackgroundColor<<tbd>> Khaki
 }
 
 package cdpipeline-operator {
     class CdPipeline {
-    -- metadata --
+        -- metadata --
         String name
-    -- spec --
+        -- spec --
         []String applications
         []String applicationsToPromote
         String deploymentType
         []String inputDockerStreams
         String name
-    -- status --
+        -- status --
         ActionType action
         Boolean available
         String detailedMessage
@@ -38,26 +38,26 @@ package cdpipeline-operator {
 
     class Stage {
         -- metadata --
-            []String annotations
-            String name
+        []String annotations
+        String name
         -- spec --
-            String cdPipeline
-            String description
-            String jobProvisioning
-            String name
-            Integer order
-            []QualityGate qualityGates
-            Source  Source
-            String triggerType
+        String cdPipeline
+        String description
+        String jobProvisioning
+        String name
+        Integer order
+        []QualityGate qualityGates
+        Source  Source
+        String triggerType
         -- status --
-            ActionType action
-            Boolean available
-            String detailedMessage
-            Date lastTimeUpdated
-            Result result
-            String status
-            String username
-            String value
+        ActionType action
+        Boolean available
+        String detailedMessage
+        Date lastTimeUpdated
+        Result result
+        String status
+        String username
+        String value
     }
 
     Stage "1" --* "1..*" QualityGate : internal structure
@@ -102,128 +102,129 @@ package cdpipeline-operator {
 package codebase-operator {
     class Codebase {
         -- metadata --
-            String name
+        String name
         -- spec --
-            String buildTool
-            String ciTool
-            String commitMessagePattern
-            String defaultBranch
-            String deploymentScript
-            String description
-            Bool emptyProject
-            String framework
-            String gitServer
-            String gitUrlPath
-            String jenkinsSlave
-            String jiraIssueMetadataPayload
-            String jobProvisioning
-            String lang
-            Perf perf
-            Repository repository
-            Strategy strategy
-            String testReportFramework
-            String ticketNamePattern
-            String type
-            Versioning versioning
+        String buildTool
+        String ciTool
+        String commitMessagePattern
+        String defaultBranch
+        String deploymentScript
+        String description
+        Bool emptyProject
+        String framework
+        String gitServer
+        String gitUrlPath
+        String jenkinsSlave
+        String jiraIssueMetadataPayload
+        String jobProvisioning
+        String lang
+        Perf perf
+        Repository repository
+        Strategy strategy
+        String testReportFramework
+        String ticketNamePattern
+        String type
+        Versioning versioning
         -- status --
-            ActionType action
-            Boolean available
-            String detailedMessage
-            Integer failureCount
-            String git
-            Date lastTimeUpdated
-            Result result
-            String status
-            String username
-            String value
+        ActionType action
+        Boolean available
+        String detailedMessage
+        Integer failureCount
+        String git
+        Date lastTimeUpdated
+        Result result
+        String status
+        String username
+        String value
     }
 
     class CodebaseBranch {
         -- metadata --
-            String name
+        String name
         -- spec --
-            String branchName
-            String codebaseName
-            String fromCommit
-            Boolean release
-            ReleaseJobParams releaseJobParams
+        String branchName
+        String codebaseName
+        String fromCommit
+        Boolean release
+        ReleaseJobParams releaseJobParams
         -- status --
-            ActionType action
-            String build
-            String detailedMessage
-            Integer failureCount
-            Date lastTimeUpdated
-            Result result
-            String status
-            String username
-            String value
-            []String versionHistory
+        ActionType action
+        String build
+        String detailedMessage
+        Integer failureCount
+        Date lastTimeUpdated
+        Result result
+        String status
+        String username
+        String value
+        []String versionHistory
     }
 
-    class CDStageDeploy {
+    class CDStageDeploy <<autodeploy>>{
         -- metadata --
-            String name
+        String name
         -- spec --
-            String pipeline
-            String stage
-            []String tags
+        String pipeline
+        String stage
+        []String tags
     }
 
     class CodebaseImageStream {
         -- metadata --
-            String name
+        String name
+        []String labels
         -- spec --
-            String codebase
-            String imageName
-            []Tag tags
+        String codebase
+        String imageName
+        []Tag tags
     }
 }
 
 package jenkins-operator {
     class JenkinsFolder {
         -- metadata --
-            String name
+        String name
         -- spec --
-            String codebaseName
-            []String job
-            String ownerName
+        String codebaseName
+        []String job
+        String ownerName
         -- status --
-            Boolean available
-            Integer jenkinsJobProvisionBuildNumber
-            Date lastTimeUpdated
-            String status
+        Boolean available
+        Integer jenkinsJobProvisionBuildNumber
+        Date lastTimeUpdated
+        String status
     }
 
     class JenkinsJob {
         -- metadata --
-            String name
+        String name
         -- spec --
-            String jenkinsFolder
-            []String job
-            String ownerName
-            String stageName
+        String jenkinsFolder
+        []String job
+        String ownerName
+        String stageName
         -- status --
-            ActionType action
-            Boolean available
-            String detailedMessage
-            Integer jenkinsJobProvisionBuildNumber
-            Date lastTimeUpdated
-            Result result
-            String status
-            String username
-            String value
+        ActionType action
+        Boolean available
+        String detailedMessage
+        Integer jenkinsJobProvisionBuildNumber
+        Date lastTimeUpdated
+        Result result
+        String status
+        String username
+        String value
     }
 
-    class CDStageJenkinsDeployment {
+    class CDStageJenkinsDeployment <<autodeploy>>{
         -- metadata --
-            String name
+        String name
         -- spec --
-            String job
-            []Tag tags
+        String job
+        []Tag tags
     }
 
     CDStageJenkinsDeployment --> Tag : internal structure
-    class Tag {
+    class Tag <<autodeploy>>{
         String codebase
         String tag
     }
@@ -233,10 +234,9 @@ JenkinsFolder <-- CdPipeline : "creates"
 Codebase "1..*" o--- "1..*" CdPipeline : applicationsToPromote
 CodebaseImageStream "1..*" o--- "1..*" CdPipeline : inputDockerStreams
 CodebaseBranch "0..1" o--- "1..*" QualityGate : autotestName+branchName
-CodebaseBranch "1" o--- "1..*" Library : name+branch
-JenkinsJob "1" <-- "1" Stage : creates
+JenkinsJob "1" <-- "1" Stage : creates CD Pipeline Job
 CodebaseImageStream "1..*" <-- "1" Stage : creates verified stream
-CDStageDeploy "1..*" <-- "1" Stage : creates
+CDStageDeploy "1..*" <-- "1" CodebaseImageStream : triggerType: auto\n creates based on labels
 CDStageJenkinsDeployment "1..*" <-=- "1" CDStageDeploy : creates
 
 @enduml
