@@ -3,21 +3,26 @@ package platform
 import "os"
 
 const (
-	platformType       = "PLATFORM_TYPE"
-	PlatformOpenshift  = "openshift"
-	PlatformKubernetes = "kubernetes"
+	Type       = "PLATFORM_TYPE"
+	Openshift  = "openshift"
+	Kubernetes = "kubernetes"
 )
 
 func GetPlatformTypeEnv() string {
-	pt, ok := os.LookupEnv(platformType)
+	pt, ok := os.LookupEnv(Type)
 	if ok {
 		return pt
 	}
 
-	return PlatformOpenshift
+	return Openshift
 }
 
 // IsKubernetes returns true if platform type is kubernetes.
 func IsKubernetes() bool {
-	return GetPlatformTypeEnv() == PlatformKubernetes
+	return GetPlatformTypeEnv() == Kubernetes
+}
+
+// IsOpenshift returns true if platform type is openshift.
+func IsOpenshift() bool {
+	return GetPlatformTypeEnv() == Openshift
 }

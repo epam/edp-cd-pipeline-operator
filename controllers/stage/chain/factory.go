@@ -105,7 +105,7 @@ func createDefDeleteChain(c client.Client) handler.CdStageHandler {
 }
 
 func getDefChain(c client.Client, triggerType string) handler.CdStageHandler {
-	rbacManager := rbac.InitRbacManager(c)
+	rbacManager := rbac.NewRbacManager(c, log.WithName("rbac-manager"))
 
 	if consts.AutoDeployTriggerType == triggerType {
 		logger := log.WithName(createChain).WithName("auto-deploy")
@@ -168,7 +168,7 @@ func getDefChain(c client.Client, triggerType string) handler.CdStageHandler {
 
 func getKioskChain(c client.Client, triggerType string) handler.CdStageHandler {
 	space := kiosk.InitSpace(c)
-	rbacManager := rbac.InitRbacManager(c)
+	rbacManager := rbac.NewRbacManager(c, log.WithName("rbac-manager"))
 
 	if consts.AutoDeployTriggerType == triggerType {
 		return getAutoDeployPutCodebaseImageStream(c, log.WithName(createChain).WithName("auto-deploy"), rbacManager, space)
@@ -177,7 +177,7 @@ func getKioskChain(c client.Client, triggerType string) handler.CdStageHandler {
 	return getManualDeployPutCodebaseImageStream(c, log.WithName(createChain).WithName("manual-deploy"), rbacManager, space)
 }
 
-func getManualDeployPutCodebaseImageStream(c client.Client, logger logr.Logger, rbacManager rbac.RbacManager, space kiosk.SpaceManager) PutCodebaseImageStream {
+func getManualDeployPutCodebaseImageStream(c client.Client, logger logr.Logger, rbacManager rbac.Manager, space kiosk.SpaceManager) PutCodebaseImageStream {
 	return PutCodebaseImageStream{
 		next: PutKioskSpace{
 			next: ConfigureRbac{
@@ -202,7 +202,7 @@ func getManualDeployPutCodebaseImageStream(c client.Client, logger logr.Logger, 
 	}
 }
 
-func getAutoDeployPutCodebaseImageStream(c client.Client, logger logr.Logger, rbacManager rbac.RbacManager, space kiosk.SpaceManager) PutCodebaseImageStream {
+func getAutoDeployPutCodebaseImageStream(c client.Client, logger logr.Logger, rbacManager rbac.Manager, space kiosk.SpaceManager) PutCodebaseImageStream {
 	return PutCodebaseImageStream{
 		next: PutKioskSpace{
 			next: ConfigureRbac{

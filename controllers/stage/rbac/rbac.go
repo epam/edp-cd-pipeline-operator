@@ -5,10 +5,9 @@ import (
 	"fmt"
 
 	"github.com/go-logr/logr"
-	k8sApi "k8s.io/api/rbac/v1"
+	rbacApi "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -16,11 +15,11 @@ const (
 	crNameLogKey = "name"
 )
 
-type RbacManager interface {
-	GetRoleBinding(name, namespace string) (*k8sApi.RoleBinding, error)
-	CreateRoleBinding(name, namespace string, subjects []k8sApi.Subject, roleRef k8sApi.RoleRef) error
-	GetRole(name, namespace string) (*k8sApi.Role, error)
-	CreateRole(name, namespace string, rules []k8sApi.PolicyRule) error
+type Manager interface {
+	GetRoleBinding(name, namespace string) (*rbacApi.RoleBinding, error)
+	CreateRoleBinding(name, namespace string, subjects []rbacApi.Subject, roleRef rbacApi.RoleRef) error
+	GetRole(name, namespace string) (*rbacApi.Role, error)
+	CreateRole(name, namespace string, rules []rbacApi.PolicyRule) error
 }
 
 type KubernetesRbac struct {
@@ -28,18 +27,18 @@ type KubernetesRbac struct {
 	log    logr.Logger
 }
 
-func InitRbacManager(c client.Client) RbacManager {
+func NewRbacManager(c client.Client, log logr.Logger) Manager {
 	return KubernetesRbac{
 		client: c,
-		log:    ctrl.Log.WithName("rbac-manager"),
+		log:    log,
 	}
 }
 
-func (s KubernetesRbac) GetRoleBinding(name, namespace string) (*k8sApi.RoleBinding, error) {
+func (s KubernetesRbac) GetRoleBinding(name, namespace string) (*rbacApi.RoleBinding, error) {
 	log := s.log.WithValues(crNameLogKey, name, "namespace", namespace)
 	log.Info("getting role binding")
 
-	rb := &k8sApi.RoleBinding{}
+	rb := &rbacApi.RoleBinding{}
 	if err := s.client.Get(context.Background(), types.NamespacedName{
 		Namespace: namespace,
 		Name:      name,
@@ -50,11 +49,11 @@ func (s KubernetesRbac) GetRoleBinding(name, namespace string) (*k8sApi.RoleBind
 	return rb, nil
 }
 
-func (s KubernetesRbac) CreateRoleBinding(name, namespace string, subjects []k8sApi.Subject, roleRef k8sApi.RoleRef) error {
+func (s KubernetesRbac) CreateRoleBinding(name, namespace string, subjects []rbacApi.Subject, roleRef rbacApi.RoleRef) error {
 	log := s.log.WithValues(crNameLogKey, name)
 	log.Info("creating rolebinding")
 
-	rb := &k8sApi.RoleBinding{
+	rb := &rbacApi.RoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
@@ -71,11 +70,11 @@ func (s KubernetesRbac) CreateRoleBinding(name, namespace string, subjects []k8s
 	return nil
 }
 
-func (s KubernetesRbac) GetRole(name, namespace string) (*k8sApi.Role, error) {
+func (s KubernetesRbac) GetRole(name, namespace string) (*rbacApi.Role, error) {
 	log := s.log.WithValues(crNameLogKey, name, "namespace", namespace)
 	log.Info("getting role binding")
 
-	r := &k8sApi.Role{}
+	r := &rbacApi.Role{}
 	if err := s.client.Get(context.Background(), types.NamespacedName{
 		Namespace: namespace,
 		Name:      name,
@@ -86,11 +85,11 @@ func (s KubernetesRbac) GetRole(name, namespace string) (*k8sApi.Role, error) {
 	return r, nil
 }
 
-func (s KubernetesRbac) CreateRole(name, namespace string, rules []k8sApi.PolicyRule) error {
+func (s KubernetesRbac) CreateRole(name, namespace string, rules []rbacApi.PolicyRule) error {
 	log := s.log.WithValues(crNameLogKey, name)
 	log.Info("creating role")
 
-	r := &k8sApi.Role{
+	r := &rbacApi.Role{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,

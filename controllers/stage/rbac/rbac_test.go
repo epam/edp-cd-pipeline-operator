@@ -10,7 +10,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
@@ -65,19 +64,6 @@ func expectedRoleInit(t *testing.T) *k8sApi.Role {
 			ResourceVersion: resourceVersion,
 		},
 	}
-}
-
-func TestInitRbacManager_Success(t *testing.T) {
-	client := fake.NewClientBuilder().Build()
-	log := ctrl.Log.WithName("rbac-manager")
-
-	expectedRbac := KubernetesRbac{
-		client: client,
-		log:    log,
-	}
-
-	initializedRbac := InitRbacManager(client)
-	assert.Equal(t, expectedRbac, initializedRbac)
 }
 
 func TestCreateRoleBinding_Success(t *testing.T) {

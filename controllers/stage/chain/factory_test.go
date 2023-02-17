@@ -7,6 +7,10 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	k8sApi "k8s.io/api/rbac/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 var (
@@ -65,4 +69,13 @@ func TestChainCreation_KioskIsEnabled(t *testing.T) {
 
 	deleteCh := CreateDeleteChain(context.Background(), fakeClient, "default")
 	assert.NotNil(t, deleteCh)
+}
+
+func createFakeClient(t *testing.T) client.Client {
+	t.Helper()
+
+	scheme := runtime.NewScheme()
+	scheme.AddKnownTypes(k8sApi.SchemeGroupVersion, &k8sApi.RoleBinding{}, &k8sApi.Role{})
+
+	return fake.NewClientBuilder().WithScheme(scheme).Build()
 }

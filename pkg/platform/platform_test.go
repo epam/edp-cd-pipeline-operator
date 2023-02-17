@@ -10,13 +10,13 @@ import (
 func TestGetPlatformTypeEnv_Success(t *testing.T) {
 	stubPlatformType := "stubPlatformType"
 
-	err := os.Setenv(platformType, stubPlatformType)
+	err := os.Setenv(Type, stubPlatformType)
 	if err != nil {
 		t.Fatalf("cannot set an env variable: %v", err)
 	}
 
 	defer func() {
-		err := os.Unsetenv(platformType)
+		err := os.Unsetenv(Type)
 		if err != nil {
 			t.Fatalf("cannot unset an env variable: %v", err)
 		}
@@ -27,13 +27,13 @@ func TestGetPlatformTypeEnv_Success(t *testing.T) {
 }
 
 func TestGetPlatformTypeEnv_PlatformTypeIsNotSet(t *testing.T) {
-	err := os.Unsetenv(platformType)
+	err := os.Unsetenv(Type)
 	if err != nil {
 		t.Fatalf("cannot unset an env variable: %v", err)
 	}
 
 	platformType := GetPlatformTypeEnv()
-	assert.Equal(t, PlatformOpenshift, platformType)
+	assert.Equal(t, Openshift, platformType)
 }
 
 func TestIsKubernetes(t *testing.T) {
@@ -47,14 +47,14 @@ func TestIsKubernetes(t *testing.T) {
 		{
 			name: "platform type is kubernetes",
 			setEnv: func(t *testing.T) {
-				t.Setenv(platformType, PlatformKubernetes)
+				t.Setenv(Type, Kubernetes)
 			},
 			want: true,
 		},
 		{
 			name: "platform type is openshift",
 			setEnv: func(t *testing.T) {
-				t.Setenv(platformType, PlatformOpenshift)
+				t.Setenv(Type, Openshift)
 			},
 			want: false,
 		},
