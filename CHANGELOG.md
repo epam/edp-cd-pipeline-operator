@@ -1,6 +1,37 @@
 <a name="unreleased"></a>
 ## [Unreleased]
 
+### Features
+
+- Updated EDP components [EPMDEDP-11206](https://jiraeu.epam.com/browse/EPMDEDP-11206)
+- Updated loft-sh/kiosk dependency [EPMDEDP-11274](https://jiraeu.epam.com/browse/EPMDEDP-11274)
+- Removed loft-sh/kiosk lib direct dependency [EPMDEDP-11286](https://jiraeu.epam.com/browse/EPMDEDP-11286)
+- Updated Operator SDK version [EPMDEDP-11363](https://jiraeu.epam.com/browse/EPMDEDP-11363)
+- Replace Admin with self-provisioner Cluster Role [EPMDEDP-11426](https://jiraeu.epam.com/browse/EPMDEDP-11426)
+- Create project for openshift platform [EPMDEDP-11441](https://jiraeu.epam.com/browse/EPMDEDP-11441)
+- Remove admin-console-view RBAC [EPMDEDP-11486](https://jiraeu.epam.com/browse/EPMDEDP-11486)
+- Remove Kiosk integration when using Openshift cluster [EPMDEDP-11489](https://jiraeu.epam.com/browse/EPMDEDP-11489)
+
+### Bug Fixes
+
+- Use ProjectRequest to create openshift Project [EPMDEDP-11441](https://jiraeu.epam.com/browse/EPMDEDP-11441)
+- Create/delete openshift project without checking its existence [EPMDEDP-11441](https://jiraeu.epam.com/browse/EPMDEDP-11441)
+
+### Code Refactoring
+
+- Apply golangci-lint [EPMDEDP-10626](https://jiraeu.epam.com/browse/EPMDEDP-10626)
+- Removed old api [EPMDEDP-11206](https://jiraeu.epam.com/browse/EPMDEDP-11206)
+
+### Routine
+
+- Update current development version [EPMDEDP-10610](https://jiraeu.epam.com/browse/EPMDEDP-10610)
+- Change type of kioskEnabled parameter from string to bool [EPMDEDP-11426](https://jiraeu.epam.com/browse/EPMDEDP-11426)
+
+### Documentation
+
+- Update chart and application version in Readme file [EPMDEDP-11221](https://jiraeu.epam.com/browse/EPMDEDP-11221)
+- Update diagram [EPMDEDP-11367](https://jiraeu.epam.com/browse/EPMDEDP-11367)
+
 
 <a name="v2.13.0"></a>
 ## [v2.13.0] - 2022-12-06
@@ -129,12 +160,12 @@
 
 ### Code Refactoring
 
-- Add namespace field in roleRef in OKD RB, align CRB name [EPMDEDP-7279](https://jiraeu.epam.com/browse/EPMDEDP-7279)
 - Provide unique name of cluster RBAC resources [EPMDEDP-7279](https://jiraeu.epam.com/browse/EPMDEDP-7279)
 - Align RBAC according to kiosk usage [EPMDEDP-7279](https://jiraeu.epam.com/browse/EPMDEDP-7279)
 - Replace namespaces role to cluster for OKD [EPMDEDP-7279](https://jiraeu.epam.com/browse/EPMDEDP-7279)
 - Replace namespaces role to cluster for OKD [EPMDEDP-7279](https://jiraeu.epam.com/browse/EPMDEDP-7279)
 - Expand cd-pipeline-operator role [EPMDEDP-7279](https://jiraeu.epam.com/browse/EPMDEDP-7279)
+- Add namespace field in roleRef in OKD RB, align CRB name [EPMDEDP-7279](https://jiraeu.epam.com/browse/EPMDEDP-7279)
 - Replace cluster-wide role/rolebinding to namespaced [EPMDEDP-7279](https://jiraeu.epam.com/browse/EPMDEDP-7279)
 - Remake condition for simplicity [EPMDEDP-7945](https://jiraeu.epam.com/browse/EPMDEDP-7945)
 
@@ -150,8 +181,8 @@
 - Update docker image [EPMDEDP-7895](https://jiraeu.epam.com/browse/EPMDEDP-7895)
 - Update go.sum and go.mod. [EPMDEDP-7930](https://jiraeu.epam.com/browse/EPMDEDP-7930)
 - Update codebase-operator to the latest stable [EPMDEDP-7930](https://jiraeu.epam.com/browse/EPMDEDP-7930)
-- Update jenkins-operator to the latest stable [EPMDEDP-7930](https://jiraeu.epam.com/browse/EPMDEDP-7930)
 - Update codebase-operator to the latest stable [EPMDEDP-7930](https://jiraeu.epam.com/browse/EPMDEDP-7930)
+- Update jenkins-operator to the latest stable [EPMDEDP-7930](https://jiraeu.epam.com/browse/EPMDEDP-7930)
 - Use custom go build step for operator [EPMDEDP-7932](https://jiraeu.epam.com/browse/EPMDEDP-7932)
 - Update go to version 1.17 [EPMDEDP-7932](https://jiraeu.epam.com/browse/EPMDEDP-7932)
 
@@ -189,4 +220,4 @@
 [v2.8.1]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.8.0...v2.8.1
 [v2.8.0]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.7.1...v2.8.0
 [v2.7.1]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.7.0...v2.7.1
-[v2.7.0]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.3.0-58...v2.7.0
+[v2.7.0]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.3.0-58.0.20210420131932-c2003069fbbd...v2.7.0
