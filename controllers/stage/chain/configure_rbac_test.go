@@ -208,7 +208,7 @@ func TestConfigureRbac_ServeRequest(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			t.Setenv(platform.Type, tt.platform)
+			t.Setenv(platform.TypeEnv, tt.platform)
 
 			k8sClient := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(tt.objects...).Build()
 

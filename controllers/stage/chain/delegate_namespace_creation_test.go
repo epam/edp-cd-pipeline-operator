@@ -15,6 +15,8 @@ import (
 
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
 	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/stage/chain/util"
+	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/stage/kiosk"
+	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/platform"
 )
 
 func TestDelegateNamespaceCreation_ServeRequest(t *testing.T) {
@@ -24,15 +26,17 @@ func TestDelegateNamespaceCreation_ServeRequest(t *testing.T) {
 	require.NoError(t, corev1.AddToScheme(scheme))
 
 	tests := []struct {
-		name        string
-		stage       *cdPipeApi.Stage
-		platformEnv string
-		wantErr     require.ErrorAssertionFunc
-		wantAssert  func(t *testing.T, c client.Client, s *cdPipeApi.Stage)
+		name       string
+		stage      *cdPipeApi.Stage
+		prepare    func(t *testing.T)
+		wantErr    require.ErrorAssertionFunc
+		wantAssert func(t *testing.T, c client.Client, s *cdPipeApi.Stage)
 	}{
 		{
-			name:        "creation of project is successful",
-			platformEnv: "openshift",
+			name: "creation of project is successful",
+			prepare: func(t *testing.T) {
+				t.Setenv(platform.TypeEnv, platform.Openshift)
+			},
 			stage: &cdPipeApi.Stage{
 				ObjectMeta: metaV1.ObjectMeta{
 					Name:      "stage-1",
@@ -50,8 +54,10 @@ func TestDelegateNamespaceCreation_ServeRequest(t *testing.T) {
 			},
 		},
 		{
-			name:        "creation of namespace is successful",
-			platformEnv: "kubernetes",
+			name: "creation of namespace is successful",
+			prepare: func(t *testing.T) {
+				t.Setenv(platform.TypeEnv, platform.Kubernetes)
+			},
 			stage: &cdPipeApi.Stage{
 				ObjectMeta: metaV1.ObjectMeta{
 					Name:      "stage-1",
@@ -69,12 +75,38 @@ func TestDelegateNamespaceCreation_ServeRequest(t *testing.T) {
 			},
 		},
 		{
+			name: "creation of kiosk space is successful",
+			prepare: func(t *testing.T) {
+				t.Setenv(platform.TypeEnv, platform.Kubernetes)
+				t.Setenv(platform.KioskEnabledEnv, "true")
+			},
+			stage: &cdPipeApi.Stage{
+				ObjectMeta: metaV1.ObjectMeta{
+					Name:      "stage-1",
+					Namespace: "default",
+				},
+			},
+			wantErr: require.NoError,
+			wantAssert: func(t *testing.T, c client.Client, s *cdPipeApi.Stage) {
+				space := kiosk.NewKioskSpace(map[string]interface{}{})
+
+				require.NoError(t,
+					c.Get(
+						context.Background(),
+						client.ObjectKey{Name: util.GenerateNamespaceName(s)}, space,
+					),
+				)
+			},
+		},
+		{
 			name: "no platform env is set, default is openshift",
 			stage: &cdPipeApi.Stage{
 				ObjectMeta: metaV1.ObjectMeta{
 					Name:      "stage-1",
 					Namespace: "default",
 				},
+			},
+			prepare: func(t *testing.T) {
 			},
 			wantErr: require.NoError,
 			wantAssert: func(t *testing.T, c client.Client, s *cdPipeApi.Stage) {
@@ -90,7 +122,7 @@ func TestDelegateNamespaceCreation_ServeRequest(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			t.Setenv("PLATFORM_TYPE", tt.platformEnv)
+			tt.prepare(t)
 
 			c := DelegateNamespaceCreation{
 				client: fake.NewClientBuilder().WithScheme(scheme).Build(),

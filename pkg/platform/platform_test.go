@@ -10,13 +10,13 @@ import (
 func TestGetPlatformTypeEnv_Success(t *testing.T) {
 	stubPlatformType := "stubPlatformType"
 
-	err := os.Setenv(Type, stubPlatformType)
+	err := os.Setenv(TypeEnv, stubPlatformType)
 	if err != nil {
 		t.Fatalf("cannot set an env variable: %v", err)
 	}
 
 	defer func() {
-		err := os.Unsetenv(Type)
+		err := os.Unsetenv(TypeEnv)
 		if err != nil {
 			t.Fatalf("cannot unset an env variable: %v", err)
 		}
@@ -27,7 +27,7 @@ func TestGetPlatformTypeEnv_Success(t *testing.T) {
 }
 
 func TestGetPlatformTypeEnv_PlatformTypeIsNotSet(t *testing.T) {
-	err := os.Unsetenv(Type)
+	err := os.Unsetenv(TypeEnv)
 	if err != nil {
 		t.Fatalf("cannot unset an env variable: %v", err)
 	}
@@ -47,14 +47,14 @@ func TestIsKubernetes(t *testing.T) {
 		{
 			name: "platform type is kubernetes",
 			setEnv: func(t *testing.T) {
-				t.Setenv(Type, Kubernetes)
+				t.Setenv(TypeEnv, Kubernetes)
 			},
 			want: true,
 		},
 		{
 			name: "platform type is openshift",
 			setEnv: func(t *testing.T) {
-				t.Setenv(Type, Openshift)
+				t.Setenv(TypeEnv, Openshift)
 			},
 			want: false,
 		},
@@ -70,6 +70,42 @@ func TestIsKubernetes(t *testing.T) {
 			}
 
 			assert.Equal(t, IsKubernetes(), tt.want)
+		})
+	}
+}
+
+func TestKioskEnabled(t *testing.T) {
+	tests := []struct {
+		name   string
+		setEnv func(t *testing.T)
+		want   bool
+	}{
+		{
+			name: "kiosk is enabled",
+			setEnv: func(t *testing.T) {
+				t.Setenv(KioskEnabledEnv, "true")
+			},
+			want: true,
+		},
+		{
+			name: "kiosk is disabled",
+			setEnv: func(t *testing.T) {
+				t.Setenv(KioskEnabledEnv, "false")
+			},
+			want: false,
+		},
+		{
+			name: "kiosk is not set",
+			setEnv: func(t *testing.T) {
+			},
+			want: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tt.setEnv(t)
+
+			assert.Equal(t, tt.want, KioskEnabled())
 		})
 	}
 }
