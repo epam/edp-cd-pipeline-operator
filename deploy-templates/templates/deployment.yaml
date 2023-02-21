@@ -42,8 +42,10 @@ spec:
               value: {{ .Values.name }}
             - name: PLATFORM_TYPE
               value: {{ .Values.global.platform }}
+            {{- if eq .Values.global.platform "kubernetes" }}
             - name: KIOSK_ENABLED
               value: "{{ .Values.global.kioskEnabled }}"
+            {{- end }}
           resources:
 {{ toYaml .Values.resources | indent 12 }}
       {{- with .Values.nodeSelector }}

@@ -1,4 +1,5 @@
 {{- if .Values.global.kioskEnabled -}}
+{{- if eq .Values.global.platform "kubernetes" -}}
 apiVersion: config.kiosk.sh/v1alpha1
 kind: Account
 metadata:
@@ -12,4 +13,5 @@ spec:
     - kind: ServiceAccount
       name: edp-{{ .Values.name }}
       namespace: {{ .Values.global.edpName }}
+{{- end -}}
 {{- end -}}
