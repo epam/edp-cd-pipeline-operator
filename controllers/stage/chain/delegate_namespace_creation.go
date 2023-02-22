@@ -19,11 +19,23 @@ type DelegateNamespaceCreation struct {
 
 // ServeRequest creates for kubernetes platform PutNamespace or PutKioskSpace if the kiosk is enabled.
 // For platform openshift it creates PutOpenshiftProject.
-// The decision is made based on the environment variable PLATFORM_TYPE.
 // By default, it creates PutOpenshiftProject.
+// If the namespace is not managed by the operator, it creates CheckNamespaceExist.
 func (c DelegateNamespaceCreation) ServeRequest(stage *cdPipeApi.Stage) error {
+	logger := c.log.WithValues("stage name", stage.Name)
+
+	if !platform.ManageNamespace() {
+		logger.Info("Namespace is not managed by the operator")
+
+		return nextServeOrNil(CheckNamespaceExist(c), stage)
+	}
+
 	if platform.IsKubernetes() {
+		logger.Info("Platform is kubernetes")
+
 		if platform.KioskEnabled() {
+			logger.Info("Kiosk is enabled")
+
 			return nextServeOrNil(PutKioskSpace{
 				next:   c.next,
 				space:  kiosk.InitSpace(c.client),
@@ -32,8 +44,12 @@ func (c DelegateNamespaceCreation) ServeRequest(stage *cdPipeApi.Stage) error {
 			}, stage)
 		}
 
+		logger.Info("Kiosk is disabled")
+
 		return nextServeOrNil(PutNamespace(c), stage)
 	}
+
+	logger.Info("Platform is openshift")
 
 	return nextServeOrNil(PutOpenshiftProject(c), stage)
 }

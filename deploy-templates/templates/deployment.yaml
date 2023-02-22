@@ -46,6 +46,8 @@ spec:
             - name: KIOSK_ENABLED
               value: "{{ .Values.global.kioskEnabled }}"
             {{- end }}
+            - name: MANAGE_NAMESPACE
+              value: "{{ .Values.manageNamespace }}"
           resources:
 {{ toYaml .Values.resources | indent 12 }}
       {{- with .Values.nodeSelector }}

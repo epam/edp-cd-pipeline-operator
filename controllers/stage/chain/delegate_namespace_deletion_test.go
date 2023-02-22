@@ -162,6 +162,39 @@ func TestDelegateNamespaceDeletion_ServeRequest(t *testing.T) {
 				require.Error(t, err)
 			},
 		},
+		{
+			name: "namespace is not managed by operator",
+			prepare: func(t *testing.T) {
+				t.Setenv(platform.TypeEnv, platform.Kubernetes)
+				t.Setenv(platform.ManageNamespaceEnv, "false")
+			},
+			stage: &cdPipeApi.Stage{
+				ObjectMeta: metaV1.ObjectMeta{
+					Name:      "stage-1",
+					Namespace: "default",
+				},
+			},
+			objects: []client.Object{
+				&corev1.Namespace{
+					ObjectMeta: metaV1.ObjectMeta{
+						Name: util.GenerateNamespaceName(&cdPipeApi.Stage{
+							ObjectMeta: metaV1.ObjectMeta{
+								Name:      "stage-1",
+								Namespace: "default",
+							},
+						}),
+					},
+				},
+			},
+			wantErr: require.NoError,
+			wantAssert: func(t *testing.T, c client.Client, s *cdPipeApi.Stage) {
+				err := c.Get(
+					context.Background(),
+					client.ObjectKey{Name: util.GenerateNamespaceName(s)}, &corev1.Namespace{},
+				)
+				require.NoError(t, err)
+			},
+		},
 	}
 
 	for _, tt := range tests {

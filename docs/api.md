@@ -330,6 +330,13 @@ StageSpec defines the desired state of Stage. NOTE: for deleting the stage use s
           Stage deployment trigger type. E.g. Manual, Auto<br/>
         </td>
         <td>true</td>
+      </tr><tr>
+        <td><b>namespace</b></td>
+        <td>string</td>
+        <td>
+          Namespace where the application will be deployed.<br/>
+        </td>
+        <td>false</td>
       </tr></tbody>
 </table>
 

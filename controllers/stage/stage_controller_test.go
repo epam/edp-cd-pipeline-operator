@@ -21,6 +21,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
+	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/objectmodifier"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/cluster"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/consts"
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
@@ -53,21 +54,6 @@ func getStage(t *testing.T, c client.Client, name string) *cdPipeApi.Stage {
 
 func createLabelName(pipeName, stageName string) string {
 	return fmt.Sprintf("%s/%s", pipeName, stageName)
-}
-
-func TestNewReconcileStage_Success(t *testing.T) {
-	scheme := runtime.NewScheme()
-	fakeClient := fake.NewClientBuilder().Build()
-	log := logr.Discard()
-
-	expectedReconcileStage := &ReconcileStage{
-		client: fakeClient,
-		scheme: scheme,
-		log:    log.WithName("cd-stage"),
-	}
-
-	reconcileStage := NewReconcileStage(fakeClient, scheme, log)
-	assert.Equal(t, expectedReconcileStage, reconcileStage)
 }
 
 func TestTryToDeleteCDStage_DeletionTimestampIsZero(t *testing.T) {
@@ -191,81 +177,6 @@ func TestTryToDeleteCDStage_Success(t *testing.T) {
 	assert.True(t, k8sErrors.IsNotFound(err))
 }
 
-func TestSetCDPipelineOwnerRef_Success(t *testing.T) {
-	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(k8sApi.SchemeGroupVersion, &cdPipeApi.Stage{}, &cdPipeApi.CDPipeline{}, &codebaseApi.CodebaseImageStream{}, &corev1.Namespace{})
-
-	stage := &cdPipeApi.Stage{
-		TypeMeta: metaV1.TypeMeta{},
-		ObjectMeta: metaV1.ObjectMeta{
-			Name:      name,
-			Namespace: namespace,
-		},
-		Spec: cdPipeApi.StageSpec{
-			Name:       name,
-			CdPipeline: cdPipeline,
-		},
-	}
-
-	cdPipeline := &cdPipeApi.CDPipeline{
-		TypeMeta: metaV1.TypeMeta{},
-		ObjectMeta: metaV1.ObjectMeta{
-			Name:      cdPipeline,
-			Namespace: namespace,
-		},
-		Spec: cdPipeApi.CDPipelineSpec{
-			Name: name,
-		},
-	}
-
-	fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(cdPipeline, stage).Build()
-
-	reconcileStage := ReconcileStage{
-		client: fakeClient,
-		scheme: scheme,
-		log:    logr.Discard(),
-	}
-
-	err := reconcileStage.setCDPipelineOwnerRef(context.Background(), stage)
-	assert.NoError(t, err)
-
-	stageAfterReconcile := getStage(t, reconcileStage.client, name)
-	assert.Equal(t, cdPipeline.Name, stageAfterReconcile.OwnerReferences[0].Name)
-}
-
-func TestSetCDPipelineOwnerRef_OwnerExists(t *testing.T) {
-	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(k8sApi.SchemeGroupVersion, &cdPipeApi.Stage{}, &cdPipeApi.CDPipeline{}, &codebaseApi.CodebaseImageStream{}, &corev1.Namespace{})
-
-	ownerReference := metaV1.OwnerReference{
-		Kind: consts.CDPipelineKind,
-		Name: cdPipeline,
-	}
-
-	stage := &cdPipeApi.Stage{
-		TypeMeta: metaV1.TypeMeta{},
-		ObjectMeta: metaV1.ObjectMeta{
-			Name:            name,
-			Namespace:       namespace,
-			OwnerReferences: []metaV1.OwnerReference{ownerReference},
-		},
-	}
-
-	fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(stage).Build()
-
-	reconcileStage := ReconcileStage{
-		client: fakeClient,
-		scheme: scheme,
-		log:    logr.Discard(),
-	}
-
-	err := reconcileStage.setCDPipelineOwnerRef(context.Background(), stage)
-	assert.NoError(t, err)
-
-	stageAfterReconcile := getStage(t, reconcileStage.client, name)
-	assert.Equal(t, cdPipeline, stageAfterReconcile.OwnerReferences[0].Name)
-}
-
 func TestSetFinishStatus_Success(t *testing.T) {
 	scheme := runtime.NewScheme()
 	scheme.AddKnownTypes(k8sApi.SchemeGroupVersion, &cdPipeApi.Stage{})
@@ -359,11 +270,12 @@ func TestReconcileStage_Reconcile_Success(t *testing.T) {
 
 	fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(cdPipeline, image, stage, jenkins).Build()
 
-	reconcileStage := ReconcileStage{
-		client: fakeClient,
-		scheme: scheme,
-		log:    logr.Discard(),
-	}
+	reconcileStage := NewReconcileStage(
+		fakeClient,
+		scheme,
+		logr.Discard(),
+		objectmodifier.NewStageBatchModifier(fakeClient, []objectmodifier.StageModifier{}),
+	)
 
 	_, err = reconcileStage.Reconcile(context.Background(), reconcile.Request{NamespacedName: types.NamespacedName{
 		Namespace: namespace,
@@ -446,11 +358,12 @@ func TestReconcileStage_ReconcileReconcile_SetOwnerRef(t *testing.T) {
 
 	fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(cdPipeline, image, stage, edpComponent).Build()
 
-	reconcileStage := ReconcileStage{
-		client: fakeClient,
-		scheme: scheme,
-		log:    logr.Discard(),
-	}
+	reconcileStage := NewReconcileStage(
+		fakeClient,
+		scheme,
+		logr.Discard(),
+		objectmodifier.NewStageBatchModifierAll(fakeClient, scheme),
+	)
 
 	_, err := reconcileStage.Reconcile(context.Background(), reconcile.Request{NamespacedName: types.NamespacedName{
 		Namespace: namespace,
@@ -464,7 +377,6 @@ func TestReconcileStage_ReconcileReconcile_SetOwnerRef(t *testing.T) {
 
 	stageAfterReconcile := getStage(t, reconcileStage.client, name)
 	assert.Equal(t, cdPipeline.Name, stageAfterReconcile.OwnerReferences[0].Name)
-	assert.Equal(t, consts.FinishedStatus, stageAfterReconcile.Status.Status)
 	assert.Equal(t, expectedLabels, stageAfterReconcile.Labels)
 }
 

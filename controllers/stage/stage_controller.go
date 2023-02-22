@@ -14,17 +14,15 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
-	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/helper"
 	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/stage/chain"
 	edpError "github.com/epam/edp-cd-pipeline-operator/v2/pkg/error"
-	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/cluster"
+	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/objectmodifier"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/consts"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/finalizer"
 )
@@ -33,22 +31,28 @@ const (
 	foregroundDeletionFinalizerName = "foregroundDeletion"
 	envLabelDeletionFinalizer       = "envLabelDeletion"
 	const15Requeue                  = 15 * time.Second
-	const5Requeue                   = 5 * time.Second
 	nameLogKey                      = "name"
 )
 
-func NewReconcileStage(c client.Client, scheme *runtime.Scheme, log logr.Logger) *ReconcileStage {
+func NewReconcileStage(
+	c client.Client,
+	scheme *runtime.Scheme,
+	log logr.Logger,
+	stageModifier objectmodifier.StageModifier,
+) *ReconcileStage {
 	return &ReconcileStage{
-		client: c,
-		scheme: scheme,
-		log:    log.WithName("cd-stage"),
+		client:        c,
+		scheme:        scheme,
+		log:           log.WithName("cd-stage"),
+		stageModifier: stageModifier,
 	}
 }
 
 type ReconcileStage struct {
-	client client.Client
-	scheme *runtime.Scheme
-	log    logr.Logger
+	client        client.Client
+	scheme        *runtime.Scheme
+	log           logr.Logger
+	stageModifier objectmodifier.StageModifier
 }
 
 func (r *ReconcileStage) SetupWithManager(mgr ctrl.Manager) error {
@@ -92,8 +96,8 @@ func (r *ReconcileStage) Reconcile(ctx context.Context, request reconcile.Reques
 	log := r.log.WithValues("Request.Namespace", request.Namespace, "Request.Name", request.Name)
 	log.V(2).Info("reconciling Stage has been started")
 
-	i := &cdPipeApi.Stage{}
-	if err := r.client.Get(ctx, request.NamespacedName, i); err != nil {
+	stage := &cdPipeApi.Stage{}
+	if err := r.client.Get(ctx, request.NamespacedName, stage); err != nil {
 		if k8sErrors.IsNotFound(err) {
 			return reconcile.Result{}, nil
 		}
@@ -101,7 +105,18 @@ func (r *ReconcileStage) Reconcile(ctx context.Context, request reconcile.Reques
 		return reconcile.Result{}, fmt.Errorf("failed to get namespace: %w", err)
 	}
 
-	result, err := r.tryToDeleteCDStage(ctx, i)
+	patched, err := r.stageModifier.Apply(ctrl.LoggerInto(ctx, log), stage)
+	if err != nil {
+		return reconcile.Result{}, fmt.Errorf("failed to apply stage changes: %w", err)
+	}
+
+	if patched {
+		log.Info("Stage default values has been patched")
+
+		return reconcile.Result{}, nil
+	}
+
+	result, err := r.tryToDeleteCDStage(ctx, stage)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
@@ -110,29 +125,21 @@ func (r *ReconcileStage) Reconcile(ctx context.Context, request reconcile.Reques
 		return *result, nil
 	}
 
-	if ownerErr := r.setCDPipelineOwnerRef(ctx, i); ownerErr != nil {
-		return reconcile.Result{RequeueAfter: const5Requeue}, err
-	}
-
-	if err = r.initLabels(ctx, i); err != nil {
-		return reconcile.Result{}, fmt.Errorf("failed to init labels for stage: %w", err)
-	}
-
-	if err = chain.CreateChain(ctx, r.client, request.Namespace, i.Spec.TriggerType).ServeRequest(i); err != nil {
+	if err = chain.CreateChain(ctx, r.client, request.Namespace, stage.Spec.TriggerType).ServeRequest(stage); err != nil {
 		var e edpError.CISNotFoundError
 		if errors.As(err, &e) {
 			log.Error(err, "cis wasn't found. reconcile again...")
 			return reconcile.Result{RequeueAfter: const15Requeue}, nil
 		}
 
-		if statusErr := r.setFailedStatus(ctx, i, err); err != nil {
+		if statusErr := r.setFailedStatus(ctx, stage, err); err != nil {
 			return reconcile.Result{}, statusErr
 		}
 
 		return reconcile.Result{RequeueAfter: const15Requeue}, fmt.Errorf("failed to handle the chain: %w", err)
 	}
 
-	if err := r.setFinishStatus(ctx, i); err != nil {
+	if err := r.setFinishStatus(ctx, stage); err != nil {
 		return reconcile.Result{}, err
 	}
 
@@ -171,28 +178,6 @@ func (r *ReconcileStage) tryToDeleteCDStage(ctx context.Context, stage *cdPipeAp
 	return &reconcile.Result{}, nil
 }
 
-func (r *ReconcileStage) setCDPipelineOwnerRef(ctx context.Context, s *cdPipeApi.Stage) error {
-	if ow := helper.GetOwnerReference(consts.CDPipelineKind, s.GetOwnerReferences()); ow != nil {
-		r.log.V(2).Info("CD Pipeline owner ref already exists", nameLogKey, ow.Name)
-		return nil
-	}
-
-	p, err := cluster.GetCdPipeline(r.client, s.Spec.CdPipeline, s.Namespace)
-	if err != nil {
-		return fmt.Errorf("couldn't get CD Pipeline %s from cluster: %w", s.Spec.CdPipeline, err)
-	}
-
-	if err = controllerutil.SetControllerReference(p, s, r.scheme); err != nil {
-		return fmt.Errorf("couldn't set CD Pipeline %s owner ref: %w", s.Spec.CdPipeline, err)
-	}
-
-	if err = r.client.Update(ctx, s); err != nil {
-		return fmt.Errorf("an error has been occurred while updating stage's owner %s: %w", s.Name, err)
-	}
-
-	return nil
-}
-
 func (r *ReconcileStage) setFinishStatus(ctx context.Context, s *cdPipeApi.Stage) error {
 	s.Status = cdPipeApi.StageStatus{
 		Status:          consts.FinishedStatus,
@@ -229,31 +214,6 @@ func (r *ReconcileStage) setFailedStatus(ctx context.Context, stage *cdPipeApi.S
 	}
 
 	r.log.Info("Stage status has been updated.", nameLogKey, stage.Name)
-
-	return nil
-}
-
-func (r *ReconcileStage) initLabels(ctx context.Context, s *cdPipeApi.Stage) error {
-	r.log.Info("Trying to update labels for stage", nameLogKey, s.Name)
-
-	originalStage := s.DeepCopy()
-
-	labels := s.GetLabels()
-	if labels == nil {
-		labels = make(map[string]string)
-	}
-
-	if _, ok := labels[cdPipeApi.CodebaseTypeLabelName]; ok {
-		r.log.Info("Stage already has label", nameLogKey, s.Name, "label", cdPipeApi.CodebaseTypeLabelName)
-		return nil
-	}
-
-	labels[cdPipeApi.CodebaseTypeLabelName] = s.Spec.CdPipeline
-	s.SetLabels(labels)
-
-	if err := r.client.Patch(ctx, s, client.MergeFrom(originalStage)); err != nil {
-		return fmt.Errorf("failed to patch cd pipeline stage: %w", err)
-	}
 
 	return nil
 }

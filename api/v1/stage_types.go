@@ -41,6 +41,9 @@ type StageSpec struct {
 
 	// CD Job Provisioner for Pipeline. E.g.
 	JobProvisioning string `json:"jobProvisioning"`
+
+	// Namespace where the application will be deployed.
+	Namespace string `json:"namespace,omitempty"`
 }
 
 // QualityGate defines a single quality for a release.

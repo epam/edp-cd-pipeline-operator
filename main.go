@@ -20,6 +20,7 @@ import (
 	cdPipeApiV1Alpha1 "github.com/epam/edp-cd-pipeline-operator/v2/api/v1alpha1"
 	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/cdpipeline"
 	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/stage"
+	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/objectmodifier"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/cluster"
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 	buildInfo "github.com/epam/edp-common/pkg/config"
@@ -126,7 +127,12 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = stage.NewReconcileStage(cl, mgr.GetScheme(), ctrlLog).SetupWithManager(mgr); err != nil {
+	if err = stage.NewReconcileStage(
+		cl,
+		mgr.GetScheme(),
+		ctrlLog,
+		objectmodifier.NewStageBatchModifierAll(cl, mgr.GetScheme()),
+	).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "cd-stage")
 		os.Exit(1)
 	}

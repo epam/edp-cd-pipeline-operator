@@ -29,6 +29,7 @@ func TestDelegateNamespaceCreation_ServeRequest(t *testing.T) {
 		name       string
 		stage      *cdPipeApi.Stage
 		prepare    func(t *testing.T)
+		objects    []client.Object
 		wantErr    require.ErrorAssertionFunc
 		wantAssert func(t *testing.T, c client.Client, s *cdPipeApi.Stage)
 	}{
@@ -118,6 +119,49 @@ func TestDelegateNamespaceCreation_ServeRequest(t *testing.T) {
 				)
 			},
 		},
+		{
+			name: "namespace is not managed by the operator",
+			stage: &cdPipeApi.Stage{
+				ObjectMeta: metaV1.ObjectMeta{
+					Name:      "stage-1",
+					Namespace: "default",
+				},
+			},
+			prepare: func(t *testing.T) {
+				t.Setenv(platform.ManageNamespaceEnv, "false")
+			},
+			objects: []client.Object{
+				&corev1.Namespace{
+					ObjectMeta: metaV1.ObjectMeta{
+						Name: util.GenerateNamespaceName(&cdPipeApi.Stage{
+							ObjectMeta: metaV1.ObjectMeta{
+								Name:      "stage-1",
+								Namespace: "default",
+							},
+						}),
+					},
+				},
+			},
+			wantErr:    require.NoError,
+			wantAssert: func(t *testing.T, c client.Client, s *cdPipeApi.Stage) {},
+		},
+		{
+			name: "namespace is not managed by the user and doesn't exist",
+			stage: &cdPipeApi.Stage{
+				ObjectMeta: metaV1.ObjectMeta{
+					Name:      "stage-1",
+					Namespace: "default",
+				},
+			},
+			prepare: func(t *testing.T) {
+				t.Setenv(platform.ManageNamespaceEnv, "false")
+			},
+			wantErr: func(t require.TestingT, err error, i ...interface{}) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "doesn't exist")
+			},
+			wantAssert: func(t *testing.T, c client.Client, s *cdPipeApi.Stage) {},
+		},
 	}
 
 	for _, tt := range tests {
@@ -125,7 +169,7 @@ func TestDelegateNamespaceCreation_ServeRequest(t *testing.T) {
 			tt.prepare(t)
 
 			c := DelegateNamespaceCreation{
-				client: fake.NewClientBuilder().WithScheme(scheme).Build(),
+				client: fake.NewClientBuilder().WithScheme(scheme).WithObjects(tt.objects...).Build(),
 				log:    logr.Discard(),
 			}
 

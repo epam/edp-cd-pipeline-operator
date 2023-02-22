@@ -109,3 +109,39 @@ func TestKioskEnabled(t *testing.T) {
 		})
 	}
 }
+
+func TestManageNamespace(t *testing.T) {
+	tests := []struct {
+		name    string
+		prepare func(t *testing.T)
+		want    bool
+	}{
+		{
+			name: "manage namespace is enabled",
+			prepare: func(t *testing.T) {
+				t.Setenv(ManageNamespaceEnv, "true")
+			},
+			want: true,
+		},
+		{
+			name: "manage namespace is disabled",
+			prepare: func(t *testing.T) {
+				t.Setenv(ManageNamespaceEnv, "false")
+			},
+			want: false,
+		},
+		{
+			name: "manage namespace is not set",
+			prepare: func(t *testing.T) {
+			},
+			want: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tt.prepare(t)
+			assert.Equal(t, tt.want, ManageNamespace())
+		})
+	}
+}
