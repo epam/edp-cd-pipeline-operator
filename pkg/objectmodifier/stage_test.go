@@ -15,6 +15,7 @@ import (
 
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
 	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/stage/chain/util"
+	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/consts"
 )
 
 func Test_setStageLabel(t *testing.T) {
@@ -256,6 +257,7 @@ func Test_stageOwnerRefModifier_Apply(t *testing.T) {
 							Name:       "test-pipeline",
 							UID:        types.UID("64fbdcc6-c176-41a9-8d8c-f5c0a955acd8"),
 							Controller: pointer.Bool(true),
+							Kind:       consts.CDPipelineKind,
 						},
 					},
 				},
@@ -384,6 +386,7 @@ func TestStageBatchModifier_Apply(t *testing.T) {
 							Name:       "test-pipeline",
 							UID:        types.UID("64fbdcc6-c176-41a9-8d8c-f5c0a955acd8"),
 							Controller: pointer.Bool(true),
+							Kind:       consts.CDPipelineKind,
 						},
 					},
 				},
@@ -442,6 +445,7 @@ func TestStageBatchModifier_Apply(t *testing.T) {
 							Name:       "test-pipeline",
 							UID:        types.UID("64fbdcc6-c176-41a9-8d8c-f5c0a955acd8"),
 							Controller: pointer.Bool(true),
+							Kind:       consts.CDPipelineKind,
 						},
 					},
 				},

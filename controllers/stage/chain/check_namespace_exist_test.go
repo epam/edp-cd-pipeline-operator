@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/go-logr/logr"
+	projectApi "github.com/openshift/api/project/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -14,18 +15,19 @@ import (
 
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
 	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/stage/chain/util"
+	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/platform"
 )
 
 func TestCheckNamespaceExist_ServeRequest(t *testing.T) {
-	t.Parallel()
-
 	scheme := runtime.NewScheme()
 
 	require.NoError(t, corev1.AddToScheme(scheme))
+	require.NoError(t, projectApi.AddToScheme(scheme))
 
 	tests := []struct {
 		name    string
 		stage   *cdPipeApi.Stage
+		prepare func(t *testing.T)
 		objects []client.Object
 		wantErr require.ErrorAssertionFunc
 	}{
@@ -36,6 +38,9 @@ func TestCheckNamespaceExist_ServeRequest(t *testing.T) {
 					Name:      "stage-1",
 					Namespace: "default",
 				},
+			},
+			prepare: func(t *testing.T) {
+				t.Setenv(platform.TypeEnv, platform.Kubernetes)
 			},
 			objects: []client.Object{
 				&corev1.Namespace{
@@ -59,6 +64,50 @@ func TestCheckNamespaceExist_ServeRequest(t *testing.T) {
 					Namespace: "default",
 				},
 			},
+			prepare: func(t *testing.T) {
+				t.Setenv(platform.TypeEnv, platform.Kubernetes)
+			},
+			wantErr: func(t require.TestingT, err error, i ...interface{}) {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), "doesn't exist")
+			},
+		},
+		{
+			name: "project exists",
+			stage: &cdPipeApi.Stage{
+				ObjectMeta: metaV1.ObjectMeta{
+					Name:      "stage-1",
+					Namespace: "default",
+				},
+			},
+			prepare: func(t *testing.T) {
+				t.Setenv(platform.TypeEnv, platform.Openshift)
+			},
+			objects: []client.Object{
+				&projectApi.Project{
+					ObjectMeta: metaV1.ObjectMeta{
+						Name: util.GenerateNamespaceName(&cdPipeApi.Stage{
+							ObjectMeta: metaV1.ObjectMeta{
+								Name:      "stage-1",
+								Namespace: "default",
+							},
+						}),
+					},
+				},
+			},
+			wantErr: require.NoError,
+		},
+		{
+			name: "project doesn't exist",
+			stage: &cdPipeApi.Stage{
+				ObjectMeta: metaV1.ObjectMeta{
+					Name:      "stage-1",
+					Namespace: "default",
+				},
+			},
+			prepare: func(t *testing.T) {
+				t.Setenv(platform.TypeEnv, platform.Openshift)
+			},
 			wantErr: func(t require.TestingT, err error, i ...interface{}) {
 				require.Error(t, err)
 				assert.Contains(t, err.Error(), "doesn't exist")
@@ -67,9 +116,8 @@ func TestCheckNamespaceExist_ServeRequest(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
+			tt.prepare(t)
 
 			h := CheckNamespaceExist{
 				client: fake.NewClientBuilder().WithScheme(scheme).WithObjects(tt.objects...).Build(),

@@ -129,6 +129,7 @@ func TestDelegateNamespaceCreation_ServeRequest(t *testing.T) {
 			},
 			prepare: func(t *testing.T) {
 				t.Setenv(platform.ManageNamespaceEnv, "false")
+				t.Setenv(platform.TypeEnv, platform.Kubernetes)
 			},
 			objects: []client.Object{
 				&corev1.Namespace{
@@ -146,7 +147,7 @@ func TestDelegateNamespaceCreation_ServeRequest(t *testing.T) {
 			wantAssert: func(t *testing.T, c client.Client, s *cdPipeApi.Stage) {},
 		},
 		{
-			name: "namespace is not managed by the user and doesn't exist",
+			name: "namespace is not managed by the operator and doesn't exist",
 			stage: &cdPipeApi.Stage{
 				ObjectMeta: metaV1.ObjectMeta{
 					Name:      "stage-1",
@@ -155,6 +156,7 @@ func TestDelegateNamespaceCreation_ServeRequest(t *testing.T) {
 			},
 			prepare: func(t *testing.T) {
 				t.Setenv(platform.ManageNamespaceEnv, "false")
+				t.Setenv(platform.TypeEnv, platform.Kubernetes)
 			},
 			wantErr: func(t require.TestingT, err error, i ...interface{}) {
 				require.Error(t, err)

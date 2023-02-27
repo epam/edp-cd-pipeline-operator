@@ -11,7 +11,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
+	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/helper"
 	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/stage/chain/util"
+	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/consts"
 )
 
 // StageModifier is an interface for modifying stage object.
@@ -148,6 +150,11 @@ func (m *stageOwnerRefModifier) Apply(ctx context.Context, stage *cdPipeApi.Stag
 		return false, errors.New("failed to update stage owner reference: stage is nil")
 	}
 
+	if ow := helper.GetOwnerReference(consts.CDPipelineKind, stage.GetOwnerReferences()); ow != nil {
+		log.Info("CDPipeline owner reference already exists")
+		return false, nil
+	}
+
 	pipeline := &cdPipeApi.CDPipeline{}
 	if err := m.k8sClient.Get(ctx, client.ObjectKey{
 		Namespace: stage.Namespace,
@@ -157,13 +164,6 @@ func (m *stageOwnerRefModifier) Apply(ctx context.Context, stage *cdPipeApi.Stag
 	}
 
 	if err := controllerutil.SetControllerReference(pipeline, stage, m.scheme); err != nil {
-		var alreadyOwned *controllerutil.AlreadyOwnedError
-		if errors.As(err, &alreadyOwned) {
-			log.Info("CDPipeline owner reference already exists")
-
-			return false, nil
-		}
-
 		return false, fmt.Errorf("couldn't set CDPipeline %s owner ref: %w", stage.Spec.CdPipeline, err)
 	}
 
