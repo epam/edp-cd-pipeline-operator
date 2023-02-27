@@ -1,4 +1,5 @@
 {{- if eq .Values.global.platform "openshift" -}}
+{{- if .Values.manageNamespace -}}
 apiVersion: authorization.openshift.io/v1
 kind: ClusterRoleBinding
 metadata:
@@ -11,4 +12,5 @@ subjects:
   - kind: ServiceAccount
     name: edp-{{ .Values.name }}
     namespace: {{ .Values.global.edpName }}
+{{- end -}}
 {{- end -}}
