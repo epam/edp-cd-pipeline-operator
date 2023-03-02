@@ -15,7 +15,7 @@ import (
 
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
 	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/stage/chain/util"
-	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/stage/kiosk"
+	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/kiosk"
 	commonmock "github.com/epam/edp-common/pkg/mock"
 )
 

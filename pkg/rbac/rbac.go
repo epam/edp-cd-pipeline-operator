@@ -6,18 +6,22 @@ import (
 
 	"github.com/go-logr/logr"
 	rbacApi "k8s.io/api/rbac/v1"
+	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
-	crNameLogKey = "name"
+	crNameLogKey    = "name"
+	ClusterRoleKind = "ClusterRole"
 )
 
 type Manager interface {
 	GetRoleBinding(name, namespace string) (*rbacApi.RoleBinding, error)
+	RoleBindingExists(ctx context.Context, name, namespace string) (bool, error)
 	CreateRoleBinding(name, namespace string, subjects []rbacApi.Subject, roleRef rbacApi.RoleRef) error
+	CreateRoleBindingIfNotExists(ctx context.Context, name, namespace string, subjects []rbacApi.Subject, roleRef rbacApi.RoleRef) error
 	GetRole(name, namespace string) (*rbacApi.Role, error)
 	CreateRole(name, namespace string, rules []rbacApi.PolicyRule) error
 }
@@ -49,6 +53,29 @@ func (s KubernetesRbac) GetRoleBinding(name, namespace string) (*rbacApi.RoleBin
 	return rb, nil
 }
 
+// RoleBindingExists checks if a RoleBinding exists in the given namespace.
+func (s KubernetesRbac) RoleBindingExists(ctx context.Context, name, namespace string) (bool, error) {
+	log := s.log.WithValues(crNameLogKey, name)
+	log.Info("Checking if RoleBinding exists")
+
+	if err := s.client.Get(ctx, types.NamespacedName{
+		Namespace: namespace,
+		Name:      name,
+	}, &rbacApi.RoleBinding{}); err != nil {
+		if k8sErrors.IsNotFound(err) {
+			log.Info("RoleBinding does not exist")
+
+			return false, nil
+		}
+
+		return false, fmt.Errorf("failed to get role binding: %w", err)
+	}
+
+	log.Info("RoleBinding exists")
+
+	return true, nil
+}
+
 func (s KubernetesRbac) CreateRoleBinding(name, namespace string, subjects []rbacApi.Subject, roleRef rbacApi.RoleRef) error {
 	log := s.log.WithValues(crNameLogKey, name)
 	log.Info("creating rolebinding")
@@ -68,6 +95,26 @@ func (s KubernetesRbac) CreateRoleBinding(name, namespace string, subjects []rba
 	log.Info("rolebinding has been created")
 
 	return nil
+}
+
+// CreateRoleBindingIfNotExists creates a RoleBinding if it does not exist in the given namespace.
+func (s KubernetesRbac) CreateRoleBindingIfNotExists(
+	ctx context.Context,
+	name,
+	namespace string,
+	subjects []rbacApi.Subject,
+	roleRef rbacApi.RoleRef,
+) error {
+	exists, err := s.RoleBindingExists(ctx, name, namespace)
+	if err != nil {
+		return fmt.Errorf("failed to check if role binding exists: %w", err)
+	}
+
+	if exists {
+		return nil
+	}
+
+	return s.CreateRoleBinding(name, namespace, subjects, roleRef)
 }
 
 func (s KubernetesRbac) GetRole(name, namespace string) (*rbacApi.Role, error) {

@@ -15,7 +15,7 @@ import (
 
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
 	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/stage/chain/util"
-	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/stage/kiosk"
+	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/kiosk"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/platform"
 )
 
@@ -100,7 +100,7 @@ func TestDelegateNamespaceCreation_ServeRequest(t *testing.T) {
 			},
 		},
 		{
-			name: "no platform env is set, default is openshift",
+			name: "no platform env is set, default is kubernetes",
 			stage: &cdPipeApi.Stage{
 				ObjectMeta: metaV1.ObjectMeta{
 					Name:      "stage-1",
@@ -114,7 +114,7 @@ func TestDelegateNamespaceCreation_ServeRequest(t *testing.T) {
 				require.NoError(t,
 					c.Get(
 						context.Background(),
-						client.ObjectKey{Name: util.GenerateNamespaceName(s)}, &projectApi.ProjectRequest{},
+						client.ObjectKey{Name: util.GenerateNamespaceName(s)}, &corev1.Namespace{},
 					),
 				)
 			},

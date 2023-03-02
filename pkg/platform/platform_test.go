@@ -33,7 +33,7 @@ func TestGetPlatformTypeEnv_PlatformTypeIsNotSet(t *testing.T) {
 	}
 
 	platformType := GetPlatformTypeEnv()
-	assert.Equal(t, Openshift, platformType)
+	assert.Equal(t, Kubernetes, platformType)
 }
 
 func TestIsKubernetes(t *testing.T) {
@@ -60,7 +60,7 @@ func TestIsKubernetes(t *testing.T) {
 		},
 		{
 			name: "platform type is not set",
-			want: false,
+			want: true,
 		},
 	}
 	for _, tt := range tests {

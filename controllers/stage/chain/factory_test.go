@@ -2,60 +2,113 @@ package chain
 
 import (
 	"context"
-	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	k8sApi "k8s.io/api/rbac/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+
+	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/consts"
+	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1"
 )
 
-var (
-	kioskEnabledEnvVarName = "KIOSK_ENABLED"
-	manualDeploy           = "manual"
-	autoDeploy             = "Auto"
-)
-
-func TestChainCreation_KioskIsDisabled(t *testing.T) {
-	err := os.Setenv(kioskEnabledEnvVarName, "false")
-	require.NoError(t, err)
-
-	fakeClient := createFakeClient(t)
-
-	defManCh := CreateChain(context.Background(), fakeClient, "default", manualDeploy)
-	assert.NotNil(t, defManCh)
-
-	defAutoCh := CreateChain(context.Background(), fakeClient, "default", autoDeploy)
-	assert.NotNil(t, defAutoCh)
-
-	deleteCh := CreateDeleteChain(context.Background(), fakeClient, "default")
-	assert.NotNil(t, deleteCh)
-}
-
-func TestChainCreation_KioskIsEnabled(t *testing.T) {
-	err := os.Setenv(kioskEnabledEnvVarName, "true")
-	require.NoError(t, err)
-
-	fakeClient := createFakeClient(t)
-
-	defManCh := CreateChain(context.Background(), fakeClient, "default", manualDeploy)
-	assert.NotNil(t, defManCh)
-
-	defAutoCh := CreateChain(context.Background(), fakeClient, "default", autoDeploy)
-	assert.NotNil(t, defAutoCh)
-
-	deleteCh := CreateDeleteChain(context.Background(), fakeClient, "default")
-	assert.NotNil(t, deleteCh)
-}
-
-func createFakeClient(t *testing.T) client.Client {
-	t.Helper()
+func TestCreateChain(t *testing.T) {
+	const ns = "default"
 
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(k8sApi.SchemeGroupVersion, &k8sApi.RoleBinding{}, &k8sApi.Role{})
+	jenkins := &jenkinsApi.Jenkins{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: ns,
+			Name:      "test",
+		},
+	}
 
-	return fake.NewClientBuilder().WithScheme(scheme).Build()
+	require.NoError(t, jenkinsApi.AddToScheme(scheme))
+
+	tests := []struct {
+		name        string
+		triggerType string
+		objects     []runtime.Object
+	}{
+		{
+			name:    "should create default chain for manual deploy",
+			objects: []runtime.Object{jenkins},
+		},
+		{
+			name:        "should create default chain for auto deploy",
+			triggerType: consts.AutoDeployTriggerType,
+			objects:     []runtime.Object{jenkins},
+		},
+		{
+			name: "should create tekton chain for manual deploy",
+		},
+		{
+			name:        "should create tekton chain for auto deploy",
+			triggerType: consts.AutoDeployTriggerType,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			chain := CreateChain(
+				context.Background(),
+				fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(tt.objects...).Build(),
+				ns,
+				tt.triggerType,
+			)
+
+			assert.NotNil(t, chain)
+		})
+	}
+}
+
+func TestCreateDeleteChain(t *testing.T) {
+	const ns = "default"
+
+	scheme := runtime.NewScheme()
+	jenkins := &jenkinsApi.Jenkins{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: ns,
+			Name:      "test",
+		},
+	}
+
+	require.NoError(t, jenkinsApi.AddToScheme(scheme))
+
+	tests := []struct {
+		name        string
+		triggerType string
+		objects     []runtime.Object
+	}{
+		{
+			name:    "should create default chain for manual deploy",
+			objects: []runtime.Object{jenkins},
+		},
+		{
+			name:        "should create default chain for auto deploy",
+			triggerType: consts.AutoDeployTriggerType,
+			objects:     []runtime.Object{jenkins},
+		},
+		{
+			name: "should create tekton chain for manual deploy",
+		},
+		{
+			name:        "should create tekton chain for auto deploy",
+			triggerType: consts.AutoDeployTriggerType,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			chain := CreateDeleteChain(
+				context.Background(),
+				fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(tt.objects...).Build(),
+				ns,
+			)
+
+			assert.NotNil(t, chain)
+		})
+	}
 }

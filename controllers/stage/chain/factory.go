@@ -9,7 +9,7 @@ import (
 
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
 	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/stage/chain/handler"
-	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/stage/rbac"
+	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/rbac"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/cluster"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/consts"
 )
@@ -19,6 +19,8 @@ var log = ctrl.Log.WithName("stage")
 const (
 	putCodebaseImageStreamChain                   = "put-codebase-image-stream-chain"
 	deleteEnvironmentLabelFromCodebaseImageStream = "delete-environment-label-from-codebase-image-streams"
+	logKeyRegistryViewerRbac                      = "registry-viewer-rbac"
+	logKeyTenantAdminRbac                         = "tenant-admin-rbac"
 )
 
 func nextServeOrNil(next handler.CdStageHandler, stage *cdPipeApi.Stage) error {
@@ -52,15 +54,16 @@ func CreateDeleteChain(ctx context.Context, c client.Client, namespace string) h
 }
 
 func createDefDeleteChain(c client.Client) handler.CdStageHandler {
-	log.Info("deletion chain is selected", "kiosk", "disabled", "type", "auto deploy")
-	logger := log.WithName("delete-chain")
+	logger := ctrl.Log.WithName("delete-chain")
+
+	logger.Info("Default delete chain is selected")
 
 	return DeleteEnvironmentLabelFromCodebaseImageStreams{
 		client: c,
-		log:    log.WithName(deleteEnvironmentLabelFromCodebaseImageStream),
+		log:    ctrl.Log.WithName(deleteEnvironmentLabelFromCodebaseImageStream),
 		next: DelegateNamespaceDeletion{
 			client: c,
-			log:    logger.WithName("delete-namespace"),
+			log:    ctrl.Log.WithName("delete-namespace"),
 		},
 	}
 }
@@ -71,111 +74,159 @@ func getDefChain(c client.Client, triggerType string) handler.CdStageHandler {
 	const (
 		configureRbac      = "configure-rbac"
 		putJenkinsJobChain = "put-jenkins-job-chain"
-		createChain        = "create-chain"
 	)
 
-	rbacManager := rbac.NewRbacManager(c, log.WithName("rbac-manager"))
+	logger := ctrl.Log.WithName("create-chain")
+	rbacManager := rbac.NewRbacManager(c, ctrl.Log.WithName("rbac-manager"))
 
 	if consts.AutoDeployTriggerType == triggerType {
-		logger := log.WithName(createChain).WithName("auto-deploy")
+		logger.Info("Auto-deploy chain is selected")
 
 		return PutCodebaseImageStream{
 			next: DelegateNamespaceCreation{
-				next: ConfigureRbac{
-					next: PutJenkinsJob{
-						client: c,
-						next: RemoveLabelsFromCodebaseDockerStreamsAfterCdPipelineUpdate{
+				next: ConfigureJenkinsRbac{
+					next: ConfigureRegistryViewerRbac{
+						next: ConfigureTenantAdminRbac{
 							client: c,
-							log:    logger.WithName("remove-labels-from-codebase-docker-streams-after-cd-pipeline-update"),
-							next: DeleteEnvironmentLabelFromCodebaseImageStreams{
+							log:    ctrl.Log.WithName(logKeyTenantAdminRbac),
+							rbac:   rbacManager,
+							next: PutJenkinsJob{
 								client: c,
-								log:    logger.WithName(deleteEnvironmentLabelFromCodebaseImageStream),
-								next: PutEnvironmentLabelToCodebaseImageStreams{
+								next: RemoveLabelsFromCodebaseDockerStreamsAfterCdPipelineUpdate{
 									client: c,
-									log:    logger.WithName("put-environment-label-to-codebase-image-streams-chain"),
+									log:    ctrl.Log.WithName("remove-labels-from-codebase-docker-streams-after-cd-pipeline-update"),
+									next: DeleteEnvironmentLabelFromCodebaseImageStreams{
+										client: c,
+										log:    ctrl.Log.WithName(deleteEnvironmentLabelFromCodebaseImageStream),
+										next: PutEnvironmentLabelToCodebaseImageStreams{
+											client: c,
+											log:    ctrl.Log.WithName("put-environment-label-to-codebase-image-streams"),
+										},
+									},
 								},
+								log: ctrl.Log.WithName(putJenkinsJobChain),
 							},
 						},
-						log: logger.WithName(putJenkinsJobChain),
+						client: c,
+						log:    ctrl.Log.WithName(logKeyRegistryViewerRbac),
+						rbac:   rbacManager,
 					},
 					client: c,
-					log:    logger.WithName(configureRbac),
+					log:    ctrl.Log.WithName(configureRbac),
 					rbac:   rbacManager,
 				},
 				client: c,
-				log:    logger.WithName("put-namespace"),
+				log:    ctrl.Log.WithName("put-namespace"),
 			},
 			client: c,
-			log:    logger.WithName(putCodebaseImageStreamChain),
+			log:    ctrl.Log.WithName(putCodebaseImageStreamChain),
 		}
 	}
 
-	logger := log.WithName(createChain).WithName("manual-deploy")
+	logger.Info("Manual-deploy chain is selected")
 
 	return PutCodebaseImageStream{
 		next: DelegateNamespaceCreation{
-			next: ConfigureRbac{
-				next: PutJenkinsJob{
+			next: ConfigureJenkinsRbac{
+				next: ConfigureRegistryViewerRbac{
 					client: c,
-					log:    logger.WithName(putJenkinsJobChain),
-					next: DeleteEnvironmentLabelFromCodebaseImageStreams{
+					log:    ctrl.Log.WithName(logKeyRegistryViewerRbac),
+					rbac:   rbacManager,
+					next: ConfigureTenantAdminRbac{
 						client: c,
-						log:    logger.WithName(deleteEnvironmentLabelFromCodebaseImageStream),
+						log:    ctrl.Log.WithName(logKeyTenantAdminRbac),
+						rbac:   rbacManager,
+						next: PutJenkinsJob{
+							client: c,
+							log:    ctrl.Log.WithName(putJenkinsJobChain),
+							next: DeleteEnvironmentLabelFromCodebaseImageStreams{
+								client: c,
+								log:    ctrl.Log.WithName(deleteEnvironmentLabelFromCodebaseImageStream),
+							},
+						},
 					},
 				},
 				client: c,
-				log:    logger.WithName(configureRbac),
+				log:    ctrl.Log.WithName(configureRbac),
 				rbac:   rbacManager,
 			},
 			client: c,
-			log:    logger.WithName("put-namespace"),
+			log:    ctrl.Log.WithName("put-namespace"),
 		},
 		client: c,
-		log:    logger.WithName(putCodebaseImageStreamChain),
+		log:    ctrl.Log.WithName(putCodebaseImageStreamChain),
 	}
 }
 
 func getTektonChain(c client.Client, triggerType string) handler.CdStageHandler {
-	log.Info("tekton chain is selected")
+	logger := ctrl.Log.WithName("create-chain")
+	rbacManager := rbac.NewRbacManager(c, ctrl.Log.WithName("rbac-manager"))
+
+	logger.Info("Tekton chain is selected")
 
 	if consts.AutoDeployTriggerType == triggerType {
+		logger.Info("Auto-deploy chain is selected")
+
 		return PutCodebaseImageStream{
 			next: RemoveLabelsFromCodebaseDockerStreamsAfterCdPipelineUpdate{
 				client: c,
-				log:    log.WithName("remove-labels-from-codebase-docker-streams-after-cd-pipeline-update"),
+				log:    ctrl.Log.WithName("remove-labels-from-codebase-docker-streams-after-cd-pipeline-update"),
 				next: DeleteEnvironmentLabelFromCodebaseImageStreams{
 					client: c,
-					log:    log.WithName(deleteEnvironmentLabelFromCodebaseImageStream),
+					log:    ctrl.Log.WithName(deleteEnvironmentLabelFromCodebaseImageStream),
 					next: PutEnvironmentLabelToCodebaseImageStreams{
 						client: c,
-						log:    log.WithName("put-environment-label-to-codebase-image-streams-chain"),
+						log:    ctrl.Log.WithName("put-environment-label-to-codebase-image-streams-chain"),
+						next: ConfigureRegistryViewerRbac{
+							client: c,
+							log:    ctrl.Log.WithName(logKeyRegistryViewerRbac),
+							rbac:   rbacManager,
+							next: ConfigureTenantAdminRbac{
+								client: c,
+								log:    ctrl.Log.WithName(logKeyTenantAdminRbac),
+								rbac:   rbacManager,
+							},
+						},
 					},
 				},
 			},
 			client: c,
-			log:    log.WithName(putCodebaseImageStreamChain),
+			log:    ctrl.Log.WithName(putCodebaseImageStreamChain),
 		}
 	}
+
+	logger.Info("Manual-deploy chain is selected")
 
 	return PutCodebaseImageStream{
 		next: DeleteEnvironmentLabelFromCodebaseImageStreams{
 			client: c,
-			log:    log.WithName(deleteEnvironmentLabelFromCodebaseImageStream),
+			log:    ctrl.Log.WithName(deleteEnvironmentLabelFromCodebaseImageStream),
+			next: ConfigureRegistryViewerRbac{
+				client: c,
+				log:    ctrl.Log.WithName(logKeyRegistryViewerRbac),
+				rbac:   rbacManager,
+				next: ConfigureTenantAdminRbac{
+					client: c,
+					log:    ctrl.Log.WithName(logKeyTenantAdminRbac),
+					rbac:   rbacManager,
+				},
+			},
 		},
 		client: c,
-		log:    log.WithName(putCodebaseImageStreamChain),
+		log:    ctrl.Log.WithName(putCodebaseImageStreamChain),
 	}
 }
 
 func getTektonDeleteChain(c client.Client) handler.CdStageHandler {
-	log.Info("tekton deletion chain is selected")
+	logger := ctrl.Log.WithName("delete-chain")
+	logger.Info("Tekton deletion chain is selected")
 
 	return DeleteEnvironmentLabelFromCodebaseImageStreams{
 		client: c,
-		log:    log.WithName(deleteEnvironmentLabelFromCodebaseImageStream),
+		log:    ctrl.Log.WithName(deleteEnvironmentLabelFromCodebaseImageStream),
 		next: DelegateNamespaceDeletion{
 			client: c,
-			log:    log.WithName("delete-namespace"),
+			log:    ctrl.Log.WithName("delete-namespace"),
 		},
 	}
 }

@@ -19,7 +19,7 @@ func GetPlatformTypeEnv() string {
 		return pt
 	}
 
-	return Openshift
+	return Kubernetes
 }
 
 // IsKubernetes returns true if platform type is kubernetes.

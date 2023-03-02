@@ -16,7 +16,7 @@ import (
 
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
 	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/stage/chain/util"
-	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/stage/kiosk"
+	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/kiosk"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/platform"
 )
 
@@ -133,7 +133,7 @@ func TestDelegateNamespaceDeletion_ServeRequest(t *testing.T) {
 			},
 		},
 		{
-			name:    "no platform env is set, default is openshift",
+			name:    "no platform env is set, default is kubernetes",
 			prepare: func(t *testing.T) {},
 			stage: &cdPipeApi.Stage{
 				ObjectMeta: metaV1.ObjectMeta{
@@ -142,7 +142,7 @@ func TestDelegateNamespaceDeletion_ServeRequest(t *testing.T) {
 				},
 			},
 			objects: []client.Object{
-				&projectApi.Project{
+				&corev1.Namespace{
 					ObjectMeta: metaV1.ObjectMeta{
 						Name: util.GenerateNamespaceName(&cdPipeApi.Stage{
 							ObjectMeta: metaV1.ObjectMeta{
@@ -157,7 +157,7 @@ func TestDelegateNamespaceDeletion_ServeRequest(t *testing.T) {
 			wantAssert: func(t *testing.T, c client.Client, s *cdPipeApi.Stage) {
 				err := c.Get(
 					context.Background(),
-					client.ObjectKey{Name: util.GenerateNamespaceName(s)}, &projectApi.Project{},
+					client.ObjectKey{Name: util.GenerateNamespaceName(s)}, &corev1.Namespace{},
 				)
 				require.Error(t, err)
 			},
