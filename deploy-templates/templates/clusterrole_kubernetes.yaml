@@ -1,5 +1,6 @@
 {{- if not .Values.global.kioskEnabled -}}
 {{- if eq .Values.global.platform "kubernetes" -}}
+{{- if .Values.manageNamespace -}}
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
@@ -16,5 +17,6 @@ rules:
     - list
     - create
     - delete
+{{- end -}}
 {{- end -}}
 {{- end -}}

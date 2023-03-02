@@ -2,8 +2,8 @@ global:
   # -- namespace or a project name (in case of OpenShift)
   edpName: ""
   # -- platform type that can be "kubernetes" or "openshift"
-  platform: "openshift"
-  kioskEnabled: true
+  platform: "kubernetes"
+  kioskEnabled: false
 
 # -- component name
 name: cd-pipeline-operator
