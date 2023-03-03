@@ -49,7 +49,7 @@ func (h ConfigureTenantAdminRbac) ServeRequest(stage *cdPipeApi.Stage) error {
 		rbacApi.RoleRef{
 			APIGroup: rbacApi.GroupName,
 			Kind:     rbac.ClusterRoleKind,
-			Name:     "cluster-admin",
+			Name:     "admin",
 		},
 	); err != nil {
 		return fmt.Errorf("failed to create %s rolebinding: %w", tenantAdminRbName, err)

@@ -21,6 +21,7 @@ const (
 	deleteEnvironmentLabelFromCodebaseImageStream = "delete-environment-label-from-codebase-image-streams"
 	logKeyRegistryViewerRbac                      = "registry-viewer-rbac"
 	logKeyTenantAdminRbac                         = "tenant-admin-rbac"
+	logKeyPutNamespace                            = "put-namespace"
 )
 
 func nextServeOrNil(next handler.CdStageHandler, stage *cdPipeApi.Stage) error {
@@ -116,7 +117,7 @@ func getDefChain(c client.Client, triggerType string) handler.CdStageHandler {
 					rbac:   rbacManager,
 				},
 				client: c,
-				log:    ctrl.Log.WithName("put-namespace"),
+				log:    ctrl.Log.WithName(logKeyPutNamespace),
 			},
 			client: c,
 			log:    ctrl.Log.WithName(putCodebaseImageStreamChain),
@@ -151,13 +152,15 @@ func getDefChain(c client.Client, triggerType string) handler.CdStageHandler {
 				rbac:   rbacManager,
 			},
 			client: c,
-			log:    ctrl.Log.WithName("put-namespace"),
+			log:    ctrl.Log.WithName(logKeyPutNamespace),
 		},
 		client: c,
 		log:    ctrl.Log.WithName(putCodebaseImageStreamChain),
 	}
 }
 
+// getTektonDeleteChain returns a chain of handlers for tekton flow.
+// nolint:funlen // it's a chain builder without any complex logic.
 func getTektonChain(c client.Client, triggerType string) handler.CdStageHandler {
 	logger := ctrl.Log.WithName("create-chain")
 	rbacManager := rbac.NewRbacManager(c, ctrl.Log.WithName("rbac-manager"))
@@ -168,23 +171,27 @@ func getTektonChain(c client.Client, triggerType string) handler.CdStageHandler 
 		logger.Info("Auto-deploy chain is selected")
 
 		return PutCodebaseImageStream{
-			next: RemoveLabelsFromCodebaseDockerStreamsAfterCdPipelineUpdate{
+			next: DelegateNamespaceCreation{
 				client: c,
-				log:    ctrl.Log.WithName("remove-labels-from-codebase-docker-streams-after-cd-pipeline-update"),
-				next: DeleteEnvironmentLabelFromCodebaseImageStreams{
+				log:    ctrl.Log.WithName(logKeyPutNamespace),
+				next: RemoveLabelsFromCodebaseDockerStreamsAfterCdPipelineUpdate{
 					client: c,
-					log:    ctrl.Log.WithName(deleteEnvironmentLabelFromCodebaseImageStream),
-					next: PutEnvironmentLabelToCodebaseImageStreams{
+					log:    ctrl.Log.WithName("remove-labels-from-codebase-docker-streams-after-cd-pipeline-update"),
+					next: DeleteEnvironmentLabelFromCodebaseImageStreams{
 						client: c,
-						log:    ctrl.Log.WithName("put-environment-label-to-codebase-image-streams-chain"),
-						next: ConfigureRegistryViewerRbac{
+						log:    ctrl.Log.WithName(deleteEnvironmentLabelFromCodebaseImageStream),
+						next: PutEnvironmentLabelToCodebaseImageStreams{
 							client: c,
-							log:    ctrl.Log.WithName(logKeyRegistryViewerRbac),
-							rbac:   rbacManager,
-							next: ConfigureTenantAdminRbac{
+							log:    ctrl.Log.WithName("put-environment-label-to-codebase-image-streams-chain"),
+							next: ConfigureRegistryViewerRbac{
 								client: c,
-								log:    ctrl.Log.WithName(logKeyTenantAdminRbac),
+								log:    ctrl.Log.WithName(logKeyRegistryViewerRbac),
 								rbac:   rbacManager,
+								next: ConfigureTenantAdminRbac{
+									client: c,
+									log:    ctrl.Log.WithName(logKeyTenantAdminRbac),
+									rbac:   rbacManager,
+								},
 							},
 						},
 					},
@@ -198,17 +205,21 @@ func getTektonChain(c client.Client, triggerType string) handler.CdStageHandler 
 	logger.Info("Manual-deploy chain is selected")
 
 	return PutCodebaseImageStream{
-		next: DeleteEnvironmentLabelFromCodebaseImageStreams{
+		next: DelegateNamespaceCreation{
 			client: c,
-			log:    ctrl.Log.WithName(deleteEnvironmentLabelFromCodebaseImageStream),
-			next: ConfigureRegistryViewerRbac{
+			log:    ctrl.Log.WithName(logKeyPutNamespace),
+			next: DeleteEnvironmentLabelFromCodebaseImageStreams{
 				client: c,
-				log:    ctrl.Log.WithName(logKeyRegistryViewerRbac),
-				rbac:   rbacManager,
-				next: ConfigureTenantAdminRbac{
+				log:    ctrl.Log.WithName(deleteEnvironmentLabelFromCodebaseImageStream),
+				next: ConfigureRegistryViewerRbac{
 					client: c,
-					log:    ctrl.Log.WithName(logKeyTenantAdminRbac),
+					log:    ctrl.Log.WithName(logKeyRegistryViewerRbac),
 					rbac:   rbacManager,
+					next: ConfigureTenantAdminRbac{
+						client: c,
+						log:    ctrl.Log.WithName(logKeyTenantAdminRbac),
+						rbac:   rbacManager,
+					},
 				},
 			},
 		},
