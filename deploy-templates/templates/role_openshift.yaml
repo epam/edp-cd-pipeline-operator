@@ -50,4 +50,14 @@ rules:
     - get
     - list
     - update
+- apiGroups:
+    - rbac.authorization.k8s.io
+  resources:
+    - rolebindings
+  verbs:
+      - get
+      - list
+      - create
+      - delete
+      - update
 {{- end -}}

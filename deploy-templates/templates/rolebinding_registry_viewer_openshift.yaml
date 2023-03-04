@@ -1,0 +1,14 @@
+{{- if eq .Values.global.platform "openshift" -}}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: edp-cd-pipeline-operator-registry-viewer
+subjects:
+  - kind: ServiceAccount
+    name: edp-cd-pipeline-operator
+    namespace: {{ .Values.global.edpName }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: registry-viewer
+{{- end -}}
