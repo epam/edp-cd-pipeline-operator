@@ -19,7 +19,7 @@ var log = ctrl.Log.WithName("stage")
 const (
 	putCodebaseImageStreamChain                   = "put-codebase-image-stream-chain"
 	deleteEnvironmentLabelFromCodebaseImageStream = "delete-environment-label-from-codebase-image-streams"
-	logKeyRegistryViewerRbac                      = "registry-viewer-rbac"
+	logKeyRegistryViewerRbac                      = "sa-registry-viewer-rbac"
 	logKeyTenantAdminRbac                         = "tenant-admin-rbac"
 	logKeyPutNamespace                            = "put-namespace"
 )
@@ -52,21 +52,6 @@ func CreateDeleteChain(ctx context.Context, c client.Client, namespace string) h
 	}
 
 	return createDefDeleteChain(c)
-}
-
-func createDefDeleteChain(c client.Client) handler.CdStageHandler {
-	logger := ctrl.Log.WithName("delete-chain")
-
-	logger.Info("Default delete chain is selected")
-
-	return DeleteEnvironmentLabelFromCodebaseImageStreams{
-		client: c,
-		log:    ctrl.Log.WithName(deleteEnvironmentLabelFromCodebaseImageStream),
-		next: DelegateNamespaceDeletion{
-			client: c,
-			log:    ctrl.Log.WithName("delete-namespace"),
-		},
-	}
 }
 
 // getDefChain returns a default chain of handlers for stage.
@@ -228,6 +213,25 @@ func getTektonChain(c client.Client, triggerType string) handler.CdStageHandler 
 	}
 }
 
+func createDefDeleteChain(c client.Client) handler.CdStageHandler {
+	logger := ctrl.Log.WithName("delete-chain")
+
+	logger.Info("Default delete chain is selected")
+
+	return DeleteEnvironmentLabelFromCodebaseImageStreams{
+		client: c,
+		log:    ctrl.Log.WithName(deleteEnvironmentLabelFromCodebaseImageStream),
+		next: DelegateNamespaceDeletion{
+			client: c,
+			log:    ctrl.Log.WithName("delete-namespace"),
+			next: DeleteRegistryViewerRbac{
+				client: c,
+				log:    ctrl.Log.WithName("delete-registry-viewer-rbac"),
+			},
+		},
+	}
+}
+
 func getTektonDeleteChain(c client.Client) handler.CdStageHandler {
 	logger := ctrl.Log.WithName("delete-chain")
 	logger.Info("Tekton deletion chain is selected")
@@ -238,6 +242,10 @@ func getTektonDeleteChain(c client.Client) handler.CdStageHandler {
 		next: DelegateNamespaceDeletion{
 			client: c,
 			log:    ctrl.Log.WithName("delete-namespace"),
+			next: DeleteRegistryViewerRbac{
+				client: c,
+				log:    ctrl.Log.WithName("delete-registry-viewer-rbac"),
+			},
 		},
 	}
 }

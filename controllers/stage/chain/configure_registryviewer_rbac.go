@@ -15,10 +15,6 @@ import (
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/rbac"
 )
 
-const (
-	registryViewerRbName = "registry-viewer"
-)
-
 type ConfigureRegistryViewerRbac struct {
 	next   handler.CdStageHandler
 	client client.Client
@@ -28,20 +24,20 @@ type ConfigureRegistryViewerRbac struct {
 
 func (h ConfigureRegistryViewerRbac) ServeRequest(stage *cdPipeApi.Stage) error {
 	targetNamespace := util.GenerateNamespaceName(stage)
-	roleBindingName := fmt.Sprintf("%s-%s", "sa-registry-viewer", targetNamespace)
+	roleBindingName := generateSaRegistryViewerRoleBindingName(stage)
 	logger := h.log.WithValues("stage", stage.Name, "targetNamespace", targetNamespace, "roleBindingName", roleBindingName)
 
-	logger.Info("Configuring RoleBinding for registry-viewer")
+	logger.Info("Configuring RoleBinding sa-registry-viewer")
 
 	if !platform.IsOpenshift() {
-		logger.Info("Skip configuring RoleBinding for registry-viewer for non-openshift platform")
+		logger.Info("Skip configuring RoleBinding sa-registry-viewer for non-openshift platform")
 
 		return nextServeOrNil(h.next, stage)
 	}
 
 	if err := h.rbac.CreateRoleBindingIfNotExists(
 		context.TODO(),
-		registryViewerRbName,
+		roleBindingName,
 		stage.Namespace,
 		[]rbacApi.Subject{
 			{
@@ -59,7 +55,12 @@ func (h ConfigureRegistryViewerRbac) ServeRequest(stage *cdPipeApi.Stage) error 
 		return fmt.Errorf("failed to create %s RoleBinding: %w", roleBindingName, err)
 	}
 
-	logger.Info("RoleBinding for registry-viewer has been configured")
+	logger.Info("RoleBinding sa-registry-viewer has been configured")
 
 	return nextServeOrNil(h.next, stage)
+}
+
+// generateSaRegistryViewerRoleBindingName generates name for RoleBinding for registry-viewer role.
+func generateSaRegistryViewerRoleBindingName(stage *cdPipeApi.Stage) string {
+	return fmt.Sprintf("%s-%s", "sa-registry-viewer", util.GenerateNamespaceName(stage))
 }

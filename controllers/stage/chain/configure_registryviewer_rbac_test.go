@@ -47,7 +47,7 @@ func TestConfigureRegistryViewerRbac_ServeRequest(t *testing.T) {
 			wantErr: require.NoError,
 			wantCheck: func(t *testing.T, stage *cdPipeApi.Stage, k8sClient client.Client) {
 				require.NoError(t, k8sClient.Get(context.Background(), client.ObjectKey{
-					Name:      registryViewerRbName,
+					Name:      generateSaRegistryViewerRoleBindingName(stage),
 					Namespace: stage.Namespace,
 				}, &rbacApi.RoleBinding{}))
 			},
@@ -66,7 +66,12 @@ func TestConfigureRegistryViewerRbac_ServeRequest(t *testing.T) {
 			objects: []runtime.Object{
 				&rbacApi.RoleBinding{
 					ObjectMeta: metaV1.ObjectMeta{
-						Name:      registryViewerRbName,
+						Name: generateSaRegistryViewerRoleBindingName(&cdPipeApi.Stage{
+							ObjectMeta: metaV1.ObjectMeta{
+								Namespace: namespace,
+								Name:      "test-stage",
+							},
+						}),
 						Namespace: namespace,
 					},
 				},
@@ -74,7 +79,7 @@ func TestConfigureRegistryViewerRbac_ServeRequest(t *testing.T) {
 			wantErr: require.NoError,
 			wantCheck: func(t *testing.T, stage *cdPipeApi.Stage, k8sClient client.Client) {
 				require.NoError(t, k8sClient.Get(context.Background(), client.ObjectKey{
-					Name:      registryViewerRbName,
+					Name:      generateSaRegistryViewerRoleBindingName(stage),
 					Namespace: stage.Namespace,
 				}, &rbacApi.RoleBinding{}))
 			},
@@ -93,7 +98,7 @@ func TestConfigureRegistryViewerRbac_ServeRequest(t *testing.T) {
 			wantErr: require.NoError,
 			wantCheck: func(t *testing.T, stage *cdPipeApi.Stage, k8sClient client.Client) {
 				err := k8sClient.Get(context.Background(), client.ObjectKey{
-					Name:      registryViewerRbName,
+					Name:      generateSaRegistryViewerRoleBindingName(stage),
 					Namespace: stage.Namespace,
 				}, &rbacApi.RoleBinding{})
 
