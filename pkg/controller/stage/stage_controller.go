@@ -75,7 +75,7 @@ func (r *ReconcileStage) SetupWithManager(mgr ctrl.Manager) error {
 
 func (r *ReconcileStage) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	log := r.log.WithValues("Request.Namespace", request.Namespace, "Request.Name", request.Name)
-	log.V(2).Info("reconciling Stage has been started")
+	log.Info("Reconciling Stage has been started")
 
 	i := &cdPipeApi.Stage{}
 	if err := r.client.Get(ctx, request.NamespacedName, i); err != nil {
@@ -114,25 +114,34 @@ func (r *ReconcileStage) Reconcile(ctx context.Context, request reconcile.Reques
 	if err := r.setFinishStatus(ctx, i); err != nil {
 		return reconcile.Result{}, err
 	}
-	log.V(2).Info("reconciling Stage has been finished")
+
+	log.Info("Reconciling Stage has been finished")
+
 	return reconcile.Result{}, nil
 }
 
 func (r *ReconcileStage) tryToDeleteCDStage(ctx context.Context, stage *cdPipeApi.Stage) (*reconcile.Result, error) {
+	log := r.log.WithValues("name", stage.Name)
+
 	if stage.GetDeletionTimestamp().IsZero() {
 
 		if !finalizer.ContainsString(stage.ObjectMeta.Finalizers, foregroundDeletionFinalizerName) {
+			log.Info("Adding foreground deletion finalizer")
 			stage.ObjectMeta.Finalizers = append(stage.ObjectMeta.Finalizers, foregroundDeletionFinalizerName)
 		}
 
 		if stage.Spec.TriggerType == consts.AutoDeployTriggerType &&
 			!finalizer.ContainsString(stage.ObjectMeta.Finalizers, envLabelDeletionFinalizer) {
+			log.Info("Adding env label deletion finalizer")
 			stage.ObjectMeta.Finalizers = append(stage.ObjectMeta.Finalizers, envLabelDeletionFinalizer)
 		}
 
 		if err := r.client.Update(ctx, stage); err != nil {
 			return &reconcile.Result{}, errors.Wrap(err, "unable to update cd stage")
 		}
+
+		log.Info("Stage finalizers have been added")
+
 		return nil, nil
 	}
 
@@ -140,16 +149,21 @@ func (r *ReconcileStage) tryToDeleteCDStage(ctx context.Context, stage *cdPipeAp
 		return &reconcile.Result{}, err
 	}
 
+	log.Info("Removing env label deletion finalizer")
+
 	stage.ObjectMeta.Finalizers = finalizer.RemoveString(stage.ObjectMeta.Finalizers, envLabelDeletionFinalizer)
 	if err := r.client.Update(ctx, stage); err != nil {
 		return &reconcile.Result{}, err
 	}
+
+	log.Info("CDStage has been deleted", "name", stage.Name)
+
 	return &reconcile.Result{}, nil
 }
 
 func (r *ReconcileStage) setCDPipelineOwnerRef(ctx context.Context, s *cdPipeApi.Stage) error {
 	if ow := helper.GetOwnerReference(consts.CDPipelineKind, s.GetOwnerReferences()); ow != nil {
-		r.log.V(2).Info("CD Pipeline owner ref already exists", "name", ow.Name)
+		r.log.Info("CD Pipeline owner ref already exists", "name", ow.Name)
 		return nil
 	}
 	p, err := cluster.GetCdPipeline(r.client, s.Spec.CdPipeline, s.Namespace)

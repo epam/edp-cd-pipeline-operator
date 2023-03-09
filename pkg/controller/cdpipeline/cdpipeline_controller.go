@@ -56,7 +56,7 @@ func (r *ReconcileCDPipeline) SetupWithManager(mgr ctrl.Manager) error {
 
 func (r *ReconcileCDPipeline) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	log := r.log.WithValues("Request.Namespace", request.Namespace, "Request.Name", request.Name)
-	log.V(2).Info("Reconciling CDPipeline")
+	log.Info("Reconciling CDPipeline")
 
 	i := &cdPipeApi.CDPipeline{}
 	if err := r.client.Get(ctx, request.NamespacedName, i); err != nil {
@@ -79,7 +79,7 @@ func (r *ReconcileCDPipeline) Reconcile(ctx context.Context, request reconcile.R
 	if err := r.setFinishStatus(ctx, i); err != nil {
 		return reconcile.Result{}, err
 	}
-	log.V(2).Info("Reconciling of CD Pipeline has been finished")
+	log.Info("Reconciling of CD Pipeline has been finished")
 	return reconcile.Result{}, nil
 }
 
@@ -118,7 +118,7 @@ func (r *ReconcileCDPipeline) setFinishStatus(ctx context.Context, p *cdPipeApi.
 func (r *ReconcileCDPipeline) createJenkinsFolder(ctx context.Context, p cdPipeApi.CDPipeline) error {
 	jfn := fmt.Sprintf("%v-%v", p.Name, "cd-pipeline")
 	log := r.log.WithValues("Jenkins folder name", jfn)
-	log.V(2).Info("start creating JenkinsFolder CR", "name", jfn)
+	log.Info("start creating JenkinsFolder CR", "name", jfn)
 	jf := &jenkinsApi.JenkinsFolder{
 		TypeMeta: metaV1.TypeMeta{
 			APIVersion: "v2.edp.epam.com/v1",
@@ -131,7 +131,7 @@ func (r *ReconcileCDPipeline) createJenkinsFolder(ctx context.Context, p cdPipeA
 	}
 	if err := r.client.Create(ctx, jf); err != nil {
 		if k8sErrors.IsAlreadyExists(err) {
-			log.V(2).Info("jenkins folder cr already exists", "name", jfn)
+			log.Info("jenkins folder cr already exists", "name", jfn)
 			return nil
 		}
 		return errors.Wrapf(err, "couldn't create jenkins folder %v", jfn)
