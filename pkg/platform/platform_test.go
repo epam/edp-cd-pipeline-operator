@@ -37,8 +37,6 @@ func TestGetPlatformTypeEnv_PlatformTypeIsNotSet(t *testing.T) {
 }
 
 func TestIsKubernetes(t *testing.T) {
-	t.Parallel()
-
 	tests := []struct {
 		name   string
 		setEnv func(t *testing.T)
