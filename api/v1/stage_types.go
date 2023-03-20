@@ -4,7 +4,7 @@ import (
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-const CodebaseTypeLabelName = "app.edp.epam.com/cdPipelineName"
+const StageCdPipelineLabelName = "app.edp.epam.com/cdPipelineName"
 
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 

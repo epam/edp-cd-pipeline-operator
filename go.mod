@@ -18,6 +18,7 @@ require (
 	github.com/openshift/api v3.9.0+incompatible
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.8.1
+	golang.org/x/exp v0.0.0-20230315142452-642cacee5cc0
 	k8s.io/api v0.26.1
 	k8s.io/apimachinery v0.26.1
 	k8s.io/client-go v0.26.1

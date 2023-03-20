@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/go-logr/logr"
+	"golang.org/x/exp/slices"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -14,7 +15,6 @@ import (
 	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/stage/chain/util"
 	edpErr "github.com/epam/edp-cd-pipeline-operator/v2/pkg/error"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/cluster"
-	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/finalizer"
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 )
 
@@ -24,16 +24,14 @@ type DeleteEnvironmentLabelFromCodebaseImageStreams struct {
 	log    logr.Logger
 }
 
-// nolint
 func (h DeleteEnvironmentLabelFromCodebaseImageStreams) ServeRequest(stage *cdPipeApi.Stage) error {
-	logger := h.log.WithValues("stage name", stage.Name)
-	logger.Info("start deleting environment labels from codebase image stream resources.")
+	h.log.Info("Start deleting environment labels from codebase image streams")
 
 	if err := h.deleteEnvironmentLabel(stage); err != nil {
 		return fmt.Errorf("failed to set environment status: %w", err)
 	}
 
-	logger.Info("environment labels have been deleted from codebase image stream resources.")
+	h.log.Info("Environment labels have been deleted from codebase image streams")
 
 	return nextServeOrNil(h.next, stage)
 }
@@ -66,12 +64,10 @@ func (h DeleteEnvironmentLabelFromCodebaseImageStreams) deleteEnvironmentLabel(s
 			return envErr
 		}
 
-		if !finalizer.ContainsString(pipe.Spec.ApplicationsToPromote, stream.Spec.Codebase) {
+		if !slices.Contains(pipe.Spec.ApplicationsToPromote, stream.Spec.Codebase) {
 			if envErr := h.setEnvLabel(stage.Spec.Name, pipe.Spec.Name, stream); envErr != nil {
 				return envErr
 			}
-
-			continue
 		}
 	}
 
@@ -86,7 +82,7 @@ func (h DeleteEnvironmentLabelFromCodebaseImageStreams) setEnvLabel(stageName, p
 		return fmt.Errorf("failed to update %v codebase image stream: %w", stream, err)
 	}
 
-	h.log.Info("label has been deleted from codebase image stream", "label", env, "stream", stream.Name)
+	h.log.Info("Label has been deleted from CodebaseImageStream", "label", env, "codebaseImageStream", stream.Name)
 
 	return nil
 }
@@ -115,7 +111,7 @@ func (h DeleteEnvironmentLabelFromCodebaseImageStreams) setEnvLabelForVerifiedIm
 		return fmt.Errorf("failed to update %v codebase image stream: %w", stream, err)
 	}
 
-	h.log.Info("label has been deleted from codebase image stream", "label", env, "stream", dockerStreamName)
+	h.log.Info("Label has been deleted from CodebaseImageStream", "label", env, "dockerStream", dockerStreamName, "codebaseImageStream", stream.Name)
 
 	return nil
 }

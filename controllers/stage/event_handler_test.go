@@ -44,7 +44,7 @@ func TestPipelineEventHandler_Update(t *testing.T) {
 						Namespace: "default",
 						Name:      "stage",
 						Labels: map[string]string{
-							cdPipeApi.CodebaseTypeLabelName: "cd-pipeline",
+							cdPipeApi.StageCdPipelineLabelName: "cd-pipeline",
 						},
 					},
 				},
@@ -67,7 +67,7 @@ func TestPipelineEventHandler_Update(t *testing.T) {
 						Namespace: "default",
 						Name:      "stage",
 						Labels: map[string]string{
-							cdPipeApi.CodebaseTypeLabelName: "cd-pipeline",
+							cdPipeApi.StageCdPipelineLabelName: "cd-pipeline",
 						},
 					},
 				},
@@ -96,7 +96,7 @@ func TestPipelineEventHandler_Update(t *testing.T) {
 						Namespace: "default",
 						Name:      "stage",
 						Labels: map[string]string{
-							cdPipeApi.CodebaseTypeLabelName: "cd-pipeline",
+							cdPipeApi.StageCdPipelineLabelName: "cd-pipeline",
 						},
 					},
 				},
@@ -105,7 +105,7 @@ func TestPipelineEventHandler_Update(t *testing.T) {
 						Namespace: "dev",
 						Name:      "stage2",
 						Labels: map[string]string{
-							cdPipeApi.CodebaseTypeLabelName: "cd-pipeline",
+							cdPipeApi.StageCdPipelineLabelName: "cd-pipeline",
 						},
 					},
 				},
@@ -133,7 +133,7 @@ func TestPipelineEventHandler_Update(t *testing.T) {
 						Namespace: "default",
 						Name:      "stage",
 						Labels: map[string]string{
-							cdPipeApi.CodebaseTypeLabelName: "cd-pipeline",
+							cdPipeApi.StageCdPipelineLabelName: "cd-pipeline",
 						},
 					},
 				},

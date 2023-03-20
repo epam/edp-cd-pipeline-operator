@@ -44,7 +44,7 @@ func Test_setStageLabel(t *testing.T) {
 					Name:      "test-stage",
 					Namespace: "default",
 					Labels: map[string]string{
-						cdPipeApi.CodebaseTypeLabelName: "test-pipeline",
+						cdPipeApi.StageCdPipelineLabelName: "test-pipeline",
 					},
 				},
 				Spec: cdPipeApi.StageSpec{
@@ -61,7 +61,7 @@ func Test_setStageLabel(t *testing.T) {
 					Name:      "test-stage",
 					Namespace: "default",
 					Labels: map[string]string{
-						cdPipeApi.CodebaseTypeLabelName: "test-pipeline",
+						cdPipeApi.StageCdPipelineLabelName: "test-pipeline",
 					},
 				},
 				Spec: cdPipeApi.StageSpec{
@@ -73,7 +73,7 @@ func Test_setStageLabel(t *testing.T) {
 					Name:      "test-stage",
 					Namespace: "default",
 					Labels: map[string]string{
-						cdPipeApi.CodebaseTypeLabelName: "test-pipeline",
+						cdPipeApi.StageCdPipelineLabelName: "test-pipeline",
 					},
 				},
 				Spec: cdPipeApi.StageSpec{
@@ -379,7 +379,7 @@ func TestStageBatchModifier_Apply(t *testing.T) {
 					Name:      "test-stage",
 					Namespace: "default",
 					Labels: map[string]string{
-						cdPipeApi.CodebaseTypeLabelName: "test-pipeline",
+						cdPipeApi.StageCdPipelineLabelName: "test-pipeline",
 					},
 					OwnerReferences: []metav1.OwnerReference{
 						{

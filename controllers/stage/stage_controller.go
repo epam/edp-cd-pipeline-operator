@@ -2,18 +2,19 @@ package stage
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"reflect"
 	"time"
 
 	"github.com/go-logr/logr"
-	"github.com/pkg/errors"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -24,14 +25,12 @@ import (
 	edpError "github.com/epam/edp-cd-pipeline-operator/v2/pkg/error"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/objectmodifier"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/consts"
-	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/finalizer"
 )
 
 const (
-	foregroundDeletionFinalizerName = "foregroundDeletion"
-	envLabelDeletionFinalizer       = "envLabelDeletion"
-	const15Requeue                  = 15 * time.Second
-	nameLogKey                      = "name"
+	envLabelDeletionFinalizer   = "envLabelDeletion"
+	const15Requeue              = 15 * time.Second
+	waitForParentStagesDeletion = time.Second
 )
 
 func NewReconcileStage(
@@ -93,27 +92,27 @@ func (r *ReconcileStage) SetupWithManager(mgr ctrl.Manager) error {
 //+kubebuilder:rbac:groups=v2.edp.epam.com,namespace=placeholder,resources=stages/finalizers,verbs=update
 
 func (r *ReconcileStage) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	log := r.log.WithValues("Request.Namespace", request.Namespace, "Request.Name", request.Name)
-	log.V(2).Info("reconciling Stage has been started")
+	log := ctrl.LoggerFrom(ctx)
+	log.Info("Reconciling Stage has been started")
 
 	stage := &cdPipeApi.Stage{}
 	if err := r.client.Get(ctx, request.NamespacedName, stage); err != nil {
 		if k8sErrors.IsNotFound(err) {
+			log.Info("Stage has been deleted")
+
 			return reconcile.Result{}, nil
 		}
 
 		return reconcile.Result{}, fmt.Errorf("failed to get namespace: %w", err)
 	}
 
-	patched, err := r.stageModifier.Apply(ctrl.LoggerInto(ctx, log), stage)
+	patched, err := r.stageModifier.Apply(ctx, stage)
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("failed to apply stage changes: %w", err)
 	}
 
 	if patched {
 		log.Info("Stage default values has been patched")
-
-		return reconcile.Result{}, nil
 	}
 
 	result, err := r.tryToDeleteCDStage(ctx, stage)
@@ -132,7 +131,7 @@ func (r *ReconcileStage) Reconcile(ctx context.Context, request reconcile.Reques
 			return reconcile.Result{RequeueAfter: const15Requeue}, nil
 		}
 
-		if statusErr := r.setFailedStatus(ctx, stage, err); err != nil {
+		if statusErr := r.setFailedStatus(ctx, stage, err); statusErr != nil {
 			return reconcile.Result{}, statusErr
 		}
 
@@ -143,37 +142,57 @@ func (r *ReconcileStage) Reconcile(ctx context.Context, request reconcile.Reques
 		return reconcile.Result{}, err
 	}
 
-	log.V(2).Info("reconciling Stage has been finished")
+	log.Info("Reconciling Stage has been finished")
 
 	return reconcile.Result{}, nil
 }
 
 func (r *ReconcileStage) tryToDeleteCDStage(ctx context.Context, stage *cdPipeApi.Stage) (*reconcile.Result, error) {
+	log := ctrl.LoggerFrom(ctx)
+
 	if stage.GetDeletionTimestamp().IsZero() {
-		if !finalizer.ContainsString(stage.ObjectMeta.Finalizers, foregroundDeletionFinalizerName) {
-			stage.ObjectMeta.Finalizers = append(stage.ObjectMeta.Finalizers, foregroundDeletionFinalizerName)
-		}
+		if controllerutil.AddFinalizer(stage, envLabelDeletionFinalizer) {
+			if err := r.client.Update(ctx, stage); err != nil {
+				return &reconcile.Result{}, fmt.Errorf("failed to update cd stage: %w", err)
+			}
 
-		if stage.Spec.TriggerType == consts.AutoDeployTriggerType &&
-			!finalizer.ContainsString(stage.ObjectMeta.Finalizers, envLabelDeletionFinalizer) {
-			stage.ObjectMeta.Finalizers = append(stage.ObjectMeta.Finalizers, envLabelDeletionFinalizer)
-		}
-
-		if err := r.client.Update(ctx, stage); err != nil {
-			return &reconcile.Result{}, fmt.Errorf("failed to update cd stage: %w", err)
+			log.Info("Finalizer has been added to Stage", "finalizer", envLabelDeletionFinalizer)
 		}
 
 		return nil, nil
 	}
 
-	if err := chain.CreateDeleteChain(ctx, r.client, stage.Namespace).ServeRequest(stage); err != nil {
-		return &reconcile.Result{}, fmt.Errorf("failed to delete chain: %w", err)
+	log.Info("Deleting Stage")
+
+	isLastStage, err := r.isLastStage(ctx, stage)
+	if err != nil {
+		return &reconcile.Result{}, fmt.Errorf("failed to check if stage is last: %w", err)
 	}
 
-	stage.ObjectMeta.Finalizers = finalizer.RemoveString(stage.ObjectMeta.Finalizers, envLabelDeletionFinalizer)
+	// if stage is not last, we should postpone deletion
+	// and wait for all parent stages to be deleted
+	// because in the chain we get previous stage
+	if !isLastStage {
+		log.Info("Stage is not last. Postpone deletion")
+
+		return &reconcile.Result{RequeueAfter: waitForParentStagesDeletion}, nil
+	}
+
+	log.Info("Stage is last. Delete chain")
+
+	if err := chain.CreateDeleteChain(ctx, r.client).ServeRequest(stage); err != nil {
+		return &reconcile.Result{}, fmt.Errorf("failed to delete Stage: %w", err)
+	}
+
+	log.Info("Removing finalizer from Stage", "finalizer", envLabelDeletionFinalizer)
+
+	controllerutil.RemoveFinalizer(stage, envLabelDeletionFinalizer)
+
 	if err := r.client.Update(ctx, stage); err != nil {
 		return &reconcile.Result{}, fmt.Errorf("failed to update cd pipeline stage: %w", err)
 	}
+
+	log.Info("Stage has been deleted")
 
 	return &reconcile.Result{}, nil
 }
@@ -199,6 +218,8 @@ func (r *ReconcileStage) setFinishStatus(ctx context.Context, s *cdPipeApi.Stage
 }
 
 func (r *ReconcileStage) setFailedStatus(ctx context.Context, stage *cdPipeApi.Stage, err error) error {
+	log := ctrl.LoggerFrom(ctx)
+
 	stage.Status = cdPipeApi.StageStatus{
 		Status:          consts.FailedStatus,
 		Available:       false,
@@ -213,7 +234,32 @@ func (r *ReconcileStage) setFailedStatus(ctx context.Context, stage *cdPipeApi.S
 		return fmt.Errorf("failed to update stage status: %w", err)
 	}
 
-	r.log.Info("Stage status has been updated.", nameLogKey, stage.Name)
+	log.Info("Stage failed status has been updated")
 
 	return nil
+}
+
+// isLastStage checks if stage is last in the pipeline.
+func (r *ReconcileStage) isLastStage(ctx context.Context, stage *cdPipeApi.Stage) (bool, error) {
+	stages := &cdPipeApi.StageList{}
+	if err := r.client.List(
+		ctx,
+		stages,
+		client.InNamespace(stage.Namespace),
+		client.MatchingLabels{cdPipeApi.StageCdPipelineLabelName: stage.Spec.CdPipeline},
+	); err != nil {
+		return false, fmt.Errorf("failed to get stages: %w", err)
+	}
+
+	for i := range stages.Items {
+		if stages.Items[i].Name == stage.Name {
+			continue
+		}
+
+		if stages.Items[i].Spec.Order > stage.Spec.Order {
+			return false, nil
+		}
+	}
+
+	return true, nil
 }

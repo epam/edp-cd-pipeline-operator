@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"reflect"
+	"time"
 
 	"github.com/go-logr/logr"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
@@ -12,6 +13,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -19,7 +21,6 @@ import (
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/cluster"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/consts"
-	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/finalizer"
 	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1"
 )
 
@@ -37,7 +38,10 @@ type ReconcileCDPipeline struct {
 	log    logr.Logger
 }
 
-const foregroundDeletionFinalizerName = "foregroundDeletion"
+const (
+	ownedStagesFinalizer       = "edp.epam.com/ownedStages"
+	waitForOwnedStagesDeletion = time.Second * 2
+)
 
 func (r *ReconcileCDPipeline) SetupWithManager(mgr ctrl.Manager) error {
 	p := predicate.Funcs{
@@ -49,6 +53,10 @@ func (r *ReconcileCDPipeline) SetupWithManager(mgr ctrl.Manager) error {
 			no, ok := e.ObjectNew.(*cdPipeApi.CDPipeline)
 			if !ok {
 				return false
+			}
+
+			if no.DeletionTimestamp != nil {
+				return true
 			}
 
 			return !reflect.DeepEqual(oo.Spec, no.Spec)
@@ -69,11 +77,11 @@ func (r *ReconcileCDPipeline) SetupWithManager(mgr ctrl.Manager) error {
 //+kubebuilder:rbac:groups=v2.edp.epam.com,namespace=placeholder,resources=cdpipelines/finalizers,verbs=update
 
 func (r *ReconcileCDPipeline) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	log := r.log.WithValues("Request.Namespace", request.Namespace, "Request.Name", request.Name)
-	log.V(2).Info("Reconciling CDPipeline")
+	log := ctrl.LoggerFrom(ctx)
+	log.Info("Reconciling CDPipeline")
 
-	i := &cdPipeApi.CDPipeline{}
-	if err := r.client.Get(ctx, request.NamespacedName, i); err != nil {
+	pipeline := &cdPipeApi.CDPipeline{}
+	if err := r.client.Get(ctx, request.NamespacedName, pipeline); err != nil {
 		if k8sErrors.IsNotFound(err) {
 			return reconcile.Result{}, nil
 		}
@@ -81,39 +89,83 @@ func (r *ReconcileCDPipeline) Reconcile(ctx context.Context, request reconcile.R
 		return reconcile.Result{}, fmt.Errorf("failed to get pipeline: %w", err)
 	}
 
-	if err := r.addFinalizer(ctx, i); err != nil {
+	result, err := r.tryToDeletePipeline(ctx, pipeline)
+	if err != nil {
 		return reconcile.Result{}, err
 	}
 
+	if result != nil {
+		return *result, nil
+	}
+
 	if cluster.JenkinsEnabled(ctx, r.client, request.Namespace, log) {
-		if err := r.createJenkinsFolder(ctx, i); err != nil {
+		if err := r.createJenkinsFolder(ctx, pipeline); err != nil {
 			return reconcile.Result{}, err
 		}
 	}
 
-	if err := r.setFinishStatus(ctx, i); err != nil {
+	if err := r.setFinishStatus(ctx, pipeline); err != nil {
 		return reconcile.Result{}, err
 	}
 
-	log.V(2).Info("Reconciling of CD Pipeline has been finished")
+	log.Info("Reconciling of CD Pipeline has been finished")
 
 	return reconcile.Result{}, nil
 }
 
-func (r *ReconcileCDPipeline) addFinalizer(ctx context.Context, pipeline *cdPipeApi.CDPipeline) error {
-	if !pipeline.GetDeletionTimestamp().IsZero() {
-		return nil
+func (r *ReconcileCDPipeline) tryToDeletePipeline(ctx context.Context, pipeline *cdPipeApi.CDPipeline) (*reconcile.Result, error) {
+	log := ctrl.LoggerFrom(ctx)
+
+	if pipeline.GetDeletionTimestamp().IsZero() {
+		if controllerutil.AddFinalizer(pipeline, ownedStagesFinalizer) {
+			if err := r.client.Update(ctx, pipeline); err != nil {
+				return &reconcile.Result{}, fmt.Errorf("failed to update pipeline: %w", err)
+			}
+
+			log.Info("Finalizer has been added to CDPipeline", "finalizer", ownedStagesFinalizer)
+		}
+
+		return nil, nil
 	}
 
-	if !finalizer.ContainsString(pipeline.ObjectMeta.Finalizers, foregroundDeletionFinalizerName) {
-		pipeline.ObjectMeta.Finalizers = append(pipeline.ObjectMeta.Finalizers, foregroundDeletionFinalizerName)
+	log.Info("Deleting CDPipeline")
+
+	hasStages, err := r.hasActiveOwnedStages(ctx, pipeline)
+	if err != nil {
+		return &reconcile.Result{}, err
 	}
+
+	// if pipeline has active stages, postpone deletion
+	// because if we delete pipeline before stages,
+	// stages deletion chain will be broken
+	if hasStages {
+		log.Info("Deleting stages of CDPipeline")
+
+		if err := r.client.DeleteAllOf(
+			ctx,
+			&cdPipeApi.Stage{},
+			client.InNamespace(pipeline.Namespace),
+			client.MatchingLabels(map[string]string{cdPipeApi.StageCdPipelineLabelName: pipeline.Name}),
+		); err != nil {
+			return &reconcile.Result{}, fmt.Errorf("failed to delete stages: %w", err)
+		}
+
+		log.Info("CDPipeline has active stages. Postpone deletion")
+
+		return &reconcile.Result{RequeueAfter: waitForOwnedStagesDeletion}, nil
+	}
+
+	log.Info("Removing finalizer from CDPipeline", "finalizer", ownedStagesFinalizer)
+
+	controllerutil.RemoveFinalizer(pipeline, ownedStagesFinalizer)
 
 	if err := r.client.Update(ctx, pipeline); err != nil {
-		return fmt.Errorf("failed to update pipeline: %w", err)
+		return &reconcile.Result{}, fmt.Errorf("failed to update pipeline: %w", err)
 	}
 
-	return nil
+	log.Info("CDPipeline has been deleted")
+
+	return &reconcile.Result{}, nil
 }
 
 func (r *ReconcileCDPipeline) setFinishStatus(ctx context.Context, p *cdPipeApi.CDPipeline) error {
@@ -139,7 +191,7 @@ func (r *ReconcileCDPipeline) setFinishStatus(ctx context.Context, p *cdPipeApi.
 func (r *ReconcileCDPipeline) createJenkinsFolder(ctx context.Context, p *cdPipeApi.CDPipeline) error {
 	jfn := fmt.Sprintf("%v-%v", p.Name, "cd-pipeline")
 	log := r.log.WithValues("Jenkins folder name", jfn)
-	log.V(2).Info("start creating JenkinsFolder CR", "name", jfn)
+	log.Info("Start creating JenkinsFolder CR", "name", jfn)
 
 	jf := &jenkinsApi.JenkinsFolder{
 		TypeMeta: metaV1.TypeMeta{
@@ -153,7 +205,7 @@ func (r *ReconcileCDPipeline) createJenkinsFolder(ctx context.Context, p *cdPipe
 	}
 	if err := r.client.Create(ctx, jf); err != nil {
 		if k8sErrors.IsAlreadyExists(err) {
-			log.V(2).Info("jenkins folder cr already exists", "name", jfn)
+			log.Info("Jenkins folder cr already exists", "name", jfn)
 			return nil
 		}
 
@@ -163,4 +215,18 @@ func (r *ReconcileCDPipeline) createJenkinsFolder(ctx context.Context, p *cdPipe
 	log.Info("JenkinsFolder CR has been created", "name", jfn)
 
 	return nil
+}
+
+// hasActiveOwnedStages checks if there are any active stages owned by the pipeline.
+func (r *ReconcileCDPipeline) hasActiveOwnedStages(ctx context.Context, pipeline *cdPipeApi.CDPipeline) (bool, error) {
+	stages := &cdPipeApi.StageList{}
+	if err := r.client.List(
+		ctx,
+		stages,
+		client.InNamespace(pipeline.Namespace), client.MatchingLabels{cdPipeApi.StageCdPipelineLabelName: pipeline.Name},
+	); err != nil {
+		return false, fmt.Errorf("failed to list stages: %w", err)
+	}
+
+	return len(stages.Items) > 0, nil
 }

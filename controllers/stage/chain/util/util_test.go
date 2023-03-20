@@ -90,7 +90,7 @@ func TestFindPreviousStageName_Success(t *testing.T) {
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "stage1",
 			Namespace: namespace,
-			Labels:    map[string]string{cdPipeApi.CodebaseTypeLabelName: name},
+			Labels:    map[string]string{cdPipeApi.StageCdPipelineLabelName: name},
 		},
 		Spec: cdPipeApi.StageSpec{
 			CdPipeline: name,

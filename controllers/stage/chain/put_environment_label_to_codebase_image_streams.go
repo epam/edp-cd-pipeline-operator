@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/go-logr/logr"
+	"golang.org/x/exp/slices"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -13,7 +14,6 @@ import (
 	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/stage/chain/util"
 	edpError "github.com/epam/edp-cd-pipeline-operator/v2/pkg/error"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/cluster"
-	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/finalizer"
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 )
 
@@ -43,7 +43,7 @@ func (h PutEnvironmentLabelToCodebaseImageStreams) ServeRequest(stage *cdPipeApi
 			return fmt.Errorf("couldn't get %s codebase image stream: %w", name, err)
 		}
 
-		if stage.IsFirst() || !finalizer.ContainsString(pipe.Spec.ApplicationsToPromote, stream.Spec.Codebase) {
+		if stage.IsFirst() || !slices.Contains(pipe.Spec.ApplicationsToPromote, stream.Spec.Codebase) {
 			if updErr := h.updateLabel(stream, pipe.Name, stage.Spec.Name); updErr != nil {
 				return updErr
 			}

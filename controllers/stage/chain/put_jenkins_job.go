@@ -10,12 +10,12 @@ import (
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
 	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/stage/chain/handler"
 	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/stage/chain/util"
-	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/common"
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1"
 )
@@ -79,7 +79,7 @@ func (h PutJenkinsJob) tryToCreateJenkinsJob(stage *cdPipeApi.Stage) error {
 			Job: jenkinsApi.Job{
 				Name:              fmt.Sprintf("job-provisions/job/cd/job/%v", stage.Spec.JobProvisioning),
 				Config:            string(jc),
-				AutoTriggerPeriod: common.GetInt32P(defaultAutoTriggerPeriod),
+				AutoTriggerPeriod: pointer.Int32(defaultAutoTriggerPeriod),
 			},
 		},
 		Status: jenkinsApi.JenkinsJobStatus{
@@ -175,7 +175,7 @@ func (h PutJenkinsJob) getDeploymentType(stage *cdPipeApi.Stage) (*string, error
 		return nil, fmt.Errorf("failed to get pipeline: %w", err)
 	}
 
-	return common.GetStringP(p.Spec.DeploymentType), nil
+	return pointer.String(p.Spec.DeploymentType), nil
 }
 
 func getQualityGateStages(qualityGates []cdPipeApi.QualityGate) (*string, error) {
@@ -210,7 +210,7 @@ func getStagesInJson(stages []interface{}) (*string, error) {
 		return nil, fmt.Errorf("failed to marshal stages to json: %w", err)
 	}
 
-	return common.GetStringP(modifyQualityGateStagesJson(string(jsonStages))), nil
+	return pointer.String(modifyQualityGateStagesJson(string(jsonStages))), nil
 }
 
 func modifyQualityGateStagesJson(qgStages string) string {

@@ -93,7 +93,7 @@ func TestPutEnvironmentLabelToCodebaseImageStreams_ServeRequest_PreviousStageIma
 	prevStage := createStage(t, 0, cdPipeline)
 	prevStage.Name = previousStageName
 	prevStage.Spec.Name = previousStageName
-	prevStage.Labels = map[string]string{cdPipeApi.CodebaseTypeLabelName: cdPipeline}
+	prevStage.Labels = map[string]string{cdPipeApi.StageCdPipelineLabelName: cdPipeline}
 	cisName := createCisName(cdPipeline, previousStageName, codebase)
 
 	cdPipeline := cdPipeApi.CDPipeline{
@@ -207,7 +207,7 @@ func TestPutEnvironmentLabelToCodebaseImageStreams_ServeRequest_CantGetPreviousS
 	stage := createStage(t, 1, cdPipeline)
 	prevStage := createStage(t, 0, cdPipeline)
 	prevStage.Name = previousStageName
-	prevStage.Labels = map[string]string{cdPipeApi.CodebaseTypeLabelName: cdPipeline}
+	prevStage.Labels = map[string]string{cdPipeApi.StageCdPipelineLabelName: cdPipeline}
 
 	cdPipeline := cdPipeApi.CDPipeline{
 		TypeMeta: metaV1.TypeMeta{},

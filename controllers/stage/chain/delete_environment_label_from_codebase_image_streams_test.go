@@ -65,7 +65,7 @@ func TestDeleteEnvironmentLabel_VerifiedImageStream(t *testing.T) {
 	prevStage := createStage(t, 0, cdPipeline)
 	prevStage.Name = previousStageName
 	prevStage.Spec.Name = previousStageName
-	prevStage.Labels = map[string]string{cdPipeApi.CodebaseTypeLabelName: cdPipeline}
+	prevStage.Labels = map[string]string{cdPipeApi.StageCdPipelineLabelName: cdPipeline}
 
 	cisName := createCisName(name, previousStageName, codebase)
 
@@ -131,7 +131,7 @@ func TestDeleteEnvironmentLabel_ApplicationToPromote(t *testing.T) {
 	prevStage := createStage(t, 0, cdPipeline)
 	prevStage.Name = previousStageName
 	prevStage.Spec.Name = previousStageName
-	prevStage.Labels = map[string]string{cdPipeApi.CodebaseTypeLabelName: cdPipeline}
+	prevStage.Labels = map[string]string{cdPipeApi.StageCdPipelineLabelName: cdPipeline}
 
 	cdPipeline := cdPipeApi.CDPipeline{
 		ObjectMeta: metaV1.ObjectMeta{
@@ -292,7 +292,7 @@ func TestSetEnvLabelForVerifiedImageStream_IsNotFoundPreviousImageStream(t *test
 	prevStage := createStage(t, 0, cdPipeline)
 	prevStage.Name = previousStageName
 	prevStage.Spec.Name = previousStageName
-	prevStage.Labels = map[string]string{cdPipeApi.CodebaseTypeLabelName: cdPipeline}
+	prevStage.Labels = map[string]string{cdPipeApi.StageCdPipelineLabelName: cdPipeline}
 
 	image := codebaseApi.CodebaseImageStream{
 		ObjectMeta: metaV1.ObjectMeta{

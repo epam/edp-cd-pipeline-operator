@@ -9,14 +9,17 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
-	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/finalizer"
+	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/consts"
 	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1"
 )
 
@@ -52,20 +55,6 @@ func (r *ReconcileCDPipeline) getJenkinsFolder(t *testing.T) *jenkinsApi.Jenkins
 	}
 
 	return createdJenkins
-}
-
-func (r *ReconcileCDPipeline) getCdPipeline(t *testing.T) *cdPipeApi.CDPipeline {
-	t.Helper()
-
-	cdPipeline := &cdPipeApi.CDPipeline{}
-	if err := r.client.Get(context.Background(), types.NamespacedName{
-		Namespace: namespace,
-		Name:      name,
-	}, cdPipeline); err != nil {
-		t.Fatalf("cannot find jenkins folder: %v", err)
-	}
-
-	return cdPipeline
 }
 
 func createScheme(t *testing.T) *runtime.Scheme {
@@ -116,13 +105,18 @@ func TestReconcile_Success(t *testing.T) {
 	}})
 	assert.NoError(t, err)
 
-	cdPipeline := reconcileCDPipeline.getCdPipeline(t)
+	cdPipeline := &cdPipeApi.CDPipeline{}
+	err = client.Get(context.Background(), types.NamespacedName{
+		Namespace: namespace,
+		Name:      name,
+	}, cdPipeline)
+	require.NoError(t, err)
 	assert.Equal(t, cdPipeline.Status.Status, "created")
 
 	jenkinsFolder := reconcileCDPipeline.getJenkinsFolder(t)
 	assert.Equal(t, jenkinsKind, jenkinsFolder.Kind)
 
-	assert.True(t, finalizer.ContainsString(cdPipeline.ObjectMeta.Finalizers, foregroundDeletionFinalizerName))
+	assert.True(t, controllerutil.ContainsFinalizer(cdPipeline, ownedStagesFinalizer))
 }
 
 func TestReconcile_PipelineIsNotFound(t *testing.T) {
@@ -154,17 +148,12 @@ func TestReconcile_GetCdPipelineError(t *testing.T) {
 }
 
 func TestAddFinalizer_DeletionTimestampNotZero(t *testing.T) {
-	var finalizerArray []string
-
-	timeToDelete := &metaV1.Time{Time: time.Now().UTC()}
-
 	cdPipeline := cdPipeApi.CDPipeline{
-		TypeMeta: metaV1.TypeMeta{},
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:              name,
 			Namespace:         namespace,
-			Finalizers:        finalizerArray,
-			DeletionTimestamp: timeToDelete,
+			Finalizers:        []string{ownedStagesFinalizer},
+			DeletionTimestamp: &metaV1.Time{Time: time.Now().UTC()},
 		},
 		Spec:   cdPipeApi.CDPipelineSpec{},
 		Status: cdPipeApi.CDPipelineStatus{},
@@ -175,22 +164,55 @@ func TestAddFinalizer_DeletionTimestampNotZero(t *testing.T) {
 
 	reconcileCdPipeline := NewReconcileCDPipeline(client, scheme, logr.Discard())
 
-	err := reconcileCdPipeline.addFinalizer(context.Background(), &cdPipeline)
+	res, err := reconcileCdPipeline.tryToDeletePipeline(ctrl.LoggerInto(context.Background(), logr.Discard()), &cdPipeline)
 	assert.NoError(t, err)
+	assert.Equal(t, &reconcile.Result{}, res)
 
-	clientCdPipeline := reconcileCdPipeline.getCdPipeline(t)
-	assert.False(t, finalizer.ContainsString(clientCdPipeline.ObjectMeta.Finalizers, foregroundDeletionFinalizerName))
+	cdPipelineProcessed := &cdPipeApi.CDPipeline{}
+	err = client.Get(context.Background(), types.NamespacedName{
+		Namespace: namespace,
+		Name:      name,
+	}, cdPipelineProcessed)
+	require.Error(t, err)
+	assert.True(t, k8sErrors.IsNotFound(err))
+}
+
+func TestAddFinalizer_PostponeDeletion(t *testing.T) {
+	cdPipeline := cdPipeApi.CDPipeline{
+		ObjectMeta: metaV1.ObjectMeta{
+			Name:              name,
+			Namespace:         namespace,
+			Finalizers:        []string{ownedStagesFinalizer},
+			DeletionTimestamp: &metaV1.Time{Time: time.Now().UTC()},
+		},
+		Spec:   cdPipeApi.CDPipelineSpec{},
+		Status: cdPipeApi.CDPipelineStatus{},
+	}
+	stage := &cdPipeApi.Stage{
+		ObjectMeta: metaV1.ObjectMeta{
+			Name:      "stage",
+			Namespace: namespace,
+			Labels: map[string]string{
+				cdPipeApi.StageCdPipelineLabelName: cdPipeline.Name,
+			},
+		},
+	}
+
+	scheme := createScheme(t)
+	client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&cdPipeline, stage).Build()
+
+	reconcileCdPipeline := NewReconcileCDPipeline(client, scheme, logr.Discard())
+
+	res, err := reconcileCdPipeline.tryToDeletePipeline(ctrl.LoggerInto(context.Background(), logr.Discard()), &cdPipeline)
+	assert.NoError(t, err)
+	assert.Equal(t, &reconcile.Result{RequeueAfter: waitForOwnedStagesDeletion}, res)
 }
 
 func TestAddFinalizer_DeletionTimestampIsZero(t *testing.T) {
-	var finalizerArray []string
-
 	cdPipeline := &cdPipeApi.CDPipeline{
-		TypeMeta: metaV1.TypeMeta{},
 		ObjectMeta: metaV1.ObjectMeta{
-			Name:       name,
-			Namespace:  namespace,
-			Finalizers: finalizerArray,
+			Name:      name,
+			Namespace: namespace,
 		},
 		Spec:   cdPipeApi.CDPipelineSpec{},
 		Status: cdPipeApi.CDPipelineStatus{},
@@ -201,11 +223,17 @@ func TestAddFinalizer_DeletionTimestampIsZero(t *testing.T) {
 
 	reconcileCdPipeline := NewReconcileCDPipeline(client, scheme, logr.Discard())
 
-	err := reconcileCdPipeline.addFinalizer(context.Background(), cdPipeline)
+	res, err := reconcileCdPipeline.tryToDeletePipeline(ctrl.LoggerInto(context.Background(), logr.Discard()), cdPipeline)
 	assert.NoError(t, err)
+	assert.Nil(t, res)
 
-	clientCdPipeline := reconcileCdPipeline.getCdPipeline(t)
-	assert.True(t, finalizer.ContainsString(clientCdPipeline.ObjectMeta.Finalizers, foregroundDeletionFinalizerName))
+	cdPipelineProcessed := &cdPipeApi.CDPipeline{}
+	err = client.Get(context.Background(), types.NamespacedName{
+		Namespace: namespace,
+		Name:      name,
+	}, cdPipelineProcessed)
+	require.NoError(t, err)
+	assert.True(t, controllerutil.ContainsFinalizer(cdPipelineProcessed, ownedStagesFinalizer))
 }
 
 func TestSetFinishStatus_Success(t *testing.T) {
@@ -218,8 +246,13 @@ func TestSetFinishStatus_Success(t *testing.T) {
 	err := reconcileCdPipeline.setFinishStatus(context.Background(), cdPipeline)
 	assert.NoError(t, err)
 
-	clientCdPipeline := reconcileCdPipeline.getCdPipeline(t)
-	assert.Equal(t, clientCdPipeline.Status.Status, "created")
+	cdPipelineProcessed := &cdPipeApi.CDPipeline{}
+	err = client.Get(context.Background(), types.NamespacedName{
+		Namespace: namespace,
+		Name:      name,
+	}, cdPipelineProcessed)
+	require.NoError(t, err)
+	assert.Equal(t, cdPipelineProcessed.Status.Status, consts.FinishedStatus)
 }
 
 func TestCreateJenkinsFolder_Success(t *testing.T) {

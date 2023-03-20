@@ -16,6 +16,7 @@ import (
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -80,11 +81,11 @@ func TestTryToDeleteCDStage_DeletionTimestampIsZero(t *testing.T) {
 		log:    logr.Discard(),
 	}
 
-	_, err := reconcileStage.tryToDeleteCDStage(context.Background(), stage)
+	_, err := reconcileStage.tryToDeleteCDStage(ctrl.LoggerInto(context.Background(), logr.Discard()), stage)
 	assert.NoError(t, err)
 
 	stageAfterReconcile := getStage(t, reconcileStage.client, name)
-	assert.Equal(t, stageAfterReconcile.Finalizers, []string{foregroundDeletionFinalizerName, envLabelDeletionFinalizer})
+	assert.Equal(t, stageAfterReconcile.Finalizers, []string{envLabelDeletionFinalizer})
 }
 
 func TestTryToDeleteCDStage_Success(t *testing.T) {
@@ -157,7 +158,7 @@ func TestTryToDeleteCDStage_Success(t *testing.T) {
 		log:    logr.Discard(),
 	}
 
-	_, err = reconcileStage.tryToDeleteCDStage(context.Background(), stage)
+	_, err = reconcileStage.tryToDeleteCDStage(ctrl.LoggerInto(context.Background(), logr.Discard()), stage)
 	assert.NoError(t, err)
 
 	previousImageStream, err := cluster.GetCodebaseImageStream(reconcileStage.client, dockerImageName, namespace)
@@ -175,6 +176,49 @@ func TestTryToDeleteCDStage_Success(t *testing.T) {
 	)
 	require.Error(t, err)
 	assert.True(t, k8sErrors.IsNotFound(err))
+}
+
+func TestTryToDeleteCDStage_PostponeDeletion(t *testing.T) {
+	scheme := runtime.NewScheme()
+	require.NoError(t, cdPipeApi.AddToScheme(scheme))
+
+	stageToRemove := &cdPipeApi.Stage{
+		ObjectMeta: metaV1.ObjectMeta{
+			Name:              "stage-name",
+			Namespace:         "stage-namespace",
+			Labels:            map[string]string{cdPipeApi.StageCdPipelineLabelName: "cd-pipeline-name"},
+			Finalizers:        []string{envLabelDeletionFinalizer},
+			DeletionTimestamp: &metaV1.Time{Time: time.Now().UTC()},
+		},
+		Spec: cdPipeApi.StageSpec{
+			CdPipeline: "cd-pipeline-name",
+			Order:      0,
+		},
+	}
+	parentStage := &cdPipeApi.Stage{
+		ObjectMeta: metaV1.ObjectMeta{
+			Name:      "stage-name2",
+			Namespace: "stage-namespace",
+			Labels:    map[string]string{cdPipeApi.StageCdPipelineLabelName: "cd-pipeline-name"},
+		},
+		Spec: cdPipeApi.StageSpec{
+			CdPipeline: "cd-pipeline-name",
+			Order:      1,
+		},
+	}
+
+	k8sClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(stageToRemove, parentStage).Build()
+
+	controller := NewReconcileStage(
+		k8sClient,
+		scheme,
+		logr.Discard(),
+		objectmodifier.NewStageBatchModifier(k8sClient, []objectmodifier.StageModifier{}),
+	)
+
+	res, err := controller.tryToDeleteCDStage(ctrl.LoggerInto(context.Background(), logr.Discard()), stageToRemove)
+	require.NoError(t, err)
+	assert.Equal(t, &reconcile.Result{RequeueAfter: waitForParentStagesDeletion}, res)
 }
 
 func TestSetFinishStatus_Success(t *testing.T) {
@@ -277,7 +321,7 @@ func TestReconcileStage_Reconcile_Success(t *testing.T) {
 		objectmodifier.NewStageBatchModifier(fakeClient, []objectmodifier.StageModifier{}),
 	)
 
-	_, err = reconcileStage.Reconcile(context.Background(), reconcile.Request{NamespacedName: types.NamespacedName{
+	_, err = reconcileStage.Reconcile(ctrl.LoggerInto(context.Background(), logr.Discard()), reconcile.Request{NamespacedName: types.NamespacedName{
 		Namespace: namespace,
 		Name:      name,
 	}})
@@ -365,7 +409,7 @@ func TestReconcileStage_ReconcileReconcile_SetOwnerRef(t *testing.T) {
 		objectmodifier.NewStageBatchModifierAll(fakeClient, scheme),
 	)
 
-	_, err := reconcileStage.Reconcile(context.Background(), reconcile.Request{NamespacedName: types.NamespacedName{
+	_, err := reconcileStage.Reconcile(ctrl.LoggerInto(context.Background(), logr.Discard()), reconcile.Request{NamespacedName: types.NamespacedName{
 		Namespace: namespace,
 		Name:      name,
 	}})
@@ -399,9 +443,125 @@ func TestReconcileStage_Reconcile_StageIsNotFound(t *testing.T) {
 	}, stage)
 	assert.True(t, k8sErrors.IsNotFound(err))
 
-	_, err = reconcileStage.Reconcile(context.Background(), reconcile.Request{NamespacedName: types.NamespacedName{
+	_, err = reconcileStage.Reconcile(ctrl.LoggerInto(context.Background(), logr.Discard()), reconcile.Request{NamespacedName: types.NamespacedName{
 		Namespace: namespace,
 		Name:      name,
 	}})
 	assert.NoError(t, err)
+}
+
+func TestReconcileStage_isLastStage(t *testing.T) {
+	t.Parallel()
+
+	scheme := runtime.NewScheme()
+	require.NoError(t, cdPipeApi.AddToScheme(scheme))
+
+	tests := []struct {
+		name    string
+		stage   *cdPipeApi.Stage
+		objects []client.Object
+		want    bool
+		wantErr require.ErrorAssertionFunc
+	}{
+		{
+			name: "should return true when stage is last",
+			stage: &cdPipeApi.Stage{
+				ObjectMeta: metaV1.ObjectMeta{
+					Name:      "stage-1",
+					Namespace: "ns-1",
+				},
+				Spec: cdPipeApi.StageSpec{
+					Order:      1,
+					CdPipeline: "cd-pipeline-1",
+				},
+			},
+			objects: []client.Object{
+				&cdPipeApi.Stage{
+					ObjectMeta: metaV1.ObjectMeta{
+						Name:      "stage-2",
+						Namespace: "ns-1",
+						Labels:    map[string]string{cdPipeApi.StageCdPipelineLabelName: "cd-pipeline-1"},
+					},
+					Spec: cdPipeApi.StageSpec{
+						Order: 0,
+					},
+				},
+			},
+			want:    true,
+			wantErr: require.NoError,
+		},
+		{
+			name: "should return true when order is equal",
+			stage: &cdPipeApi.Stage{
+				ObjectMeta: metaV1.ObjectMeta{
+					Name:      "stage-1",
+					Namespace: "ns-1",
+				},
+				Spec: cdPipeApi.StageSpec{
+					Order:      1,
+					CdPipeline: "cd-pipeline-1",
+				},
+			},
+			objects: []client.Object{
+				&cdPipeApi.Stage{
+					ObjectMeta: metaV1.ObjectMeta{
+						Name:      "stage-2",
+						Namespace: "ns-1",
+						Labels:    map[string]string{cdPipeApi.StageCdPipelineLabelName: "cd-pipeline-1"},
+					},
+					Spec: cdPipeApi.StageSpec{
+						Order: 1,
+					},
+				},
+			},
+			want:    true,
+			wantErr: require.NoError,
+		},
+		{
+			name: "should return false when stage is not last",
+			stage: &cdPipeApi.Stage{
+				ObjectMeta: metaV1.ObjectMeta{
+					Name:      "stage-1",
+					Namespace: "ns-1",
+				},
+				Spec: cdPipeApi.StageSpec{
+					Order:      0,
+					CdPipeline: "cd-pipeline-1",
+				},
+			},
+			objects: []client.Object{
+				&cdPipeApi.Stage{
+					ObjectMeta: metaV1.ObjectMeta{
+						Name:      "stage-2",
+						Namespace: "ns-1",
+						Labels:    map[string]string{cdPipeApi.StageCdPipelineLabelName: "cd-pipeline-1"},
+					},
+					Spec: cdPipeApi.StageSpec{
+						Order: 1,
+					},
+				},
+			},
+			want:    false,
+			wantErr: require.NoError,
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			k8sClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(tt.objects...).Build()
+			r := NewReconcileStage(
+				k8sClient,
+				scheme,
+				logr.Discard(),
+				objectmodifier.NewStageBatchModifierAll(k8sClient, scheme),
+			)
+
+			got, err := r.isLastStage(ctrl.LoggerInto(context.Background(), logr.Discard()), tt.stage)
+			tt.wantErr(t, err)
+			assert.Equal(t, tt.want, got)
+		})
+	}
 }

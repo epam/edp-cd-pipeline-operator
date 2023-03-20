@@ -8,7 +8,7 @@ import (
 var log = ctrl.Log.WithName("platform_util")
 
 func GetOwnerReference(ownerKind string, ors []metav1.OwnerReference) *metav1.OwnerReference {
-	log.V(2).Info("finding owner", "kind", ownerKind)
+	log.Info("Finding owner", "kind", ownerKind)
 
 	if len(ors) == 0 {
 		return nil

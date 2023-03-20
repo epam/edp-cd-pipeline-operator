@@ -93,12 +93,12 @@ func setStageLabel(ctx context.Context, stage *cdPipeApi.Stage) (bool, error) {
 		labels = make(map[string]string)
 	}
 
-	if _, ok := labels[cdPipeApi.CodebaseTypeLabelName]; ok {
-		log.Info("Stage already has label", "label", cdPipeApi.CodebaseTypeLabelName)
+	if _, ok := labels[cdPipeApi.StageCdPipelineLabelName]; ok {
+		log.Info("Stage already has label", "label", cdPipeApi.StageCdPipelineLabelName)
 		return false, nil
 	}
 
-	labels[cdPipeApi.CodebaseTypeLabelName] = stage.Spec.CdPipeline
+	labels[cdPipeApi.StageCdPipelineLabelName] = stage.Spec.CdPipeline
 	stage.SetLabels(labels)
 
 	log.Info("Stage labels were updated", "labels", labels)

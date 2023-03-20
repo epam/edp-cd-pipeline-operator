@@ -42,7 +42,7 @@ func FindPreviousStageName(ctx context.Context, k8sClient client.Client, stage *
 		ctx,
 		stages,
 		client.InNamespace(stage.Namespace),
-		client.MatchingLabels{cdPipeApi.CodebaseTypeLabelName: stage.Spec.CdPipeline},
+		client.MatchingLabels{cdPipeApi.StageCdPipelineLabelName: stage.Spec.CdPipeline},
 	); err != nil {
 		return "", fmt.Errorf("failed to list stage names: %w", err)
 	}

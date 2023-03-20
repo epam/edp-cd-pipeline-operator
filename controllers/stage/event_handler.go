@@ -44,12 +44,17 @@ func (h *PipelineEventHandler) Update(evt event.UpdateEvent, q workqueue.RateLim
 		return
 	}
 
+	if !evt.ObjectNew.GetDeletionTimestamp().IsZero() {
+		h.log.Info("CD pipeline is being deleted")
+		return
+	}
+
 	stages := &cdPipeApi.StageList{}
 	if err := h.client.List(
 		context.Background(),
 		stages,
 		client.InNamespace(evt.ObjectNew.GetNamespace()),
-		client.MatchingLabels{cdPipeApi.CodebaseTypeLabelName: evt.ObjectNew.GetName()},
+		client.MatchingLabels{cdPipeApi.StageCdPipelineLabelName: evt.ObjectNew.GetName()},
 		client.Limit(clientLimit),
 	); err != nil {
 		h.log.Error(err, "unable to get stages for cd pipeline", "cd pipeline", evt.ObjectNew.GetName())

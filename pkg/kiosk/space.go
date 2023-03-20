@@ -7,11 +7,11 @@ import (
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/pointer"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/stage/chain/util"
-	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/common"
 )
 
 const crdNameKey = "name"
@@ -100,7 +100,7 @@ func (s Space) Delete(name string) error {
 		context.Background(),
 		space,
 		&client.DeleteOptions{
-			GracePeriodSeconds: common.GetInt64P(0),
+			GracePeriodSeconds: pointer.Int64(0),
 		},
 	); err != nil {
 		return fmt.Errorf("failed to delete loft kiosk space: %w", err)

@@ -8,10 +8,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
-	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/common"
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1"
 )
@@ -104,32 +104,32 @@ func TestGetQualityGateStagesMethod_ShouldReturnParsedStagesScenarioFirst(t *tes
 		{
 			QualityGateType: "autotests",
 			StepName:        "aut1",
-			AutotestName:    common.GetStringP("aut1"),
-			BranchName:      common.GetStringP("master"),
+			AutotestName:    pointer.String("aut1"),
+			BranchName:      pointer.String("master"),
 		},
 		{
 			QualityGateType: "autotests",
 			StepName:        "aut2",
-			AutotestName:    common.GetStringP("aut2"),
-			BranchName:      common.GetStringP("master"),
+			AutotestName:    pointer.String("aut2"),
+			BranchName:      pointer.String("master"),
 		},
 		{
 			QualityGateType: "autotests",
 			StepName:        "aut3",
-			AutotestName:    common.GetStringP("aut3"),
-			BranchName:      common.GetStringP("master"),
+			AutotestName:    pointer.String("aut3"),
+			BranchName:      pointer.String("master"),
 		},
 		{
 			QualityGateType: "autotests",
 			StepName:        "aut4",
-			AutotestName:    common.GetStringP("aut4"),
-			BranchName:      common.GetStringP("master"),
+			AutotestName:    pointer.String("aut4"),
+			BranchName:      pointer.String("master"),
 		},
 		{
 			QualityGateType: "manual",
 			StepName:        "man1",
-			AutotestName:    common.GetStringP("man1"),
-			BranchName:      common.GetStringP("master"),
+			AutotestName:    pointer.String("man1"),
+			BranchName:      pointer.String("master"),
 		},
 	}
 
@@ -146,32 +146,32 @@ func TestGetQualityGateStagesMethod_ShouldReturnParsedStagesScenarioSecond(t *te
 		{
 			QualityGateType: "autotests",
 			StepName:        "aut1",
-			AutotestName:    common.GetStringP("aut1"),
-			BranchName:      common.GetStringP("master"),
+			AutotestName:    pointer.String("aut1"),
+			BranchName:      pointer.String("master"),
 		},
 		{
 			QualityGateType: "autotests",
 			StepName:        "aut3",
-			AutotestName:    common.GetStringP("aut3"),
-			BranchName:      common.GetStringP("master"),
+			AutotestName:    pointer.String("aut3"),
+			BranchName:      pointer.String("master"),
 		},
 		{
 			QualityGateType: "autotests",
 			StepName:        "aut4",
-			AutotestName:    common.GetStringP("aut4"),
-			BranchName:      common.GetStringP("master"),
+			AutotestName:    pointer.String("aut4"),
+			BranchName:      pointer.String("master"),
 		},
 		{
 			QualityGateType: "manual",
 			StepName:        "man1",
-			AutotestName:    common.GetStringP("man1"),
-			BranchName:      common.GetStringP("master"),
+			AutotestName:    pointer.String("man1"),
+			BranchName:      pointer.String("master"),
 		},
 		{
 			QualityGateType: "autotests",
 			StepName:        "aut2",
-			AutotestName:    common.GetStringP("aut2"),
-			BranchName:      common.GetStringP("master"),
+			AutotestName:    pointer.String("aut2"),
+			BranchName:      pointer.String("master"),
 		},
 	}
 
