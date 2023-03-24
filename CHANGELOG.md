@@ -1,6 +1,9 @@
 <a name="unreleased"></a>
 ## [Unreleased]
 
+
+<a name="v2.14.0"></a>
+## [v2.14.0] - 2023-03-24
 ### Features
 
 - Updated EDP components [EPMDEDP-11206](https://jiraeu.epam.com/browse/EPMDEDP-11206)
@@ -11,11 +14,17 @@
 - Create project for openshift platform [EPMDEDP-11441](https://jiraeu.epam.com/browse/EPMDEDP-11441)
 - Remove admin-console-view RBAC [EPMDEDP-11486](https://jiraeu.epam.com/browse/EPMDEDP-11486)
 - Remove Kiosk integration when using Openshift cluster [EPMDEDP-11489](https://jiraeu.epam.com/browse/EPMDEDP-11489)
+- Remove sa-registry-viewer RoleBinding after stage removing [EPMDEDP-11528](https://jiraeu.epam.com/browse/EPMDEDP-11528)
+- Add namespace creation in case Tektone CI [EPMDEDP-11528](https://jiraeu.epam.com/browse/EPMDEDP-11528)
+- RBAC for stage namespace [EPMDEDP-11528](https://jiraeu.epam.com/browse/EPMDEDP-11528)
+- Use existing namespace to deploy application [EPMDEDP-11528](https://jiraeu.epam.com/browse/EPMDEDP-11528)
 
 ### Bug Fixes
 
 - Use ProjectRequest to create openshift Project [EPMDEDP-11441](https://jiraeu.epam.com/browse/EPMDEDP-11441)
 - Create/delete openshift project without checking its existence [EPMDEDP-11441](https://jiraeu.epam.com/browse/EPMDEDP-11441)
+- Check if the project exists for openshift [EPMDEDP-11528](https://jiraeu.epam.com/browse/EPMDEDP-11528)
+- Resolve CDPipeline deletion with owned stages [EPMDEDP-11668](https://jiraeu.epam.com/browse/EPMDEDP-11668)
 
 ### Code Refactoring
 
@@ -26,6 +35,13 @@
 
 - Update current development version [EPMDEDP-10610](https://jiraeu.epam.com/browse/EPMDEDP-10610)
 - Change type of kioskEnabled parameter from string to bool [EPMDEDP-11426](https://jiraeu.epam.com/browse/EPMDEDP-11426)
+- Remove Kiosk resources from Openshift [EPMDEDP-11486](https://jiraeu.epam.com/browse/EPMDEDP-11486)
+- Update git-chglog for cd-pipeline-operator [EPMDEDP-11518](https://jiraeu.epam.com/browse/EPMDEDP-11518)
+- Disable RBAC creation if manageNamespace set to false [EPMDEDP-11528](https://jiraeu.epam.com/browse/EPMDEDP-11528)
+- Disable self-provisioner role if manageNamespace set to false [EPMDEDP-11528](https://jiraeu.epam.com/browse/EPMDEDP-11528)
+- Align RBAC to provide RBAC management in created namespace [EPMDEDP-11528](https://jiraeu.epam.com/browse/EPMDEDP-11528)
+- Bump golang.org/x/net from 0.5.0 to 0.8.0 [EPMDEDP-11578](https://jiraeu.epam.com/browse/EPMDEDP-11578)
+- Upgrade alpine image version to 3.16.4 [EPMDEDP-11764](https://jiraeu.epam.com/browse/EPMDEDP-11764)
 
 ### Documentation
 
@@ -160,12 +176,12 @@
 
 ### Code Refactoring
 
+- Add namespace field in roleRef in OKD RB, align CRB name [EPMDEDP-7279](https://jiraeu.epam.com/browse/EPMDEDP-7279)
 - Provide unique name of cluster RBAC resources [EPMDEDP-7279](https://jiraeu.epam.com/browse/EPMDEDP-7279)
 - Align RBAC according to kiosk usage [EPMDEDP-7279](https://jiraeu.epam.com/browse/EPMDEDP-7279)
 - Replace namespaces role to cluster for OKD [EPMDEDP-7279](https://jiraeu.epam.com/browse/EPMDEDP-7279)
 - Replace namespaces role to cluster for OKD [EPMDEDP-7279](https://jiraeu.epam.com/browse/EPMDEDP-7279)
 - Expand cd-pipeline-operator role [EPMDEDP-7279](https://jiraeu.epam.com/browse/EPMDEDP-7279)
-- Add namespace field in roleRef in OKD RB, align CRB name [EPMDEDP-7279](https://jiraeu.epam.com/browse/EPMDEDP-7279)
 - Replace cluster-wide role/rolebinding to namespaced [EPMDEDP-7279](https://jiraeu.epam.com/browse/EPMDEDP-7279)
 - Remake condition for simplicity [EPMDEDP-7945](https://jiraeu.epam.com/browse/EPMDEDP-7945)
 
@@ -181,8 +197,8 @@
 - Update docker image [EPMDEDP-7895](https://jiraeu.epam.com/browse/EPMDEDP-7895)
 - Update go.sum and go.mod. [EPMDEDP-7930](https://jiraeu.epam.com/browse/EPMDEDP-7930)
 - Update codebase-operator to the latest stable [EPMDEDP-7930](https://jiraeu.epam.com/browse/EPMDEDP-7930)
-- Update codebase-operator to the latest stable [EPMDEDP-7930](https://jiraeu.epam.com/browse/EPMDEDP-7930)
 - Update jenkins-operator to the latest stable [EPMDEDP-7930](https://jiraeu.epam.com/browse/EPMDEDP-7930)
+- Update codebase-operator to the latest stable [EPMDEDP-7930](https://jiraeu.epam.com/browse/EPMDEDP-7930)
 - Use custom go build step for operator [EPMDEDP-7932](https://jiraeu.epam.com/browse/EPMDEDP-7932)
 - Update go to version 1.17 [EPMDEDP-7932](https://jiraeu.epam.com/browse/EPMDEDP-7932)
 
@@ -209,7 +225,8 @@
 <a name="v2.7.0"></a>
 ## [v2.7.0] - 2021-12-03
 
-[Unreleased]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.13.0...HEAD
+[Unreleased]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.14.0...HEAD
+[v2.14.0]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.13.0...v2.14.0
 [v2.13.0]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.12.1...v2.13.0
 [v2.12.1]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.12.0...v2.12.1
 [v2.12.0]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.11.0...v2.12.0
