@@ -11,7 +11,6 @@ import (
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
 	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/stage/chain/handler"
 	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/stage/chain/util"
-	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/platform"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/rbac"
 )
 
@@ -57,25 +56,7 @@ func (h ConfigureJenkinsRbac) ServeRequest(stage *cdPipeApi.Stage) error {
 func getJenkinsAdminRoleSubjects(sourceNamespace string) []rbacApi.Subject {
 	const jenkinsServiceAccountName = "jenkins"
 
-	if !platform.IsOpenshift() {
-		return []rbacApi.Subject{
-			{
-				Kind:      rbacApi.ServiceAccountKind,
-				Name:      jenkinsServiceAccountName,
-				Namespace: sourceNamespace,
-			},
-		}
-	}
-
 	return []rbacApi.Subject{
-		{
-			Kind: rbacApi.GroupKind,
-			Name: fmt.Sprintf("%v-edp-super-admin", sourceNamespace),
-		},
-		{
-			Kind: rbacApi.GroupKind,
-			Name: fmt.Sprintf("%v-edp-admin", sourceNamespace),
-		},
 		{
 			Kind:      rbacApi.ServiceAccountKind,
 			Name:      jenkinsServiceAccountName,
