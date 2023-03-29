@@ -1,6 +1,21 @@
 <a name="unreleased"></a>
 ## [Unreleased]
 
+### Bug Fixes
+
+- Remove Jenkins admin groups from the jenkins-admin RoleBinding [EPMDEDP-11805](https://jiraeu.epam.com/browse/EPMDEDP-11805)
+
+### Routine
+
+- Update current development version [EPMDEDP-11472](https://jiraeu.epam.com/browse/EPMDEDP-11472)
+
+
+<a name="v2.14.1"></a>
+## [v2.14.1] - 2023-03-29
+### Bug Fixes
+
+- Remove Jenkins admin groups from the jenkins-admin RoleBinding [EPMDEDP-11805](https://jiraeu.epam.com/browse/EPMDEDP-11805)
+
 
 <a name="v2.14.0"></a>
 ## [v2.14.0] - 2023-03-24
@@ -225,7 +240,8 @@
 <a name="v2.7.0"></a>
 ## [v2.7.0] - 2021-12-03
 
-[Unreleased]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.14.0...HEAD
+[Unreleased]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.14.1...HEAD
+[v2.14.1]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.14.0...v2.14.1
 [v2.14.0]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.13.0...v2.14.0
 [v2.13.0]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.12.1...v2.13.0
 [v2.12.1]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.12.0...v2.12.1
