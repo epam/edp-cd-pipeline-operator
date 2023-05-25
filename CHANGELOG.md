@@ -4,10 +4,14 @@
 ### Bug Fixes
 
 - Remove Jenkins admin groups from the jenkins-admin RoleBinding [EPMDEDP-11805](https://jiraeu.epam.com/browse/EPMDEDP-11805)
+- Update github templates [EPMDEDP-11928](https://jiraeu.epam.com/browse/EPMDEDP-11928)
 
 ### Routine
 
+- Update CHANGELOG.md [EPMDEDP-11472](https://jiraeu.epam.com/browse/EPMDEDP-11472)
 - Update current development version [EPMDEDP-11472](https://jiraeu.epam.com/browse/EPMDEDP-11472)
+- Add templates for github issues [EPMDEDP-11928](https://jiraeu.epam.com/browse/EPMDEDP-11928)
+- Upgrade alpine image version to 3.18.0 [EPMDEDP-12085](https://jiraeu.epam.com/browse/EPMDEDP-12085)
 
 
 <a name="v2.14.1"></a>
