@@ -4,7 +4,10 @@ import (
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-const StageCdPipelineLabelName = "app.edp.epam.com/cdPipelineName"
+const (
+	StageCdPipelineLabelName = "app.edp.epam.com/cdPipelineName"
+	InCluster                = "in-cluster"
+)
 
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
@@ -44,6 +47,12 @@ type StageSpec struct {
 
 	// Namespace where the application will be deployed.
 	Namespace string `json:"namespace,omitempty"`
+
+	// Specifies a name of cluster where the application will be deployed.
+	// Default value is "in-cluster" which means that application will be deployed in the same cluster where CD Pipeline is running.
+	// +optional
+	// +kubebuilder:default:="in-cluster"
+	ClusterName string `json:"clusterName,omitempty"`
 }
 
 // QualityGate defines a single quality for a release.
@@ -135,9 +144,12 @@ type Stage struct {
 	Status StageStatus `json:"status,omitempty"`
 }
 
-// nolint:gocritic
-func (in Stage) IsFirst() bool {
-	return in.Spec.Order == 0
+func (s *Stage) IsFirst() bool {
+	return s.Spec.Order == 0
+}
+
+func (s *Stage) InCluster() bool {
+	return s.Spec.ClusterName == InCluster
 }
 
 // +kubebuilder:object:root=true

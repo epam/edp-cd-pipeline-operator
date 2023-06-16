@@ -331,6 +331,15 @@ StageSpec defines the desired state of Stage. NOTE: for deleting the stage use s
         </td>
         <td>true</td>
       </tr><tr>
+        <td><b>clusterName</b></td>
+        <td>string</td>
+        <td>
+          Specifies a name of cluster where the application will be deployed. Default value is "in-cluster" which means that application will be deployed in the same cluster where CD Pipeline is running.<br/>
+          <br/>
+            <i>Default</i>: in-cluster<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>namespace</b></td>
         <td>string</td>
         <td>

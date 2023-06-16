@@ -38,15 +38,23 @@ func nextServeOrNil(next handler.CdStageHandler, stage *cdPipeApi.Stage) error {
 	return nil
 }
 
-func CreateChain(ctx context.Context, c client.Client, namespace, triggerType string) handler.CdStageHandler {
-	if !cluster.JenkinsEnabled(ctx, c, namespace, log) {
-		return getTektonChain(c, triggerType)
+func CreateChain(ctx context.Context, c client.Client, stage *cdPipeApi.Stage) handler.CdStageHandler {
+	if !stage.InCluster() {
+		return createExternalClusterChain(ctx, c, stage.Spec.TriggerType)
 	}
 
-	return getDefChain(c, triggerType)
+	if !cluster.JenkinsEnabled(ctx, c, stage.Namespace, log) {
+		return getTektonChain(c, stage.Spec.TriggerType)
+	}
+
+	return getDefChain(c, stage.Spec.TriggerType)
 }
 
-func CreateDeleteChain(ctx context.Context, c client.Client) handler.CdStageHandler {
+func CreateDeleteChain(ctx context.Context, c client.Client, stage *cdPipeApi.Stage) handler.CdStageHandler {
+	if !stage.InCluster() {
+		return createExternalClusterDeleteChain(ctx, c)
+	}
+
 	return createDefDeleteChain(ctx, c)
 }
 
@@ -225,5 +233,56 @@ func createDefDeleteChain(ctx context.Context, c client.Client) handler.CdStageH
 				log:    logger.WithName("delete-registry-viewer-rbac"),
 			},
 		},
+	}
+}
+
+// getExternalClusterChain returns a chain of handlers for external cluster flow.
+func createExternalClusterChain(ctx context.Context, c client.Client, triggerType string) handler.CdStageHandler {
+	logger := ctrl.LoggerFrom(ctx)
+
+	logger.Info("External cluster chain is selected")
+
+	if consts.AutoDeployTriggerType == triggerType {
+		logger.Info("Auto-deploy chain is selected")
+
+		return PutCodebaseImageStream{
+			client: c,
+			log:    ctrl.Log.WithName(putCodebaseImageStreamChain),
+			next: RemoveLabelsFromCodebaseDockerStreamsAfterCdPipelineUpdate{
+				client: c,
+				log:    ctrl.Log.WithName("remove-labels-from-codebase-docker-streams-after-cd-pipeline-update"),
+				next: DeleteEnvironmentLabelFromCodebaseImageStreams{
+					client: c,
+					log:    ctrl.Log.WithName(deleteEnvironmentLabelFromCodebaseImageStream),
+					next: PutEnvironmentLabelToCodebaseImageStreams{
+						client: c,
+						log:    ctrl.Log.WithName("put-environment-label-to-codebase-image-streams-chain"),
+					},
+				},
+			},
+		}
+	}
+
+	logger.Info("Manual-deploy chain is selected")
+
+	return PutCodebaseImageStream{
+		client: c,
+		log:    ctrl.Log.WithName(putCodebaseImageStreamChain),
+		next: DeleteEnvironmentLabelFromCodebaseImageStreams{
+			client: c,
+			log:    ctrl.Log.WithName(deleteEnvironmentLabelFromCodebaseImageStream),
+		},
+	}
+}
+
+// createExternalClusterDeleteChain returns a chain of handlers for external cluster delete flow.
+func createExternalClusterDeleteChain(ctx context.Context, c client.Client) handler.CdStageHandler {
+	logger := ctrl.LoggerFrom(ctx)
+
+	logger.Info("Delete in external cluster chain is selected")
+
+	return DeleteEnvironmentLabelFromCodebaseImageStreams{
+		client: c,
+		log:    logger.WithName(deleteEnvironmentLabelFromCodebaseImageStream),
 	}
 }

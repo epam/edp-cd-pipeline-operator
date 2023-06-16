@@ -40,6 +40,12 @@ spec:
                 description: Name of CD pipeline which this Stage will be linked to.
                 minLength: 2
                 type: string
+              clusterName:
+                default: in-cluster
+                description: Specifies a name of cluster where the application will
+                  be deployed. Default value is "in-cluster" which means that application
+                  will be deployed in the same cluster where CD Pipeline is running.
+                type: string
               description:
                 description: A description of a stage.
                 minLength: 0
