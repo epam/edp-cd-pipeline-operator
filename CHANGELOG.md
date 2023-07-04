@@ -1,6 +1,10 @@
 <a name="unreleased"></a>
 ## [Unreleased]
 
+### Features
+
+- Stage spec add clusterName property [EPMDEDP-12169](https://jiraeu.epam.com/browse/EPMDEDP-12169)
+
 ### Bug Fixes
 
 - Remove Jenkins admin groups from the jenkins-admin RoleBinding [EPMDEDP-11805](https://jiraeu.epam.com/browse/EPMDEDP-11805)
@@ -10,8 +14,11 @@
 
 - Update CHANGELOG.md [EPMDEDP-11472](https://jiraeu.epam.com/browse/EPMDEDP-11472)
 - Update current development version [EPMDEDP-11472](https://jiraeu.epam.com/browse/EPMDEDP-11472)
+- Update current development version [EPMDEDP-11826](https://jiraeu.epam.com/browse/EPMDEDP-11826)
 - Add templates for github issues [EPMDEDP-11928](https://jiraeu.epam.com/browse/EPMDEDP-11928)
 - Upgrade alpine image version to 3.18.0 [EPMDEDP-12085](https://jiraeu.epam.com/browse/EPMDEDP-12085)
+- Add printcolumn for Stage and CDPipeline CRs [EPMDEDP-12184](https://jiraeu.epam.com/browse/EPMDEDP-12184)
+- Bump alpine docker image to 3.18.2 [EPMDEDP-12253](https://jiraeu.epam.com/browse/EPMDEDP-12253)
 
 
 <a name="v2.14.1"></a>
@@ -56,9 +63,9 @@
 - Change type of kioskEnabled parameter from string to bool [EPMDEDP-11426](https://jiraeu.epam.com/browse/EPMDEDP-11426)
 - Remove Kiosk resources from Openshift [EPMDEDP-11486](https://jiraeu.epam.com/browse/EPMDEDP-11486)
 - Update git-chglog for cd-pipeline-operator [EPMDEDP-11518](https://jiraeu.epam.com/browse/EPMDEDP-11518)
+- Align RBAC to provide RBAC management in created namespace [EPMDEDP-11528](https://jiraeu.epam.com/browse/EPMDEDP-11528)
 - Disable RBAC creation if manageNamespace set to false [EPMDEDP-11528](https://jiraeu.epam.com/browse/EPMDEDP-11528)
 - Disable self-provisioner role if manageNamespace set to false [EPMDEDP-11528](https://jiraeu.epam.com/browse/EPMDEDP-11528)
-- Align RBAC to provide RBAC management in created namespace [EPMDEDP-11528](https://jiraeu.epam.com/browse/EPMDEDP-11528)
 - Bump golang.org/x/net from 0.5.0 to 0.8.0 [EPMDEDP-11578](https://jiraeu.epam.com/browse/EPMDEDP-11578)
 - Upgrade alpine image version to 3.16.4 [EPMDEDP-11764](https://jiraeu.epam.com/browse/EPMDEDP-11764)
 
@@ -195,12 +202,12 @@
 
 ### Code Refactoring
 
-- Add namespace field in roleRef in OKD RB, align CRB name [EPMDEDP-7279](https://jiraeu.epam.com/browse/EPMDEDP-7279)
 - Provide unique name of cluster RBAC resources [EPMDEDP-7279](https://jiraeu.epam.com/browse/EPMDEDP-7279)
 - Align RBAC according to kiosk usage [EPMDEDP-7279](https://jiraeu.epam.com/browse/EPMDEDP-7279)
 - Replace namespaces role to cluster for OKD [EPMDEDP-7279](https://jiraeu.epam.com/browse/EPMDEDP-7279)
 - Replace namespaces role to cluster for OKD [EPMDEDP-7279](https://jiraeu.epam.com/browse/EPMDEDP-7279)
 - Expand cd-pipeline-operator role [EPMDEDP-7279](https://jiraeu.epam.com/browse/EPMDEDP-7279)
+- Add namespace field in roleRef in OKD RB, align CRB name [EPMDEDP-7279](https://jiraeu.epam.com/browse/EPMDEDP-7279)
 - Replace cluster-wide role/rolebinding to namespaced [EPMDEDP-7279](https://jiraeu.epam.com/browse/EPMDEDP-7279)
 - Remake condition for simplicity [EPMDEDP-7945](https://jiraeu.epam.com/browse/EPMDEDP-7945)
 
@@ -216,8 +223,8 @@
 - Update docker image [EPMDEDP-7895](https://jiraeu.epam.com/browse/EPMDEDP-7895)
 - Update go.sum and go.mod. [EPMDEDP-7930](https://jiraeu.epam.com/browse/EPMDEDP-7930)
 - Update codebase-operator to the latest stable [EPMDEDP-7930](https://jiraeu.epam.com/browse/EPMDEDP-7930)
-- Update jenkins-operator to the latest stable [EPMDEDP-7930](https://jiraeu.epam.com/browse/EPMDEDP-7930)
 - Update codebase-operator to the latest stable [EPMDEDP-7930](https://jiraeu.epam.com/browse/EPMDEDP-7930)
+- Update jenkins-operator to the latest stable [EPMDEDP-7930](https://jiraeu.epam.com/browse/EPMDEDP-7930)
 - Use custom go build step for operator [EPMDEDP-7932](https://jiraeu.epam.com/browse/EPMDEDP-7932)
 - Update go to version 1.17 [EPMDEDP-7932](https://jiraeu.epam.com/browse/EPMDEDP-7932)
 
