@@ -15,7 +15,17 @@ spec:
     singular: cdpipeline
   scope: Namespaced
   versions:
-  - name: v1
+  - additionalPrinterColumns:
+    - description: This flag indicates neither CDPipeline are initialized and ready
+        to work
+      jsonPath: .status.available
+      name: Available
+      type: string
+    - description: Specifies a current status of CDPipeline
+      jsonPath: .status.status
+      name: Status
+      type: string
+    name: v1
     schema:
       openAPIV3Schema:
         description: CDPipeline is the Schema for the cdpipelines API.

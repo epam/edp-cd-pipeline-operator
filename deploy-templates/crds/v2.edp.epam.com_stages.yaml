@@ -15,7 +15,24 @@ spec:
     singular: stage
   scope: Namespaced
   versions:
-  - name: v1
+  - additionalPrinterColumns:
+    - description: Is resource available
+      jsonPath: .status.available
+      name: Available
+      type: boolean
+    - description: CDPipeline that owns the Stage
+      jsonPath: .spec.cdPipeline
+      name: CDPipeline Name
+      type: string
+    - description: Stage deployment trigger type. E.g. Manual, Auto
+      jsonPath: .spec.triggerType
+      name: Trigger Type
+      type: string
+    - description: The order in the CDPipeline promotion flow (starts from 0)
+      jsonPath: .spec.order
+      name: Order
+      type: integer
+    name: v1
     schema:
       openAPIV3Schema:
         description: Stage is the Schema for the stages API.

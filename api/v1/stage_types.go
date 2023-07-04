@@ -134,6 +134,10 @@ type StageStatus struct {
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +kubebuilder:storageversion
+// +kubebuilder:printcolumn:name="Available",type="boolean",JSONPath=".status.available",description="Is resource available"
+// +kubebuilder:printcolumn:name="CDPipeline Name",type="string",JSONPath=".spec.cdPipeline",description="CDPipeline that owns the Stage"
+// +kubebuilder:printcolumn:name="Trigger Type",type="string",JSONPath=".spec.triggerType",description="Stage deployment trigger type. E.g. Manual, Auto"
+// +kubebuilder:printcolumn:name="Order",type="integer",JSONPath=".spec.order",description="The order in the CDPipeline promotion flow (starts from 0)"
 
 // Stage is the Schema for the stages API.
 type Stage struct {

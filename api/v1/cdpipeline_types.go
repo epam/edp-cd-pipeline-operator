@@ -87,6 +87,8 @@ type CDPipelineStatus struct {
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +kubebuilder:storageversion
+// +kubebuilder:printcolumn:name="Available",type="string",JSONPath=".status.available",description="This flag indicates neither CDPipeline are initialized and ready to work"
+// +kubebuilder:printcolumn:name="Status",type="string",JSONPath=".status.status",description="Specifies a current status of CDPipeline"
 
 // CDPipeline is the Schema for the cdpipelines API.
 type CDPipeline struct {
