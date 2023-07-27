@@ -15,6 +15,7 @@ import (
 const (
 	crNameLogKey    = "name"
 	ClusterRoleKind = "ClusterRole"
+	RoleKind        = "Role"
 )
 
 type Manager interface {

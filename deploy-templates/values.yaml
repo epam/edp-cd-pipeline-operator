@@ -28,3 +28,6 @@ resources:
 
 # -- should the operator manage(create/delete) namespaces for stages
 manageNamespace: true
+
+# -- manageSecrets is a flag that indicates whether the operator should manage secrets for stages
+manageSecrets: false

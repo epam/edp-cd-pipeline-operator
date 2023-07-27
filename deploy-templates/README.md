@@ -30,6 +30,7 @@ A Helm chart for EDP CD Pipeline Operator
 | image.tag | string | `nil` | EDP cd-pipeline-operator Docker image tag. The released image can be found on [Dockerhub](https://hub.docker.com/r/epamedp/cd-pipeline-operator/tags) |
 | imagePullPolicy | string | `"IfNotPresent"` |  |
 | manageNamespace | bool | `true` | should the operator manage(create/delete) namespaces for stages |
+| manageSecrets | bool | `false` | manageSecrets is a flag that indicates whether the operator should manage secrets for stages |
 | name | string | `"cd-pipeline-operator"` | component name |
 | nodeSelector | object | `{}` |  |
 | resources.limits.memory | string | `"192Mi"` |  |

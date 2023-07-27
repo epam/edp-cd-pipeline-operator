@@ -7,6 +7,7 @@ import (
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
 	projectApi "github.com/openshift/api/project/v1"
+	corev1 "k8s.io/api/core/v1"
 	k8sApi "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -70,6 +71,7 @@ func main() {
 	utilruntime.Must(edpCompApi.AddToScheme(scheme))
 	utilruntime.Must(jenkinsApi.AddToScheme(scheme))
 	utilruntime.Must(k8sApi.AddToScheme(scheme))
+	utilruntime.Must(corev1.AddToScheme(scheme))
 	utilruntime.Must(projectApi.AddToScheme(scheme))
 
 	v := buildInfo.Get()

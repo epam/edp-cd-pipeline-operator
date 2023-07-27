@@ -22,6 +22,7 @@ const (
 	logKeyRegistryViewerRbac                      = "sa-registry-viewer-rbac"
 	logKeyTenantAdminRbac                         = "tenant-admin-rbac"
 	logKeyPutNamespace                            = "put-namespace"
+	logKeyManageSecretsRBAC                       = "manage-secrets-rbac"
 )
 
 func nextServeOrNil(next handler.CdStageHandler, stage *cdPipeApi.Stage) error {
@@ -91,6 +92,10 @@ func getDefChain(c client.Client, triggerType string) handler.CdStageHandler {
 										next: PutEnvironmentLabelToCodebaseImageStreams{
 											client: c,
 											log:    ctrl.Log.WithName("put-environment-label-to-codebase-image-streams"),
+											next: ConfigureManageSecretsRBAC{
+												client: c,
+												log:    ctrl.Log.WithName(logKeyManageSecretsRBAC),
+											},
 										},
 									},
 								},
@@ -132,6 +137,10 @@ func getDefChain(c client.Client, triggerType string) handler.CdStageHandler {
 							next: DeleteEnvironmentLabelFromCodebaseImageStreams{
 								client: c,
 								log:    ctrl.Log.WithName(deleteEnvironmentLabelFromCodebaseImageStream),
+								next: ConfigureManageSecretsRBAC{
+									client: c,
+									log:    ctrl.Log.WithName(logKeyManageSecretsRBAC),
+								},
 							},
 						},
 					},
@@ -180,6 +189,10 @@ func getTektonChain(c client.Client, triggerType string) handler.CdStageHandler 
 									client: c,
 									log:    ctrl.Log.WithName(logKeyTenantAdminRbac),
 									rbac:   rbacManager,
+									next: ConfigureManageSecretsRBAC{
+										client: c,
+										log:    ctrl.Log.WithName(logKeyManageSecretsRBAC),
+									},
 								},
 							},
 						},
@@ -208,6 +221,10 @@ func getTektonChain(c client.Client, triggerType string) handler.CdStageHandler 
 						client: c,
 						log:    ctrl.Log.WithName(logKeyTenantAdminRbac),
 						rbac:   rbacManager,
+						next: ConfigureManageSecretsRBAC{
+							client: c,
+							log:    ctrl.Log.WithName(logKeyManageSecretsRBAC),
+						},
 					},
 				},
 			},

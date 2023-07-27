@@ -48,6 +48,8 @@ spec:
             {{- end }}
             - name: MANAGE_NAMESPACE
               value: "{{ .Values.manageNamespace }}"
+            - name: MANAGE_SECRETS
+              value: "{{ .Values.manageSecrets }}"
           resources:
 {{ toYaml .Values.resources | indent 12 }}
       {{- with .Values.nodeSelector }}
