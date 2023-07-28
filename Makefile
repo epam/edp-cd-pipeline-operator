@@ -82,7 +82,7 @@ vet:  ## Run go vet
 	go vet ./...
 
 lint: golangci-lint ## Run go lint
-	${GOLANGCILINT} run
+	${GOLANGCILINT} run --timeout=10m -v
 
 .PHONY: build
 build: clean ## build operator's binary

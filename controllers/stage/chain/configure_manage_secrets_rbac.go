@@ -204,10 +204,23 @@ func (h ConfigureManageSecretsRBAC) createExternalSecret(
 		},
 		"data": []interface{}{
 			map[string]interface{}{
-				"secretKey": ".dockerconfigjson",
+				"secretKey": "secretValue",
 				"remoteRef": map[string]interface{}{
-					"key":      "regcred",
-					"property": ".dockerconfigjson",
+					"key":                "regcred",
+					"property":           ".dockerconfigjson",
+					"decodingStrategy":   "None",
+					"conversionStrategy": "Default",
+				},
+			},
+		},
+		"target": map[string]interface{}{
+			"creationPolicy": "Owner",
+			"deletionPolicy": "Retain",
+			"template": map[string]interface{}{
+				"engineVersion": "v2",
+				"type":          "kubernetes.io/dockerconfigjson",
+				"data": map[string]interface{}{
+					".dockerconfigjson": "{{ .secretValue | toString }}",
 				},
 			},
 		},
