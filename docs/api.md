@@ -289,13 +289,6 @@ StageSpec defines the desired state of Stage. NOTE: for deleting the stage use s
         </td>
         <td>true</td>
       </tr><tr>
-        <td><b>jobProvisioning</b></td>
-        <td>string</td>
-        <td>
-          CD Job Provisioner for Pipeline. E.g.<br/>
-        </td>
-        <td>true</td>
-      </tr><tr>
         <td><b>name</b></td>
         <td>string</td>
         <td>
@@ -317,13 +310,6 @@ StageSpec defines the desired state of Stage. NOTE: for deleting the stage use s
         </td>
         <td>true</td>
       </tr><tr>
-        <td><b><a href="#stagespecsource">source</a></b></td>
-        <td>object</td>
-        <td>
-          Specifies a source of a pipeline library which will run release<br/>
-        </td>
-        <td>true</td>
-      </tr><tr>
         <td><b>triggerType</b></td>
         <td>string</td>
         <td>
@@ -340,10 +326,26 @@ StageSpec defines the desired state of Stage. NOTE: for deleting the stage use s
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>jobProvisioning</b></td>
+        <td>string</td>
+        <td>
+          CD Job Provisioner for Pipeline. E.g.<br/>
+          <br/>
+            <i>Default</i>: default<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>namespace</b></td>
         <td>string</td>
         <td>
           Namespace where the application will be deployed.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#stagespecsource">source</a></b></td>
+        <td>object</td>
+        <td>
+          Specifies a source of a pipeline library which will run release<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -415,17 +417,19 @@ Specifies a source of a pipeline library which will run release
         </tr>
     </thead>
     <tbody><tr>
-        <td><b>type</b></td>
-        <td>string</td>
-        <td>
-          Type of pipeline library, e.g. default, library<br/>
-        </td>
-        <td>true</td>
-      </tr><tr>
         <td><b><a href="#stagespecsourcelibrary">library</a></b></td>
         <td>object</td>
         <td>
           A reference to a non default source library<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>type</b></td>
+        <td>string</td>
+        <td>
+          Type of pipeline library, e.g. default, library<br/>
+          <br/>
+            <i>Default</i>: default<br/>
         </td>
         <td>false</td>
       </tr></tbody>

@@ -40,10 +40,14 @@ type StageSpec struct {
 	QualityGates []QualityGate `json:"qualityGates"`
 
 	// Specifies a source of a pipeline library which will run release
-	Source Source `json:"source"`
+	// +optional
+	// +nullable
+	Source *Source `json:"source,omitempty"`
 
 	// CD Job Provisioner for Pipeline. E.g.
-	JobProvisioning string `json:"jobProvisioning"`
+	// +optional
+	// +kubebuilder:default:="default"
+	JobProvisioning string `json:"jobProvisioning,omitempty"`
 
 	// Namespace where the application will be deployed.
 	Namespace string `json:"namespace,omitempty"`
@@ -79,7 +83,8 @@ type QualityGate struct {
 // Source defines a pipeline library.
 type Source struct {
 	// Type of pipeline library, e.g. default, library
-	Type string `json:"type"`
+	// +kubebuilder:default:="default"
+	Type string `json:"type,omitempty"`
 
 	// A reference to a non default source library
 	// +nullable

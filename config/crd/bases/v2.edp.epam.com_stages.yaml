@@ -68,6 +68,7 @@ spec:
                 minLength: 0
                 type: string
               jobProvisioning:
+                default: default
                 description: CD Job Provisioner for Pipeline. E.g.
                 type: string
               name:
@@ -109,6 +110,7 @@ spec:
               source:
                 description: Specifies a source of a pipeline library which will run
                   release
+                nullable: true
                 properties:
                   library:
                     description: A reference to a non default source library
@@ -122,10 +124,9 @@ spec:
                         type: string
                     type: object
                   type:
+                    default: default
                     description: Type of pipeline library, e.g. default, library
                     type: string
-                required:
-                - type
                 type: object
               triggerType:
                 description: Stage deployment trigger type. E.g. Manual, Auto
@@ -133,11 +134,9 @@ spec:
             required:
             - cdPipeline
             - description
-            - jobProvisioning
             - name
             - order
             - qualityGates
-            - source
             - triggerType
             type: object
           status:
