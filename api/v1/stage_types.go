@@ -41,8 +41,8 @@ type StageSpec struct {
 
 	// Specifies a source of a pipeline library which will run release
 	// +optional
-	// +nullable
-	Source *Source `json:"source,omitempty"`
+	// +kubebuilder:default:={type: "default"}
+	Source Source `json:"source"`
 
 	// CD Job Provisioner for Pipeline. E.g.
 	// +optional

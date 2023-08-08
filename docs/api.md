@@ -346,6 +346,8 @@ StageSpec defines the desired state of Stage. NOTE: for deleting the stage use s
         <td>object</td>
         <td>
           Specifies a source of a pipeline library which will run release<br/>
+          <br/>
+            <i>Default</i>: map[type:default]<br/>
         </td>
         <td>false</td>
       </tr></tbody>

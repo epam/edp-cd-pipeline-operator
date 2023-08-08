@@ -108,9 +108,10 @@ spec:
                   type: object
                 type: array
               source:
+                default:
+                  type: default
                 description: Specifies a source of a pipeline library which will run
                   release
-                nullable: true
                 properties:
                   library:
                     description: A reference to a non default source library

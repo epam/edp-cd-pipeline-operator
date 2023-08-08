@@ -2,7 +2,6 @@ package chain
 
 import (
 	"encoding/json"
-	"github.com/stretchr/testify/require"
 	"testing"
 
 	"github.com/go-logr/logr"
@@ -63,7 +62,7 @@ func putJenkinsJobCreateStage(t *testing.T) *cdPipeApi.Stage {
 					QualityGateType: "autotests",
 				},
 			},
-			Source: &cdPipeApi.Source{
+			Source: cdPipeApi.Source{
 				Type: "library",
 				Library: cdPipeApi.Library{
 					Name:   library,
@@ -212,7 +211,7 @@ func TestCreateJenkinsJobConfig_Success(t *testing.T) {
 					QualityGateType: "autotests",
 				},
 			},
-			Source: &cdPipeApi.Source{},
+			Source: cdPipeApi.Source{},
 		},
 	}
 
@@ -228,25 +227,6 @@ func TestCreateJenkinsJobConfig_Success(t *testing.T) {
 	err = json.Unmarshal(resultJson, &result)
 	assert.NoError(t, err)
 	assert.Equal(t, deploymentType, result["DEPLOYMENT_TYPE"])
-}
-
-func TestCreateJenkinsJobConfig_FailedToGetSource(t *testing.T) {
-	stage := &cdPipeApi.Stage{
-		Spec: cdPipeApi.StageSpec{
-			QualityGates: []cdPipeApi.QualityGate{
-				{
-					QualityGateType: "autotests",
-				},
-			},
-		},
-	}
-
-	putJenkinsJob := PutJenkinsJob{}
-
-	resultJson, err := putJenkinsJob.createJenkinsJobConfig(stage)
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "stage source is required for creating JenkinsJob")
-	assert.Nil(t, resultJson)
 }
 
 func TestCreateJenkinsJobConfig_WithLibraryParams(t *testing.T) {

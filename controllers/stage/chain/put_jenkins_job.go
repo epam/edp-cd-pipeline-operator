@@ -3,7 +3,6 @@ package chain
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"strings"
 
@@ -128,10 +127,6 @@ func (h PutJenkinsJob) tryToUpdateJenkinsJobConfig(stage *cdPipeApi.Stage) error
 }
 
 func (h PutJenkinsJob) createJenkinsJobConfig(stage *cdPipeApi.Stage) ([]byte, error) {
-	if stage.Spec.Source == nil {
-		return nil, errors.New("stage source is required for creating JenkinsJob")
-	}
-
 	qgStages, err := getQualityGateStages(stage.Spec.QualityGates)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse quality gate stages: %w", err)
