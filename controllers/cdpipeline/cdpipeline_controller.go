@@ -89,6 +89,10 @@ func (r *ReconcileCDPipeline) Reconcile(ctx context.Context, request reconcile.R
 		return reconcile.Result{}, fmt.Errorf("failed to get pipeline: %w", err)
 	}
 
+	if err := r.applyDefaults(ctx, pipeline); err != nil {
+		return reconcile.Result{}, err
+	}
+
 	result, err := r.tryToDeletePipeline(ctx, pipeline)
 	if err != nil {
 		return reconcile.Result{}, err
@@ -229,4 +233,16 @@ func (r *ReconcileCDPipeline) hasActiveOwnedStages(ctx context.Context, pipeline
 	}
 
 	return len(stages.Items) > 0, nil
+}
+
+func (r *ReconcileCDPipeline) applyDefaults(ctx context.Context, pipeline *cdPipeApi.CDPipeline) error {
+	if pipeline.Spec.ApplicationsToPromote == nil {
+		// currently it is not possible to set default as empty slice in the CRD definition by controller-gen
+		pipeline.Spec.ApplicationsToPromote = []string{}
+		if err := r.client.Update(ctx, pipeline); err != nil {
+			return fmt.Errorf("failed to update pipeline: %w", err)
+		}
+	}
+
+	return nil
 }

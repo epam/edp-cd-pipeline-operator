@@ -29,7 +29,7 @@ type CDPipelineSpec struct {
 	// A list of applications which will promote after successful release.
 	// +nullable
 	// +optional
-	ApplicationsToPromote []string `json:"applicationsToPromote,omitempty"`
+	ApplicationsToPromote []string `json:"applicationsToPromote"`
 }
 
 type ActionType string
