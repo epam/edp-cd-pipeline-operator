@@ -213,7 +213,7 @@ func (r *ReconcileCDPipeline) createJenkinsFolder(ctx context.Context, p *cdPipe
 			return nil
 		}
 
-		return fmt.Errorf("failed to reate jenkins folder %v: %w", jfn, err)
+		return fmt.Errorf("failed to create jenkins folder %v: %w", jfn, err)
 	}
 
 	log.Info("JenkinsFolder CR has been created", "name", jfn)

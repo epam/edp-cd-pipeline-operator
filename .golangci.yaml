@@ -52,7 +52,6 @@ linters:
     - containedctx
     - cyclop
     - decorder
-    - depguard
     - dogsled
     - dupl
     - durationcheck
@@ -177,15 +176,6 @@ linters-settings:
     # should ignore tests (default false)
     skip-tests: false
 
-  depguard:
-    list-type: blacklist
-    include-go-root: false
-    packages:
-      - github.com/sirupsen/logrus
-    packages-with-error-message:
-      # specify an error message to output when a blacklisted package is used
-      - github.com/sirupsen/logrus: "logging is allowed only by logutils.Log"
-
   dogsled:
     # checks assignments with too many blank identifiers; default is 2
     max-blank-identifiers: 2
@@ -270,7 +260,7 @@ linters-settings:
       - ^print.*$
       - 'fmt\.Print.*'
     # Exclude godoc examples from forbidigo checks.  Default is true.
-    exclude_godoc_examples: false
+    exclude-godoc-examples: false
 
   funlen:
     lines: 60

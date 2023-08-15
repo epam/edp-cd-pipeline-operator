@@ -103,7 +103,7 @@ func (r *ReconcileStage) Reconcile(ctx context.Context, request reconcile.Reques
 			return reconcile.Result{}, nil
 		}
 
-		return reconcile.Result{}, fmt.Errorf("failed to get namespace: %w", err)
+		return reconcile.Result{}, fmt.Errorf("failed to get stage: %w", err)
 	}
 
 	patched, err := r.stageModifier.Apply(ctx, stage)
