@@ -1,14 +1,23 @@
 <a name="unreleased"></a>
 ## [Unreleased]
 
+
+<a name="v2.15.0"></a>
+## [v2.15.0] - 2023-08-15
 ### Features
 
+- Stage.spec.source add default value [EPMDEDP-11389](https://jiraeu.epam.com/browse/EPMDEDP-11389)
+- Make Stage.spec.jobProvisioning and source optional [EPMDEDP-11389](https://jiraeu.epam.com/browse/EPMDEDP-11389)
 - Stage spec add clusterName property [EPMDEDP-12169](https://jiraeu.epam.com/browse/EPMDEDP-12169)
+- Use credentials of private registry in CD namespaces [EPMDEDP-12315](https://jiraeu.epam.com/browse/EPMDEDP-12315)
 
 ### Bug Fixes
 
 - Remove Jenkins admin groups from the jenkins-admin RoleBinding [EPMDEDP-11805](https://jiraeu.epam.com/browse/EPMDEDP-11805)
 - Update github templates [EPMDEDP-11928](https://jiraeu.epam.com/browse/EPMDEDP-11928)
+- ExternalSecret configuration [EPMDEDP-12315](https://jiraeu.epam.com/browse/EPMDEDP-12315)
+- Add empty array as default value for CDPipeline applicationsToPromote [EPMDEDP-12334](https://jiraeu.epam.com/browse/EPMDEDP-12334)
+- Fix deployment command [EPMDEDP-12465](https://jiraeu.epam.com/browse/EPMDEDP-12465)
 
 ### Routine
 
@@ -19,6 +28,12 @@
 - Upgrade alpine image version to 3.18.0 [EPMDEDP-12085](https://jiraeu.epam.com/browse/EPMDEDP-12085)
 - Add printcolumn for Stage and CDPipeline CRs [EPMDEDP-12184](https://jiraeu.epam.com/browse/EPMDEDP-12184)
 - Bump alpine docker image to 3.18.2 [EPMDEDP-12253](https://jiraeu.epam.com/browse/EPMDEDP-12253)
+- Bump alpine docker image to 3.18.2 [EPMDEDP-12253](https://jiraeu.epam.com/browse/EPMDEDP-12253)
+- Switch to distroless container image [EPMDEDP-12465](https://jiraeu.epam.com/browse/EPMDEDP-12465)
+
+### Documentation
+
+- Add description of the Autodeploy feature to the arch.md file [EPMDEDP-11438](https://jiraeu.epam.com/browse/EPMDEDP-11438)
 
 
 <a name="v2.14.1"></a>
@@ -251,7 +266,8 @@
 <a name="v2.7.0"></a>
 ## [v2.7.0] - 2021-12-03
 
-[Unreleased]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.14.1...HEAD
+[Unreleased]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.15.0...HEAD
+[v2.15.0]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.14.1...v2.15.0
 [v2.14.1]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.14.0...v2.14.1
 [v2.14.0]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.13.0...v2.14.0
 [v2.13.0]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.12.1...v2.13.0
