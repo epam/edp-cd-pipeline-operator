@@ -30,14 +30,16 @@ func TestPutNamespace_CreateNs(t *testing.T) {
 			Name:      name,
 			Namespace: namespace,
 		},
+		Spec: cdPipeApi.StageSpec{
+			Namespace: "default-stage-1",
+		},
 	}
 	err := ch.ServeRequest(s)
 	assert.NoError(t, err)
 
 	ns := &v1.Namespace{}
-	n := fmt.Sprintf("%v-%v", namespace, name)
-	err = ch.client.Get(context.TODO(), types.NamespacedName{
-		Name: n,
+	err = ch.client.Get(context.Background(), types.NamespacedName{
+		Name: s.Spec.Namespace,
 	}, ns)
 	assert.NoError(t, err)
 }
@@ -57,6 +59,9 @@ func TestPutNamespace_NSExists(t *testing.T) {
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
+		},
+		Spec: cdPipeApi.StageSpec{
+			Namespace: ns.Name,
 		},
 	}
 	err := ch.ServeRequest(s)

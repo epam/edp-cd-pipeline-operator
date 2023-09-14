@@ -6,11 +6,13 @@ import (
 )
 
 const (
-	TypeEnv            = "PLATFORM_TYPE"
-	Openshift          = "openshift"
-	Kubernetes         = "kubernetes"
-	KioskEnabledEnv    = "KIOSK_ENABLED"
-	ManageNamespaceEnv = "MANAGE_NAMESPACE"
+	TypeEnv              = "PLATFORM_TYPE"
+	TenancyEngineEnv     = "TENANCY_ENGINE"
+	ManageNamespaceEnv   = "MANAGE_NAMESPACE"
+	Openshift            = "openshift"
+	Kubernetes           = "kubernetes"
+	TenancyEngineKiosk   = "kiosk"
+	TenancyEngineCapsule = "capsule"
 )
 
 func GetPlatformTypeEnv() string {
@@ -33,19 +35,13 @@ func IsOpenshift() bool {
 }
 
 // KioskEnabled returns true if kiosk is enabled.
-// It is enabled if the environment variable KIOSK_ENABLED is set to true.
 func KioskEnabled() bool {
-	enabled, ok := os.LookupEnv(KioskEnabledEnv)
-	if !ok {
-		return false
-	}
+	return os.Getenv(TenancyEngineEnv) == TenancyEngineKiosk
+}
 
-	b, err := strconv.ParseBool(enabled)
-	if err != nil {
-		return false
-	}
-
-	return b
+// CapsuleEnabled returns true if capsule is enabled.
+func CapsuleEnabled() bool {
+	return os.Getenv(TenancyEngineEnv) == TenancyEngineCapsule
 }
 
 // ManageNamespace returns true if namespace should be managed by the operator.

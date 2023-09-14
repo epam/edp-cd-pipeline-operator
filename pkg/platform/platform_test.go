@@ -81,14 +81,14 @@ func TestKioskEnabled(t *testing.T) {
 		{
 			name: "kiosk is enabled",
 			setEnv: func(t *testing.T) {
-				t.Setenv(KioskEnabledEnv, "true")
+				t.Setenv(TenancyEngineEnv, TenancyEngineKiosk)
 			},
 			want: true,
 		},
 		{
-			name: "kiosk is disabled",
+			name: "kiosk is not enabled",
 			setEnv: func(t *testing.T) {
-				t.Setenv(KioskEnabledEnv, "false")
+				t.Setenv(TenancyEngineEnv, TenancyEngineCapsule)
 			},
 			want: false,
 		},

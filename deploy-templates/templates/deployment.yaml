@@ -34,16 +34,10 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
-            - name: POD_NAME
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.name
             - name: PLATFORM_TYPE
               value: {{ .Values.global.platform }}
-            {{- if eq .Values.global.platform "kubernetes" }}
-            - name: KIOSK_ENABLED
-              value: "{{ .Values.global.kioskEnabled }}"
-            {{- end }}
+            - name: TENANCY_ENGINE
+              value: "{{ .Values.global.tenancyEngine }}"
             - name: MANAGE_NAMESPACE
               value: "{{ .Values.manageNamespace }}"
             - name: MANAGE_SECRETS

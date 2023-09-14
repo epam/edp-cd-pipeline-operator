@@ -47,7 +47,11 @@ func (c DelegateNamespaceDeletion) ServeRequest(stage *cdPipeApi.Stage) error {
 			}, stage)
 		}
 
-		logger.Info("Kiosk is disabled")
+		if platform.CapsuleEnabled() {
+			logger.Info("Capsule is enabled")
+		} else {
+			logger.Info("None of multi-tenancy engines is enabled")
+		}
 
 		return nextServeOrNil(DeleteNamespace(c), stage)
 	}

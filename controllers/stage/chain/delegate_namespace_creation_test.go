@@ -14,7 +14,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
-	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/stage/chain/util"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/kiosk"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/platform"
 )
@@ -43,13 +42,16 @@ func TestDelegateNamespaceCreation_ServeRequest(t *testing.T) {
 					Name:      "stage-1",
 					Namespace: "default",
 				},
+				Spec: cdPipeApi.StageSpec{
+					Namespace: "default-stage-1",
+				},
 			},
 			wantErr: require.NoError,
 			wantAssert: func(t *testing.T, c client.Client, s *cdPipeApi.Stage) {
 				require.NoError(t,
 					c.Get(
 						context.Background(),
-						client.ObjectKey{Name: util.GenerateNamespaceName(s)}, &projectApi.ProjectRequest{},
+						client.ObjectKey{Name: s.Spec.Namespace}, &projectApi.ProjectRequest{},
 					),
 				)
 			},
@@ -64,13 +66,16 @@ func TestDelegateNamespaceCreation_ServeRequest(t *testing.T) {
 					Name:      "stage-1",
 					Namespace: "default",
 				},
+				Spec: cdPipeApi.StageSpec{
+					Namespace: "default-stage-1",
+				},
 			},
 			wantErr: require.NoError,
 			wantAssert: func(t *testing.T, c client.Client, s *cdPipeApi.Stage) {
 				require.NoError(t,
 					c.Get(
 						context.Background(),
-						client.ObjectKey{Name: util.GenerateNamespaceName(s)}, &corev1.Namespace{},
+						client.ObjectKey{Name: s.Spec.Namespace}, &corev1.Namespace{},
 					),
 				)
 			},
@@ -79,12 +84,15 @@ func TestDelegateNamespaceCreation_ServeRequest(t *testing.T) {
 			name: "creation of kiosk space is successful",
 			prepare: func(t *testing.T) {
 				t.Setenv(platform.TypeEnv, platform.Kubernetes)
-				t.Setenv(platform.KioskEnabledEnv, "true")
+				t.Setenv(platform.TenancyEngineEnv, platform.TenancyEngineKiosk)
 			},
 			stage: &cdPipeApi.Stage{
 				ObjectMeta: metaV1.ObjectMeta{
 					Name:      "stage-1",
 					Namespace: "default",
+				},
+				Spec: cdPipeApi.StageSpec{
+					Namespace: "default-stage-1",
 				},
 			},
 			wantErr: require.NoError,
@@ -94,7 +102,7 @@ func TestDelegateNamespaceCreation_ServeRequest(t *testing.T) {
 				require.NoError(t,
 					c.Get(
 						context.Background(),
-						client.ObjectKey{Name: util.GenerateNamespaceName(s)}, space,
+						client.ObjectKey{Name: s.Spec.Namespace}, space,
 					),
 				)
 			},
@@ -106,6 +114,9 @@ func TestDelegateNamespaceCreation_ServeRequest(t *testing.T) {
 					Name:      "stage-1",
 					Namespace: "default",
 				},
+				Spec: cdPipeApi.StageSpec{
+					Namespace: "default-stage-1",
+				},
 			},
 			prepare: func(t *testing.T) {
 			},
@@ -114,7 +125,7 @@ func TestDelegateNamespaceCreation_ServeRequest(t *testing.T) {
 				require.NoError(t,
 					c.Get(
 						context.Background(),
-						client.ObjectKey{Name: util.GenerateNamespaceName(s)}, &corev1.Namespace{},
+						client.ObjectKey{Name: s.Spec.Namespace}, &corev1.Namespace{},
 					),
 				)
 			},
@@ -126,6 +137,9 @@ func TestDelegateNamespaceCreation_ServeRequest(t *testing.T) {
 					Name:      "stage-1",
 					Namespace: "default",
 				},
+				Spec: cdPipeApi.StageSpec{
+					Namespace: "default-stage-1",
+				},
 			},
 			prepare: func(t *testing.T) {
 				t.Setenv(platform.ManageNamespaceEnv, "false")
@@ -134,12 +148,7 @@ func TestDelegateNamespaceCreation_ServeRequest(t *testing.T) {
 			objects: []client.Object{
 				&corev1.Namespace{
 					ObjectMeta: metaV1.ObjectMeta{
-						Name: util.GenerateNamespaceName(&cdPipeApi.Stage{
-							ObjectMeta: metaV1.ObjectMeta{
-								Name:      "stage-1",
-								Namespace: "default",
-							},
-						}),
+						Name: "default-stage-1",
 					},
 				},
 			},
@@ -152,6 +161,9 @@ func TestDelegateNamespaceCreation_ServeRequest(t *testing.T) {
 				ObjectMeta: metaV1.ObjectMeta{
 					Name:      "stage-1",
 					Namespace: "default",
+				},
+				Spec: cdPipeApi.StageSpec{
+					Namespace: "default-stage-1",
 				},
 			},
 			prepare: func(t *testing.T) {

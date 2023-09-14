@@ -15,7 +15,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
-	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/stage/chain/util"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/kiosk"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/platform"
 )
@@ -44,16 +43,14 @@ func TestDelegateNamespaceDeletion_ServeRequest(t *testing.T) {
 					Name:      "stage-1",
 					Namespace: "default",
 				},
+				Spec: cdPipeApi.StageSpec{
+					Namespace: "default-stage-1",
+				},
 			},
 			objects: []client.Object{
 				&projectApi.Project{
 					ObjectMeta: metaV1.ObjectMeta{
-						Name: util.GenerateNamespaceName(&cdPipeApi.Stage{
-							ObjectMeta: metaV1.ObjectMeta{
-								Name:      "stage-1",
-								Namespace: "default",
-							},
-						}),
+						Name: "default-stage-1",
 					},
 				},
 			},
@@ -61,7 +58,7 @@ func TestDelegateNamespaceDeletion_ServeRequest(t *testing.T) {
 			wantAssert: func(t *testing.T, c client.Client, s *cdPipeApi.Stage) {
 				err := c.Get(
 					context.Background(),
-					client.ObjectKey{Name: util.GenerateNamespaceName(s)}, &projectApi.Project{},
+					client.ObjectKey{Name: s.Spec.Namespace}, &projectApi.Project{},
 				)
 				require.Error(t, err)
 				require.True(t, apiErrors.IsNotFound(err))
@@ -77,16 +74,14 @@ func TestDelegateNamespaceDeletion_ServeRequest(t *testing.T) {
 					Name:      "stage-1",
 					Namespace: "default",
 				},
+				Spec: cdPipeApi.StageSpec{
+					Namespace: "default-stage-1",
+				},
 			},
 			objects: []client.Object{
 				&corev1.Namespace{
 					ObjectMeta: metaV1.ObjectMeta{
-						Name: util.GenerateNamespaceName(&cdPipeApi.Stage{
-							ObjectMeta: metaV1.ObjectMeta{
-								Name:      "stage-1",
-								Namespace: "default",
-							},
-						}),
+						Name: "default-stage-1",
 					},
 				},
 			},
@@ -94,7 +89,7 @@ func TestDelegateNamespaceDeletion_ServeRequest(t *testing.T) {
 			wantAssert: func(t *testing.T, c client.Client, s *cdPipeApi.Stage) {
 				err := c.Get(
 					context.Background(),
-					client.ObjectKey{Name: util.GenerateNamespaceName(s)}, &corev1.Namespace{},
+					client.ObjectKey{Name: s.Spec.Namespace}, &corev1.Namespace{},
 				)
 				require.Error(t, err)
 				require.True(t, apiErrors.IsNotFound(err))
@@ -103,7 +98,7 @@ func TestDelegateNamespaceDeletion_ServeRequest(t *testing.T) {
 		{
 			name: "deletion of kiosk space is successful",
 			prepare: func(t *testing.T) {
-				t.Setenv(platform.KioskEnabledEnv, "true")
+				t.Setenv(platform.TenancyEngineEnv, platform.TenancyEngineKiosk)
 				t.Setenv(platform.TypeEnv, platform.Kubernetes)
 			},
 			stage: &cdPipeApi.Stage{
@@ -111,22 +106,20 @@ func TestDelegateNamespaceDeletion_ServeRequest(t *testing.T) {
 					Name:      "stage-1",
 					Namespace: "default",
 				},
+				Spec: cdPipeApi.StageSpec{
+					Namespace: "default-stage-1",
+				},
 			},
 			objects: []client.Object{
 				kiosk.NewKioskSpace(map[string]interface{}{
-					"name": util.GenerateNamespaceName(&cdPipeApi.Stage{
-						ObjectMeta: metaV1.ObjectMeta{
-							Name:      "stage-1",
-							Namespace: "default",
-						},
-					}),
+					"name": "default-stage-1",
 				}),
 			},
 			wantErr: require.NoError,
 			wantAssert: func(t *testing.T, c client.Client, s *cdPipeApi.Stage) {
 				err := c.Get(
 					context.Background(),
-					client.ObjectKey{Name: util.GenerateNamespaceName(s)}, &corev1.Namespace{},
+					client.ObjectKey{Name: s.Spec.Namespace}, &corev1.Namespace{},
 				)
 				require.Error(t, err)
 				require.True(t, apiErrors.IsNotFound(err))
@@ -140,16 +133,14 @@ func TestDelegateNamespaceDeletion_ServeRequest(t *testing.T) {
 					Name:      "stage-1",
 					Namespace: "default",
 				},
+				Spec: cdPipeApi.StageSpec{
+					Namespace: "default-stage-1",
+				},
 			},
 			objects: []client.Object{
 				&corev1.Namespace{
 					ObjectMeta: metaV1.ObjectMeta{
-						Name: util.GenerateNamespaceName(&cdPipeApi.Stage{
-							ObjectMeta: metaV1.ObjectMeta{
-								Name:      "stage-1",
-								Namespace: "default",
-							},
-						}),
+						Name: "default-stage-1",
 					},
 				},
 			},
@@ -157,7 +148,7 @@ func TestDelegateNamespaceDeletion_ServeRequest(t *testing.T) {
 			wantAssert: func(t *testing.T, c client.Client, s *cdPipeApi.Stage) {
 				err := c.Get(
 					context.Background(),
-					client.ObjectKey{Name: util.GenerateNamespaceName(s)}, &corev1.Namespace{},
+					client.ObjectKey{Name: s.Spec.Namespace}, &corev1.Namespace{},
 				)
 				require.Error(t, err)
 			},
@@ -173,16 +164,14 @@ func TestDelegateNamespaceDeletion_ServeRequest(t *testing.T) {
 					Name:      "stage-1",
 					Namespace: "default",
 				},
+				Spec: cdPipeApi.StageSpec{
+					Namespace: "default-stage-1",
+				},
 			},
 			objects: []client.Object{
 				&corev1.Namespace{
 					ObjectMeta: metaV1.ObjectMeta{
-						Name: util.GenerateNamespaceName(&cdPipeApi.Stage{
-							ObjectMeta: metaV1.ObjectMeta{
-								Name:      "stage-1",
-								Namespace: "default",
-							},
-						}),
+						Name: "default-stage-1",
 					},
 				},
 			},
@@ -190,7 +179,7 @@ func TestDelegateNamespaceDeletion_ServeRequest(t *testing.T) {
 			wantAssert: func(t *testing.T, c client.Client, s *cdPipeApi.Stage) {
 				err := c.Get(
 					context.Background(),
-					client.ObjectKey{Name: util.GenerateNamespaceName(s)}, &corev1.Namespace{},
+					client.ObjectKey{Name: s.Spec.Namespace}, &corev1.Namespace{},
 				)
 				require.NoError(t, err)
 			},

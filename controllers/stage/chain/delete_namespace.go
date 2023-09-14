@@ -5,14 +5,14 @@ import (
 	"fmt"
 
 	"github.com/go-logr/logr"
-	v1 "k8s.io/api/core/v1"
-	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/types"
+	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
 	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/stage/chain/handler"
-	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/stage/chain/util"
 )
 
 type DeleteNamespace struct {
@@ -22,35 +22,26 @@ type DeleteNamespace struct {
 }
 
 func (h DeleteNamespace) ServeRequest(stage *cdPipeApi.Stage) error {
-	name := util.GenerateNamespaceName(stage)
-	if err := h.delete(name); err != nil {
-		return fmt.Errorf("unable to delete %v namespace, name : %w", name, err)
+	l := h.log.WithValues("namespace", stage.Spec.Namespace)
+	ctx := ctrl.LoggerInto(context.TODO(), l)
+
+	ns := &corev1.Namespace{
+		ObjectMeta: metaV1.ObjectMeta{
+			Name: stage.Spec.Namespace,
+		},
 	}
 
-	return nextServeOrNil(h.next, stage)
-}
+	if err := h.client.Delete(ctx, ns); err != nil {
+		if apierrors.IsNotFound(err) {
+			l.Info("Namespace has already been deleted")
 
-func (h DeleteNamespace) delete(name string) error {
-	logger := h.log.WithValues("name", name)
-	logger.Info("trying to delete namespace")
-
-	ns := &v1.Namespace{}
-	if err := h.client.Get(context.TODO(), types.NamespacedName{
-		Name: name,
-	}, ns); err != nil {
-		if k8sErrors.IsNotFound(err) {
-			logger.Info("namespace doesn't exist")
 			return nil
 		}
 
-		return fmt.Errorf("failed to get namespace: %w", err)
-	}
-
-	if err := h.client.Delete(context.TODO(), ns); err != nil {
 		return fmt.Errorf("failed to delete namespace: %w", err)
 	}
 
-	logger.Info("namespace has been deleted")
+	l.Info("Namespace has been deleted")
 
-	return nil
+	return nextServeOrNil(h.next, stage)
 }

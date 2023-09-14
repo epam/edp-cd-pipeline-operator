@@ -56,6 +56,9 @@ func TestDeleteNamespace_DeleteNS(t *testing.T) {
 			Name:      name,
 			Namespace: namespace,
 		},
+		Spec: cdPipeApi.StageSpec{
+			Namespace: n,
+		},
 	}
 	err := ch.ServeRequest(s)
 	assert.NoError(t, err)
