@@ -1,4 +1,4 @@
-{{- if eq .Values.global.tenancyEngine "kiosk" -}}
+{{- if eq .Values.tenancyEngine "kiosk" -}}
 {{- if eq .Values.global.platform "kubernetes" -}}
 {{- if .Values.manageNamespace -}}
 apiVersion: config.kiosk.sh/v1alpha1

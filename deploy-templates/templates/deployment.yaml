@@ -37,7 +37,7 @@ spec:
             - name: PLATFORM_TYPE
               value: {{ .Values.global.platform }}
             - name: TENANCY_ENGINE
-              value: "{{ .Values.global.tenancyEngine }}"
+              value: "{{ .Values.tenancyEngine }}"
             - name: MANAGE_NAMESPACE
               value: "{{ .Values.manageNamespace }}"
             - name: MANAGE_SECRETS

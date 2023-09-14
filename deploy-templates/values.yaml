@@ -3,11 +3,13 @@ global:
   edpName: ""
   # -- platform type that can be "kubernetes" or "openshift"
   platform: "kubernetes"
-  # -- defines the type of the tenant engine that can be "none", "kiosk" or "capsule"
-  tenancyEngine: "none"
 
 # -- component name
 name: cd-pipeline-operator
+
+# -- defines the type of the tenant engine that can be "none", "kiosk" or "capsule"
+tenancyEngine: "none"
+
 annotations: {}
 nodeSelector: {}
 tolerations: []
