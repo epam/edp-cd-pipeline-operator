@@ -6,7 +6,7 @@ kind: ClusterRole
 metadata:
   labels:
     {{- include "cd-pipeline-operator.labels" . | nindent 4 }}
-  name: edp-{{ .Values.name }}-{{ .Values.global.edpName }}
+  name: edp-{{ .Values.name }}-{{ .Release.Namespace }}
 rules:
 - apiGroups:
     - ""

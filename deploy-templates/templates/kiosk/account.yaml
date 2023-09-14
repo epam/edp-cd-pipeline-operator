@@ -6,14 +6,14 @@ kind: Account
 metadata:
   labels:
     {{- include "cd-pipeline-operator.labels" . | nindent 4 }}
-  name: {{ .Values.global.edpName }}
+  name: {{ .Release.Namespace }}
 spec:
   space:
     clusterRole: kiosk-space-admin
   subjects:
     - kind: ServiceAccount
       name: edp-{{ .Values.name }}
-      namespace: {{ .Values.global.edpName }}
+      namespace: {{ .Release.Namespace }}
 {{- end -}}
 {{- end -}}
 {{- end -}}

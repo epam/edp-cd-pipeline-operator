@@ -5,12 +5,12 @@ kind: ClusterRoleBinding
 metadata:
   labels:
     {{- include "cd-pipeline-operator.labels" . | nindent 4 }}
-  name: edp-{{ .Values.name }}-{{ .Values.global.edpName }}-self-provisioner
+  name: edp-{{ .Values.name }}-{{ .Release.Namespace }}-self-provisioner
 roleRef:
   name: self-provisioner
 subjects:
   - kind: ServiceAccount
     name: edp-{{ .Values.name }}
-    namespace: {{ .Values.global.edpName }}
+    namespace: {{ .Release.Namespace }}
 {{- end -}}
 {{- end -}}

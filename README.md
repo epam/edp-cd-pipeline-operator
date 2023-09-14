@@ -42,13 +42,13 @@ In order to install the CD Pipeline Operator, follow the steps below:
 
 3. Full chart parameters available in [deploy-templates/README.md](deploy-templates/README.md).
 
-4. Install operator in the <edp-project> namespace with the helm command; find below the installation command example:
+4. Install operator in the edp namespace with the helm command; find below the installation command example:
 
     ```bash
-    helm install cd-pipeline-operator epamedp/cd-pipeline-operator --version <chart_version> --namespace <edp-project> --set name=cd-pipeline-operator --set global.edpName=<edp-project> --set global.platform=<platform_type>
+    helm install cd-pipeline-operator epamedp/cd-pipeline-operator --version <chart_version> --namespace edp --set name=cd-pipeline-operator --set global.platform=<platform_type>
     ```
 
-5. Check the <edp-project> namespace that should contain operator deployment with your operator in a running status.
+5. Check the edp namespace that should contain operator deployment with your operator in a running status.
 
 ## Local Development
 

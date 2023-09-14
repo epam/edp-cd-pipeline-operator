@@ -6,15 +6,15 @@ kind: ClusterRoleBinding
 metadata:
   labels:
     {{- include "cd-pipeline-operator.labels" . | nindent 4 }}
-  name: edp-{{ .Values.name }}-{{ .Values.global.edpName }}
+  name: edp-{{ .Values.name }}-{{ .Release.Namespace }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: edp-{{ .Values.name }}-{{ .Values.global.edpName }}
+  name: edp-{{ .Values.name }}-{{ .Release.Namespace }}
 subjects:
   - kind: ServiceAccount
     name: edp-{{ .Values.name }}
-    namespace: {{ .Values.global.edpName }}
+    namespace: {{ .Release.Namespace }}
 {{- end -}}
 {{- end -}}
 {{- end -}}

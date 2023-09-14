@@ -6,11 +6,11 @@ kind: ClusterRoleBinding
 metadata:
   labels:
     {{- include "cd-pipeline-operator.labels" . | nindent 4 }}
-  name: edp-{{ .Values.name }}-{{ .Values.global.edpName }}-kiosk-edit
+  name: edp-{{ .Values.name }}-{{ .Release.Namespace }}-kiosk-edit
 subjects:
   - kind: ServiceAccount
     name: edp-{{ .Values.name }}
-    namespace: {{ .Values.global.edpName }}
+    namespace: {{ .Release.Namespace }}
 roleRef:
   kind: ClusterRole
   name: kiosk-edit

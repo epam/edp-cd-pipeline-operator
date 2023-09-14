@@ -23,7 +23,6 @@ A Helm chart for EDP CD Pipeline Operator
 |-----|------|---------|-------------|
 | affinity | string | `nil` |  |
 | annotations | object | `{}` |  |
-| global.edpName | string | `""` | namespace or a project name (in case of OpenShift) |
 | global.platform | string | `"kubernetes"` | platform type that can be "kubernetes" or "openshift" |
 | image.repository | string | `"epamedp/cd-pipeline-operator"` | EDP cd-pipeline-operator Docker image name. The released image can be found on [Dockerhub](https://hub.docker.com/r/epamedp/cd-pipeline-operator) |
 | image.tag | string | `nil` | EDP cd-pipeline-operator Docker image tag. The released image can be found on [Dockerhub](https://hub.docker.com/r/epamedp/cd-pipeline-operator/tags) |
