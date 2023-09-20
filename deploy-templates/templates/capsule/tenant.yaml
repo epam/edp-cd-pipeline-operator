@@ -1,0 +1,16 @@
+{{- if eq .Values.tenancyEngine "capsule" -}}
+{{- if eq .Values.global.platform "kubernetes" -}}
+{{- if .Values.manageNamespace -}}
+apiVersion: capsule.clastix.io/v1beta1
+kind: Tenant
+metadata:
+  labels:
+    {{- include "cd-pipeline-operator.labels" . | nindent 4 }}
+  name: {{ .Release.Namespace }}
+spec:
+  owners:
+    - kind: ServiceAccount
+      name: system:serviceaccount:{{ .Release.Namespace }}:edp-cd-pipeline-operator
+{{- end -}}
+{{- end -}}
+{{- end -}}
