@@ -1,6 +1,6 @@
 module github.com/epam/edp-cd-pipeline-operator/v2
 
-go 1.19
+go 1.20
 
 replace (
 	github.com/epam/edp-codebase-operator/v2 v2.14.0 => github.com/epam/edp-codebase-operator/v2 v2.3.0-95.0.20230124110730-474b89bc5124
