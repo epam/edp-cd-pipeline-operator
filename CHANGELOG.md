@@ -2,15 +2,11 @@
 ## [Unreleased]
 
 
-<a name="v2.16.0"></a>
-## v2.16.0 - 2023-09-20
-### Features
+<a name="v2.16.1"></a>
+## v2.16.1 - 2023-09-22
+### Routine
 
-- Create capsule tenant resource ([#4](https://github.com/epam/edp-cd-pipeline-operator/issues/4))
-
-### Code Refactoring
-
-- Remove deprecated edpName parameter ([#5](https://github.com/epam/edp-cd-pipeline-operator/issues/5))
+- Upgrade Go to 1.20 ([#7](https://github.com/epam/edp-cd-pipeline-operator/issues/7))
 
 
-[Unreleased]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.16.0...HEAD
+[Unreleased]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.16.1...HEAD
