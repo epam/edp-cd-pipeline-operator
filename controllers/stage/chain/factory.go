@@ -10,7 +10,6 @@ import (
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
 	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/stage/chain/handler"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/rbac"
-	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/cluster"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/consts"
 )
 
@@ -44,11 +43,7 @@ func CreateChain(ctx context.Context, c client.Client, stage *cdPipeApi.Stage) h
 		return createExternalClusterChain(ctx, c, stage.Spec.TriggerType)
 	}
 
-	if !cluster.JenkinsEnabled(ctx, c, stage.Namespace, log) {
-		return getTektonChain(c, stage.Spec.TriggerType)
-	}
-
-	return getDefChain(c, stage.Spec.TriggerType)
+	return getTektonChain(c, stage.Spec.TriggerType)
 }
 
 func CreateDeleteChain(ctx context.Context, c client.Client, stage *cdPipeApi.Stage) handler.CdStageHandler {
@@ -57,104 +52,6 @@ func CreateDeleteChain(ctx context.Context, c client.Client, stage *cdPipeApi.St
 	}
 
 	return createDefDeleteChain(ctx, c)
-}
-
-// getDefChain returns a default chain of handlers for stage.
-// nolint:funlen // it's a chain builder without any complex logic.
-func getDefChain(c client.Client, triggerType string) handler.CdStageHandler {
-	const (
-		configureRbac      = "configure-rbac"
-		putJenkinsJobChain = "put-jenkins-job-chain"
-	)
-
-	logger := ctrl.Log.WithName("create-chain")
-	rbacManager := rbac.NewRbacManager(c, ctrl.Log.WithName("rbac-manager"))
-
-	if consts.AutoDeployTriggerType == triggerType {
-		logger.Info("Auto-deploy chain is selected")
-
-		return PutCodebaseImageStream{
-			next: DelegateNamespaceCreation{
-				next: ConfigureJenkinsRbac{
-					next: ConfigureRegistryViewerRbac{
-						next: ConfigureTenantAdminRbac{
-							client: c,
-							log:    ctrl.Log.WithName(logKeyTenantAdminRbac),
-							rbac:   rbacManager,
-							next: PutJenkinsJob{
-								client: c,
-								next: RemoveLabelsFromCodebaseDockerStreamsAfterCdPipelineUpdate{
-									client: c,
-									log:    ctrl.Log.WithName("remove-labels-from-codebase-docker-streams-after-cd-pipeline-update"),
-									next: DeleteEnvironmentLabelFromCodebaseImageStreams{
-										client: c,
-										log:    ctrl.Log.WithName(deleteEnvironmentLabelFromCodebaseImageStream),
-										next: PutEnvironmentLabelToCodebaseImageStreams{
-											client: c,
-											log:    ctrl.Log.WithName("put-environment-label-to-codebase-image-streams"),
-											next: ConfigureManageSecretsRBAC{
-												client: c,
-												log:    ctrl.Log.WithName(logKeyManageSecretsRBAC),
-											},
-										},
-									},
-								},
-								log: ctrl.Log.WithName(putJenkinsJobChain),
-							},
-						},
-						client: c,
-						log:    ctrl.Log.WithName(logKeyRegistryViewerRbac),
-						rbac:   rbacManager,
-					},
-					client: c,
-					log:    ctrl.Log.WithName(configureRbac),
-					rbac:   rbacManager,
-				},
-				client: c,
-				log:    ctrl.Log.WithName(logKeyPutNamespace),
-			},
-			client: c,
-			log:    ctrl.Log.WithName(putCodebaseImageStreamChain),
-		}
-	}
-
-	logger.Info("Manual-deploy chain is selected")
-
-	return PutCodebaseImageStream{
-		next: DelegateNamespaceCreation{
-			next: ConfigureJenkinsRbac{
-				next: ConfigureRegistryViewerRbac{
-					client: c,
-					log:    ctrl.Log.WithName(logKeyRegistryViewerRbac),
-					rbac:   rbacManager,
-					next: ConfigureTenantAdminRbac{
-						client: c,
-						log:    ctrl.Log.WithName(logKeyTenantAdminRbac),
-						rbac:   rbacManager,
-						next: PutJenkinsJob{
-							client: c,
-							log:    ctrl.Log.WithName(putJenkinsJobChain),
-							next: DeleteEnvironmentLabelFromCodebaseImageStreams{
-								client: c,
-								log:    ctrl.Log.WithName(deleteEnvironmentLabelFromCodebaseImageStream),
-								next: ConfigureManageSecretsRBAC{
-									client: c,
-									log:    ctrl.Log.WithName(logKeyManageSecretsRBAC),
-								},
-							},
-						},
-					},
-				},
-				client: c,
-				log:    ctrl.Log.WithName(configureRbac),
-				rbac:   rbacManager,
-			},
-			client: c,
-			log:    ctrl.Log.WithName(logKeyPutNamespace),
-		},
-		client: c,
-		log:    ctrl.Log.WithName(putCodebaseImageStreamChain),
-	}
 }
 
 // getTektonDeleteChain returns a chain of handlers for tekton flow.

@@ -1,24 +1,19 @@
 package cluster
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"testing"
 
-	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	k8sApi "k8s.io/api/rbac/v1"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
-	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1"
 )
 
 const (
@@ -142,68 +137,4 @@ func TestGetDebugMode_IsNotSet(t *testing.T) {
 	debugMode, err := GetDebugMode()
 	assert.NoError(t, err)
 	assert.False(t, debugMode)
-}
-
-func TestJenkinsEnabled(t *testing.T) {
-	scheme := runtime.NewScheme()
-	err := jenkinsApi.AddToScheme(scheme)
-	require.NoError(t, err)
-
-	type args struct {
-		k8sObjects []client.Object
-		namespace  string
-	}
-
-	tests := []struct {
-		name string
-		args args
-		want bool
-	}{
-		{
-			name: "jenkins is enabled",
-			args: args{
-				k8sObjects: []client.Object{
-					&jenkinsApi.Jenkins{
-						ObjectMeta: metaV1.ObjectMeta{
-							Name:      "jenkins",
-							Namespace: "default",
-						},
-					},
-				},
-				namespace: "default",
-			},
-			want: true,
-		},
-		{
-			name: "jenkins is disabled",
-			args: args{
-				k8sObjects: []client.Object{},
-				namespace:  "default",
-			},
-			want: false,
-		},
-		{
-			name: "jenkins is in another namespace",
-			args: args{
-				k8sObjects: []client.Object{
-					&jenkinsApi.Jenkins{
-						ObjectMeta: metaV1.ObjectMeta{
-							Name:      "jenkins",
-							Namespace: "test-namespace",
-						},
-					},
-				},
-				namespace: "default",
-			},
-			want: false,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(tt.args.k8sObjects...).Build()
-			got := JenkinsEnabled(context.Background(), fakeClient, tt.args.namespace, logr.Discard())
-			assert.Equal(t, tt.want, got)
-		})
-	}
 }

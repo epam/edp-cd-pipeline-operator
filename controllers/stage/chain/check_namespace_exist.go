@@ -44,7 +44,7 @@ func (h CheckNamespaceExist) ServeRequest(stage *cdPipeApi.Stage) error {
 }
 
 func (h CheckNamespaceExist) namespaceExist(ctx context.Context, name string) error {
-	h.log.Info("Checking existence of namespace", crNameLogKey, name)
+	h.log.Info("Checking existence of namespace", "name", name)
 
 	if err := h.client.Get(ctx, types.NamespacedName{
 		Name: name,
@@ -60,7 +60,7 @@ func (h CheckNamespaceExist) namespaceExist(ctx context.Context, name string) er
 }
 
 func (h CheckNamespaceExist) projectExist(ctx context.Context, name string) error {
-	h.log.Info("Checking existence of project", crNameLogKey, name)
+	h.log.Info("Checking existence of project", "name", name)
 
 	if err := h.client.Get(ctx, types.NamespacedName{
 		Name: name,

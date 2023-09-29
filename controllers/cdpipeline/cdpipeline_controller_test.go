@@ -2,7 +2,6 @@ package cdpipeline
 
 import (
 	"context"
-	"fmt"
 	"testing"
 	"time"
 
@@ -20,13 +19,11 @@ import (
 
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/consts"
-	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1"
 )
 
 const (
-	namespace   = "stub-Namespace"
-	name        = "stub-Name"
-	jenkinsKind = "JenkinsFolder"
+	namespace = "stub-Namespace"
+	name      = "stub-Name"
 )
 
 func emptyCdPipelineInit(t *testing.T) *cdPipeApi.CDPipeline {
@@ -43,29 +40,12 @@ func emptyCdPipelineInit(t *testing.T) *cdPipeApi.CDPipeline {
 	}
 }
 
-func (r *ReconcileCDPipeline) getJenkinsFolder(t *testing.T) *jenkinsApi.JenkinsFolder {
-	t.Helper()
-
-	createdJenkins := &jenkinsApi.JenkinsFolder{}
-	if err := r.client.Get(context.Background(), types.NamespacedName{
-		Namespace: namespace,
-		Name:      fmt.Sprintf("%s-%s", name, "cd-pipeline"),
-	}, createdJenkins); err != nil {
-		t.Fatalf("cannot find jenkins folder: %v", err)
-	}
-
-	return createdJenkins
-}
-
 func createScheme(t *testing.T) *runtime.Scheme {
 	t.Helper()
 
 	scheme := runtime.NewScheme()
 
 	err := cdPipeApi.AddToScheme(scheme)
-	require.NoError(t, err)
-
-	err = jenkinsApi.AddToScheme(scheme)
 	require.NoError(t, err)
 
 	return scheme
@@ -88,14 +68,8 @@ func TestNewReconcileCDPipeline_Success(t *testing.T) {
 
 func TestReconcile_Success(t *testing.T) {
 	emptyCdPipeline := emptyCdPipelineInit(t)
-	jenkins := &jenkinsApi.Jenkins{
-		ObjectMeta: metaV1.ObjectMeta{
-			Namespace: namespace,
-			Name:      "stub-Jenkins",
-		},
-	}
 	scheme := createScheme(t)
-	client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(emptyCdPipeline, jenkins).Build()
+	client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(emptyCdPipeline).Build()
 
 	reconcileCDPipeline := NewReconcileCDPipeline(client, scheme, logr.Discard())
 
@@ -112,9 +86,6 @@ func TestReconcile_Success(t *testing.T) {
 	}, cdPipeline)
 	require.NoError(t, err)
 	assert.Equal(t, cdPipeline.Status.Status, "created")
-
-	jenkinsFolder := reconcileCDPipeline.getJenkinsFolder(t)
-	assert.Equal(t, jenkinsKind, jenkinsFolder.Kind)
 
 	assert.True(t, controllerutil.ContainsFinalizer(cdPipeline, ownedStagesFinalizer))
 }
@@ -253,48 +224,4 @@ func TestSetFinishStatus_Success(t *testing.T) {
 	}, cdPipelineProcessed)
 	require.NoError(t, err)
 	assert.Equal(t, cdPipelineProcessed.Status.Status, consts.FinishedStatus)
-}
-
-func TestCreateJenkinsFolder_Success(t *testing.T) {
-	cdPipeline := emptyCdPipelineInit(t)
-	scheme := createScheme(t)
-	client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(cdPipeline).Build()
-
-	reconcileCdPipeline := NewReconcileCDPipeline(client, scheme, logr.Discard())
-
-	err := reconcileCdPipeline.createJenkinsFolder(context.Background(), cdPipeline)
-	assert.NoError(t, err)
-
-	jenkinsFolder := reconcileCdPipeline.getJenkinsFolder(t)
-	assert.Equal(t, jenkinsKind, jenkinsFolder.Kind)
-}
-
-func TestCreateJenkinsFolder_AlreadyExists(t *testing.T) {
-	cdPipeline := emptyCdPipelineInit(t)
-
-	jenkins := &jenkinsApi.JenkinsFolder{
-		TypeMeta: metaV1.TypeMeta{
-			APIVersion: "v2.edp.epam.com/v1",
-			Kind:       jenkinsKind,
-		},
-		ObjectMeta: metaV1.ObjectMeta{
-			Namespace: namespace,
-			Name:      fmt.Sprintf("%s-%s", name, "cd-pipeline"),
-		},
-		Status: jenkinsApi.JenkinsFolderStatus{
-			Status: "createdWithoutUsingFunction",
-		},
-	}
-
-	scheme := createScheme(t)
-	client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(cdPipeline, jenkins).Build()
-
-	reconcileCdPipeline := NewReconcileCDPipeline(client, scheme, logr.Discard())
-
-	err := reconcileCdPipeline.createJenkinsFolder(context.Background(), cdPipeline)
-	assert.NoError(t, err)
-
-	createdJenkins := reconcileCdPipeline.getJenkinsFolder(t)
-
-	assert.Equal(t, "createdWithoutUsingFunction", createdJenkins.Status.Status)
 }

@@ -13,7 +13,6 @@ require (
 	github.com/epam/edp-codebase-operator/v2 v2.3.0-95.0.20230124110730-474b89bc5124
 	github.com/epam/edp-common v0.0.0-20230104131608-33d095012fe8
 	github.com/epam/edp-component-operator v0.12.0
-	github.com/epam/edp-jenkins-operator/v2 v2.13.2
 	github.com/go-logr/logr v1.2.3
 	github.com/openshift/api v3.9.0+incompatible
 	github.com/pkg/errors v0.9.1
@@ -31,6 +30,7 @@ require (
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/emicklei/go-restful/v3 v3.10.1 // indirect
+	github.com/epam/edp-jenkins-operator/v2 v2.13.2 // indirect
 	github.com/evanphx/json-patch v4.12.0+incompatible // indirect
 	github.com/evanphx/json-patch/v5 v5.6.0 // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect

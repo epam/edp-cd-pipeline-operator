@@ -34,12 +34,6 @@ type CDPipelineSpec struct {
 
 type ActionType string
 
-const (
-	AcceptCDStageRegistration          ActionType = "accept_cd_stage_registration"
-	SetupInitialStructureForCDPipeline ActionType = "setup_initial_structure"
-	AcceptJenkinsJob                              = "accept_jenkins_job"
-)
-
 // Result describes how action were performed.
 // Once action ended, we record a result of this action.
 // +kubebuilder:validation:Enum=success;error

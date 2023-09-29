@@ -26,7 +26,6 @@ import (
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 	buildInfo "github.com/epam/edp-common/pkg/config"
 	edpCompApi "github.com/epam/edp-component-operator/api/v1"
-	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1"
 )
 
 var (
@@ -69,7 +68,6 @@ func main() {
 	utilruntime.Must(cdPipeApiV1.AddToScheme(scheme))
 	utilruntime.Must(codebaseApi.AddToScheme(scheme))
 	utilruntime.Must(edpCompApi.AddToScheme(scheme))
-	utilruntime.Must(jenkinsApi.AddToScheme(scheme))
 	utilruntime.Must(k8sApi.AddToScheme(scheme))
 	utilruntime.Must(corev1.AddToScheme(scheme))
 	utilruntime.Must(projectApi.AddToScheme(scheme))

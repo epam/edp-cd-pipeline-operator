@@ -27,7 +27,6 @@ import (
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/consts"
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 	componentApi "github.com/epam/edp-component-operator/api/v1"
-	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1"
 )
 
 const (
@@ -94,8 +93,6 @@ func TestTryToDeleteCDStage_Success(t *testing.T) {
 	require.NoError(t, err)
 	err = codebaseApi.AddToScheme(scheme)
 	require.NoError(t, err)
-	err = jenkinsApi.AddToScheme(scheme)
-	require.NoError(t, err)
 	err = corev1.AddToScheme(scheme)
 	require.NoError(t, err)
 	require.NoError(t, projectApi.AddToScheme(scheme))
@@ -143,14 +140,7 @@ func TestTryToDeleteCDStage_Success(t *testing.T) {
 		},
 	}
 
-	jenkins := &jenkinsApi.Jenkins{
-		ObjectMeta: metaV1.ObjectMeta{
-			Name:      "stub-jenkins-name",
-			Namespace: namespace,
-		},
-	}
-
-	fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(cdPipeline, image, stage, jenkins).Build()
+	fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(cdPipeline, image, stage).Build()
 
 	reconcileStage := ReconcileStage{
 		client: fakeClient,
@@ -256,8 +246,6 @@ func TestReconcileStage_Reconcile_Success(t *testing.T) {
 	require.NoError(t, err)
 	err = k8sApi.AddToScheme(scheme)
 	require.NoError(t, err)
-	err = jenkinsApi.AddToScheme(scheme)
-	require.NoError(t, err)
 	err = corev1.AddToScheme(scheme)
 	require.NoError(t, err)
 	require.NoError(t, projectApi.AddToScheme(scheme))
@@ -305,14 +293,7 @@ func TestReconcileStage_Reconcile_Success(t *testing.T) {
 		},
 	}
 
-	jenkins := &jenkinsApi.Jenkins{
-		ObjectMeta: metaV1.ObjectMeta{
-			Name:      "jenkins",
-			Namespace: namespace,
-		},
-	}
-
-	fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(cdPipeline, image, stage, jenkins).Build()
+	fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(cdPipeline, image, stage).Build()
 
 	reconcileStage := NewReconcileStage(
 		fakeClient,
@@ -348,7 +329,7 @@ func TestReconcileStage_ReconcileReconcile_SetOwnerRef(t *testing.T) {
 	scheme := runtime.NewScheme()
 	scheme.AddKnownTypes(k8sApi.SchemeGroupVersion, &cdPipeApi.Stage{},
 		&cdPipeApi.CDPipeline{}, &codebaseApi.CodebaseImageStream{}, &corev1.Namespace{},
-		&componentApi.EDPComponent{}, &k8sApi.RoleBinding{}, &k8sApi.Role{}, &jenkinsApi.JenkinsJob{})
+		&componentApi.EDPComponent{}, &k8sApi.RoleBinding{}, &k8sApi.Role{})
 
 	edpComponent := &componentApi.EDPComponent{
 		TypeMeta: metaV1.TypeMeta{},

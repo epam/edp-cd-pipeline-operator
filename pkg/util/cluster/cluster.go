@@ -7,13 +7,11 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
-	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1"
 )
 
 const (
@@ -80,17 +78,4 @@ func GetDebugMode() (bool, error) {
 func RunningInCluster() bool {
 	_, err := os.Stat(inClusterNamespacePath)
 	return !os.IsNotExist(err)
-}
-
-// JenkinsEnabled returns true if jenkins is enabled in the namespace.
-func JenkinsEnabled(ctx context.Context, k8sClient client.Reader, namespace string, log logr.Logger) bool {
-	jenkinsList := &jenkinsApi.JenkinsList{}
-
-	if err := k8sClient.List(ctx, jenkinsList, &client.ListOptions{Namespace: namespace}); err != nil {
-		log.Error(err, "unable to get jenkins list")
-
-		return false
-	}
-
-	return len(jenkinsList.Items) != 0
 }

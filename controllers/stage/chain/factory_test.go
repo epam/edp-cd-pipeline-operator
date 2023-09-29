@@ -6,29 +6,16 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/consts"
-	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1"
 )
 
 func TestCreateChain(t *testing.T) {
-	const ns = "default"
-
 	scheme := runtime.NewScheme()
-	jenkins := &jenkinsApi.Jenkins{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: ns,
-			Name:      "test",
-		},
-	}
-
-	require.NoError(t, jenkinsApi.AddToScheme(scheme))
 
 	tests := []struct {
 		name    string
@@ -42,7 +29,7 @@ func TestCreateChain(t *testing.T) {
 					ClusterName: cdPipeApi.InCluster,
 				},
 			},
-			objects: []runtime.Object{jenkins},
+			objects: []runtime.Object{},
 		},
 		{
 			name: "should create default chain for auto deploy",
@@ -52,7 +39,7 @@ func TestCreateChain(t *testing.T) {
 					ClusterName: cdPipeApi.InCluster,
 				},
 			},
-			objects: []runtime.Object{jenkins},
+			objects: []runtime.Object{},
 		},
 		{
 			name: "should create tekton chain for manual deploy",

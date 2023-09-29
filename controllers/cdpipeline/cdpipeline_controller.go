@@ -19,9 +19,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
-	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/cluster"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/consts"
-	jenkinsApi "github.com/epam/edp-jenkins-operator/v2/pkg/apis/v2/v1"
 )
 
 func NewReconcileCDPipeline(c client.Client, scheme *runtime.Scheme, log logr.Logger) *ReconcileCDPipeline {
@@ -100,12 +98,6 @@ func (r *ReconcileCDPipeline) Reconcile(ctx context.Context, request reconcile.R
 
 	if result != nil {
 		return *result, nil
-	}
-
-	if cluster.JenkinsEnabled(ctx, r.client, request.Namespace, log) {
-		if err := r.createJenkinsFolder(ctx, pipeline); err != nil {
-			return reconcile.Result{}, err
-		}
 	}
 
 	if err := r.setFinishStatus(ctx, pipeline); err != nil {
@@ -188,35 +180,6 @@ func (r *ReconcileCDPipeline) setFinishStatus(ctx context.Context, p *cdPipeApi.
 			return fmt.Errorf("failed to update pipeline status: %w", err)
 		}
 	}
-
-	return nil
-}
-
-func (r *ReconcileCDPipeline) createJenkinsFolder(ctx context.Context, p *cdPipeApi.CDPipeline) error {
-	jfn := fmt.Sprintf("%v-%v", p.Name, "cd-pipeline")
-	log := r.log.WithValues("Jenkins folder name", jfn)
-	log.Info("Start creating JenkinsFolder CR", "name", jfn)
-
-	jf := &jenkinsApi.JenkinsFolder{
-		TypeMeta: metaV1.TypeMeta{
-			APIVersion: "v2.edp.epam.com/v1",
-			Kind:       "JenkinsFolder",
-		},
-		ObjectMeta: metaV1.ObjectMeta{
-			Name:      jfn,
-			Namespace: p.Namespace,
-		},
-	}
-	if err := r.client.Create(ctx, jf); err != nil {
-		if k8sErrors.IsAlreadyExists(err) {
-			log.Info("Jenkins folder cr already exists", "name", jfn)
-			return nil
-		}
-
-		return fmt.Errorf("failed to create jenkins folder %v: %w", jfn, err)
-	}
-
-	log.Info("JenkinsFolder CR has been created", "name", jfn)
 
 	return nil
 }

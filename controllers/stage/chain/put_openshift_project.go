@@ -25,7 +25,7 @@ type PutOpenshiftProject struct {
 // ServeRequest creates a project for a stage.
 func (c PutOpenshiftProject) ServeRequest(stage *cdPipeApi.Stage) error {
 	projectName := util.GenerateNamespaceName(stage)
-	logger := c.log.WithValues(crNameLogKey, projectName)
+	logger := c.log.WithValues("name", projectName)
 
 	logger.Info("Try to create project")
 
