@@ -14,6 +14,7 @@ import (
 	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/stage/chain/util"
 	edpError "github.com/epam/edp-cd-pipeline-operator/v2/pkg/error"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/cluster"
+	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/consts"
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 )
 
@@ -26,6 +27,11 @@ type PutEnvironmentLabelToCodebaseImageStreams struct {
 // nolint
 func (h PutEnvironmentLabelToCodebaseImageStreams) ServeRequest(stage *cdPipeApi.Stage) error {
 	logger := h.log.WithValues("stage name", stage.Name)
+	if consts.AutoDeployTriggerType != stage.Spec.TriggerType {
+		logger.Info("Trigger type is not auto deploy, skipping")
+		return nextServeOrNil(h.next, stage)
+	}
+
 	logger.Info("start creating environment labels in codebase image stream resources.")
 
 	pipe, err := util.GetCdPipeline(h.client, stage)

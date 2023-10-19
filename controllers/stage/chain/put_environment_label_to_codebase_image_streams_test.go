@@ -15,6 +15,7 @@ import (
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
 	edpErr "github.com/epam/edp-cd-pipeline-operator/v2/pkg/error"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/cluster"
+	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/consts"
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 )
 
@@ -34,9 +35,10 @@ func createStage(t *testing.T, order int, cdPipeline string) cdPipeApi.Stage {
 			Namespace: namespace,
 		},
 		Spec: cdPipeApi.StageSpec{
-			Name:       name,
-			Order:      order,
-			CdPipeline: cdPipeline,
+			Name:        name,
+			Order:       order,
+			CdPipeline:  cdPipeline,
+			TriggerType: consts.AutoDeployTriggerType,
 		},
 	}
 }

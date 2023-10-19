@@ -30,5 +30,9 @@ resources:
 # -- should the operator manage(create/delete) namespaces for stages
 manageNamespace: true
 
-# -- manageSecrets is a flag that indicates whether the operator should manage secrets for stages
-manageSecrets: false
+# -- flag that indicates whether the operator should manage secrets for stages;
+# values: own/eso/none.
+# own - just copy secrets;
+# eso - secrete will be managed by External Secrets Operator(operator should be installed in the cluster);
+# none - not enable secrets management logic;
+secretManager: none

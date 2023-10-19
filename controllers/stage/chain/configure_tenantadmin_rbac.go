@@ -6,7 +6,6 @@ import (
 
 	"github.com/go-logr/logr"
 	rbacApi "k8s.io/api/rbac/v1"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
 	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/stage/chain/handler"
@@ -19,10 +18,9 @@ const (
 )
 
 type ConfigureTenantAdminRbac struct {
-	next   handler.CdStageHandler
-	client client.Client
-	log    logr.Logger
-	rbac   rbac.Manager
+	next handler.CdStageHandler
+	log  logr.Logger
+	rbac rbac.Manager
 }
 
 func (h ConfigureTenantAdminRbac) ServeRequest(stage *cdPipeApi.Stage) error {

@@ -8,7 +8,6 @@ import (
 	projectApi "github.com/openshift/api/project/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
 	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/stage/chain/handler"
@@ -18,7 +17,7 @@ import (
 // PutOpenshiftProject is a handler that creates an openshift project for a stage.
 type PutOpenshiftProject struct {
 	next   handler.CdStageHandler
-	client client.Client
+	client multiClusterClient
 	log    logr.Logger
 }
 
@@ -42,7 +41,7 @@ func (c PutOpenshiftProject) ServeRequest(stage *cdPipeApi.Stage) error {
 		if apierrors.IsAlreadyExists(err) {
 			logger.Info("Project already exists")
 
-			return nil
+			return nextServeOrNil(c.next, stage)
 		}
 
 		return fmt.Errorf("failed to create project: %w", err)

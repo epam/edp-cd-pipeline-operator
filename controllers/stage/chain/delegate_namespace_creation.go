@@ -2,7 +2,6 @@ package chain
 
 import (
 	"github.com/go-logr/logr"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
 	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/stage/chain/handler"
@@ -13,7 +12,7 @@ import (
 // DelegateNamespaceCreation is a stage chain element that decides whether to create a namespace, kiosk space or project.
 type DelegateNamespaceCreation struct {
 	next   handler.CdStageHandler
-	client client.Client
+	client multiClusterClient
 	log    logr.Logger
 }
 

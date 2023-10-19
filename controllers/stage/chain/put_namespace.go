@@ -9,7 +9,6 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
 	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/stage/chain/handler"
@@ -18,7 +17,7 @@ import (
 
 type PutNamespace struct {
 	next   handler.CdStageHandler
-	client client.Client
+	client multiClusterClient
 	log    logr.Logger
 }
 
@@ -40,7 +39,7 @@ func (h PutNamespace) ServeRequest(stage *cdPipeApi.Stage) error {
 		if apierrors.IsAlreadyExists(err) {
 			l.Info("Namespace already exists")
 
-			return nil
+			return nextServeOrNil(h.next, stage)
 		}
 
 		return fmt.Errorf("failed to create namespace: %w", err)

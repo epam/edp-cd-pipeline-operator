@@ -9,7 +9,6 @@ import (
 	v1 "k8s.io/api/core/v1"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
 	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/stage/chain/handler"
@@ -20,7 +19,7 @@ import (
 // CheckNamespaceExist checks if namespace exists.
 type CheckNamespaceExist struct {
 	next   handler.CdStageHandler
-	client client.Client
+	client multiClusterClient
 	log    logr.Logger
 }
 

@@ -28,7 +28,7 @@ func TestConfigureManageSecretsRBAC_ServeRequest(t *testing.T) {
 		wantErr require.ErrorAssertionFunc
 	}{
 		{
-			name: "rbac is configured successfully",
+			name: "eso is configured successfully",
 			stage: &cdPipeApi.Stage{
 				ObjectMeta: metaV1.ObjectMeta{
 					Name:      "stage-1",
@@ -47,7 +47,7 @@ func TestConfigureManageSecretsRBAC_ServeRequest(t *testing.T) {
 				},
 			},
 			setup: func(t *testing.T) {
-				t.Setenv(manageSecretsEnv, "true")
+				t.Setenv(secretManagerEnv, secretManagerESO)
 			},
 			want: func(t *testing.T, cl client.Client, stage *cdPipeApi.Stage) {
 				serviceAccount := &corev1.ServiceAccount{}
@@ -85,7 +85,7 @@ func TestConfigureManageSecretsRBAC_ServeRequest(t *testing.T) {
 			wantErr: require.NoError,
 		},
 		{
-			name: "all rbac objects already exist",
+			name: "secretManagerESO all objects already exist",
 			stage: &cdPipeApi.Stage{
 				ObjectMeta: metaV1.ObjectMeta{
 					Name:      "stage-1",
@@ -118,13 +118,13 @@ func TestConfigureManageSecretsRBAC_ServeRequest(t *testing.T) {
 				externalsecrets.NewExternalSecret(externalSecretName, "test-namespace"),
 			},
 			setup: func(t *testing.T) {
-				t.Setenv(manageSecretsEnv, "true")
+				t.Setenv(secretManagerEnv, secretManagerESO)
 			},
 			want:    func(t *testing.T, cl client.Client, stage *cdPipeApi.Stage) {},
 			wantErr: require.NoError,
 		},
 		{
-			name: "externalSecretIntegrationRole not found",
+			name: "eso externalSecretIntegrationRole not found",
 			stage: &cdPipeApi.Stage{
 				ObjectMeta: metaV1.ObjectMeta{
 					Name:      "stage-1",
@@ -136,7 +136,7 @@ func TestConfigureManageSecretsRBAC_ServeRequest(t *testing.T) {
 			},
 			objects: []client.Object{},
 			setup: func(t *testing.T) {
-				t.Setenv(manageSecretsEnv, "true")
+				t.Setenv(secretManagerEnv, secretManagerESO)
 			},
 			want: func(t *testing.T, cl client.Client, stage *cdPipeApi.Stage) {},
 			wantErr: func(t require.TestingT, err error, i ...interface{}) {
@@ -145,14 +145,15 @@ func TestConfigureManageSecretsRBAC_ServeRequest(t *testing.T) {
 			},
 		},
 		{
-			name: "env variable manageSecrets is not set",
+			name: "env variable secretManagerEnv is not set",
 			stage: &cdPipeApi.Stage{
 				ObjectMeta: metaV1.ObjectMeta{
 					Name:      "stage-1",
 					Namespace: "default",
 				},
 				Spec: cdPipeApi.StageSpec{
-					Namespace: "test-namespace",
+					Namespace:   "test-namespace",
+					ClusterName: cdPipeApi.InCluster,
 				},
 			},
 			objects: []client.Object{},
@@ -168,15 +169,120 @@ func TestConfigureManageSecretsRBAC_ServeRequest(t *testing.T) {
 					Namespace: "default",
 				},
 				Spec: cdPipeApi.StageSpec{
+					Namespace:   "test-namespace",
+					ClusterName: cdPipeApi.InCluster,
+				},
+			},
+			objects: []client.Object{},
+			setup: func(t *testing.T) {
+				t.Setenv(secretManagerEnv, "invalid value")
+			},
+			want:    func(t *testing.T, cl client.Client, stage *cdPipeApi.Stage) {},
+			wantErr: require.NoError,
+		},
+		{
+			name: "own secret manager is configured successfully",
+			stage: &cdPipeApi.Stage{
+				ObjectMeta: metaV1.ObjectMeta{
+					Name:      "stage-1",
+					Namespace: "default",
+				},
+				Spec: cdPipeApi.StageSpec{
+					Namespace: "test-namespace",
+				},
+			},
+			objects: []client.Object{
+				&corev1.Secret{
+					ObjectMeta: metaV1.ObjectMeta{
+						Name:      externalSecretName,
+						Namespace: "default",
+					},
+					Data: map[string][]byte{
+						"test": []byte("test"),
+					},
+				},
+			},
+			setup: func(t *testing.T) {
+				t.Setenv(secretManagerEnv, secretManagerOwn)
+			},
+			want: func(t *testing.T, cl client.Client, stage *cdPipeApi.Stage) {
+				secret := &corev1.Secret{}
+				err := cl.Get(context.Background(), client.ObjectKey{
+					Namespace: stage.Spec.Namespace,
+					Name:      externalSecretName,
+				}, secret)
+
+				require.NoError(t, err)
+				require.Equal(t, map[string][]byte{"test": []byte("test")}, secret.Data)
+			},
+			wantErr: require.NoError,
+		},
+		{
+			name: "own secret manager - all objects already exist",
+			stage: &cdPipeApi.Stage{
+				ObjectMeta: metaV1.ObjectMeta{
+					Name:      "stage-1",
+					Namespace: "default",
+				},
+				Spec: cdPipeApi.StageSpec{
+					Namespace: "test-namespace",
+				},
+			},
+			objects: []client.Object{
+				&corev1.Secret{
+					ObjectMeta: metaV1.ObjectMeta{
+						Name:      externalSecretName,
+						Namespace: "default",
+					},
+					Data: map[string][]byte{
+						"test": []byte("test"),
+					},
+				},
+				&corev1.Secret{
+					ObjectMeta: metaV1.ObjectMeta{
+						Name:      externalSecretName,
+						Namespace: "test-namespace",
+					},
+					Data: map[string][]byte{
+						"test": []byte("test"),
+					},
+				},
+			},
+			setup: func(t *testing.T) {
+				t.Setenv(secretManagerEnv, secretManagerOwn)
+			},
+			want: func(t *testing.T, cl client.Client, stage *cdPipeApi.Stage) {
+				secret := &corev1.Secret{}
+				err := cl.Get(context.Background(), client.ObjectKey{
+					Namespace: stage.Spec.Namespace,
+					Name:      externalSecretName,
+				}, secret)
+
+				require.NoError(t, err)
+				require.Equal(t, map[string][]byte{"test": []byte("test")}, secret.Data)
+			},
+			wantErr: require.NoError,
+		},
+		{
+			name: "own secret manager - failed to get secret to copy data from",
+			stage: &cdPipeApi.Stage{
+				ObjectMeta: metaV1.ObjectMeta{
+					Name:      "stage-1",
+					Namespace: "default",
+				},
+				Spec: cdPipeApi.StageSpec{
 					Namespace: "test-namespace",
 				},
 			},
 			objects: []client.Object{},
 			setup: func(t *testing.T) {
-				t.Setenv(manageSecretsEnv, "invalid value")
+				t.Setenv(secretManagerEnv, secretManagerOwn)
 			},
-			want:    func(t *testing.T, cl client.Client, stage *cdPipeApi.Stage) {},
-			wantErr: require.NoError,
+			want: func(t *testing.T, cl client.Client, stage *cdPipeApi.Stage) {},
+			wantErr: func(t require.TestingT, err error, i ...interface{}) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), fmt.Sprintf("failed to get %s secret", externalSecretName))
+			},
 		},
 	}
 
@@ -190,16 +296,19 @@ func TestConfigureManageSecretsRBAC_ServeRequest(t *testing.T) {
 			require.NoError(t, corev1.AddToScheme(sc))
 			require.NoError(t, rbacApi.AddToScheme(sc))
 
-			h := ConfigureManageSecretsRBAC{
-				client: fake.NewClientBuilder().
-					WithScheme(sc).
-					WithObjects(tt.objects...).
-					Build(),
-				log: logr.Discard(),
+			cl := fake.NewClientBuilder().
+				WithScheme(sc).
+				WithObjects(tt.objects...).
+				Build()
+
+			h := ConfigureSecretManager{
+				multiClusterClient: cl,
+				internalClient:     cl,
+				log:                logr.Discard(),
 			}
 
 			tt.wantErr(t, h.ServeRequest(tt.stage))
-			tt.want(t, h.client, tt.stage)
+			tt.want(t, h.multiClusterClient, tt.stage)
 		})
 	}
 }

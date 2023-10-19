@@ -114,9 +114,8 @@ func TestConfigureRegistryViewerRbac_ServeRequest(t *testing.T) {
 			k8sClient := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(tt.objects...).Build()
 
 			h := ConfigureRegistryViewerRbac{
-				client: k8sClient,
-				log:    logr.Discard(),
-				rbac:   rbac.NewRbacManager(k8sClient, logr.Discard()),
+				log:  logr.Discard(),
+				rbac: rbac.NewRbacManager(k8sClient, logr.Discard()),
 			}
 
 			err := h.ServeRequest(tt.stage)

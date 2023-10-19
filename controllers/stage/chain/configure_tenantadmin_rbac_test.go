@@ -87,9 +87,8 @@ func TestConfigureTenantAdminRbac_ServeRequest(t *testing.T) {
 			k8sClient := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(tt.objects...).Build()
 
 			h := ConfigureTenantAdminRbac{
-				client: k8sClient,
-				log:    logr.Discard(),
-				rbac:   rbac.NewRbacManager(k8sClient, logr.Discard()),
+				log:  logr.Discard(),
+				rbac: rbac.NewRbacManager(k8sClient, logr.Discard()),
 			}
 
 			err := h.ServeRequest(tt.stage)

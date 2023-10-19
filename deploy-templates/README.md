@@ -28,12 +28,12 @@ A Helm chart for EDP CD Pipeline Operator
 | image.tag | string | `nil` | EDP cd-pipeline-operator Docker image tag. The released image can be found on [Dockerhub](https://hub.docker.com/r/epamedp/cd-pipeline-operator/tags) |
 | imagePullPolicy | string | `"IfNotPresent"` |  |
 | manageNamespace | bool | `true` | should the operator manage(create/delete) namespaces for stages |
-| manageSecrets | bool | `false` | manageSecrets is a flag that indicates whether the operator should manage secrets for stages |
 | name | string | `"cd-pipeline-operator"` | component name |
 | nodeSelector | object | `{}` |  |
 | resources.limits.memory | string | `"192Mi"` |  |
 | resources.requests.cpu | string | `"50m"` |  |
 | resources.requests.memory | string | `"64Mi"` |  |
+| secretManager | string | `"none"` | flag that indicates whether the operator should manage secrets for stages; values: own/eso/none. own - just copy secrets; eso - secrete will be managed by External Secrets Operator(operator should be installed in the cluster); none - not enable secrets management logic; |
 | tenancyEngine | string | `"none"` | defines the type of the tenant engine that can be "none", "kiosk" or "capsule" |
 | tolerations | list | `[]` |  |
 

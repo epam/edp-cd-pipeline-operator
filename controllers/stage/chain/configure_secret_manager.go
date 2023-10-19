@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"strconv"
 
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
@@ -26,30 +25,53 @@ const (
 	secretIntegrationServiceAccountName = "secret-manager"
 	secretStoreName                     = "edp-system"
 	externalSecretName                  = "regcred"
-	manageSecretsEnv                    = "MANAGE_SECRETS"
+	secretManagerEnv                    = "SECRET_MANAGER"
+	secretManagerESO                    = "eso"
+	secretManagerOwn                    = "own"
 )
 
-// ConfigureManageSecretsRBAC is a stage chain element that configures RBAC for external secret integration.
-type ConfigureManageSecretsRBAC struct {
-	next   handler.CdStageHandler
-	client client.Client
-	log    logr.Logger
+// ConfigureSecretManager is a stage chain element that configures secret management.
+type ConfigureSecretManager struct {
+	next               handler.CdStageHandler
+	multiClusterClient multiClusterClient
+	internalClient     client.Client
+	log                logr.Logger
 }
 
-// ServeRequest implements the logic to configure RBAC for external secret integration.
-func (h ConfigureManageSecretsRBAC) ServeRequest(stage *cdPipeApi.Stage) error {
+// ServeRequest implements the logic to configure secret management.
+func (h ConfigureSecretManager) ServeRequest(stage *cdPipeApi.Stage) error {
 	ctx := context.Background() // TODO: pass ctx from the caller
-	logger := h.log.WithValues("stage", stage.Name, "target-ns", stage.Spec.Namespace)
+	secretManager := os.Getenv(secretManagerEnv)
+	logger := h.log.WithValues(
+		"stage", stage.Name,
+		"target-ns", stage.Spec.Namespace,
+		"secret-manager", secretManager,
+	)
 
-	if !shouldManageSecretes() {
+	switch secretManager {
+	case secretManagerESO:
+		if err := h.configureEso(ctrl.LoggerInto(ctx, logger), stage); err != nil {
+			return err
+		}
+	case secretManagerOwn:
+		if err := h.configureOwn(ctrl.LoggerInto(ctx, logger), stage); err != nil {
+			return err
+		}
+	default:
 		logger.Info("Secrets management is disabled, skipping")
 		return nextServeOrNil(h.next, stage)
 	}
 
-	logger.Info("Configuring RBAC for external secret integration")
+	return nextServeOrNil(h.next, stage)
+}
+
+func (h ConfigureSecretManager) configureEso(ctx context.Context, stage *cdPipeApi.Stage) error {
+	logger := ctrl.LoggerFrom(ctx)
+
+	logger.Info("Configuring external secret integration")
 
 	externalSecretIntegrationRole := &rbacApi.Role{}
-	if err := h.client.Get(ctx, client.ObjectKey{
+	if err := h.multiClusterClient.Get(ctx, client.ObjectKey{
 		Name:      "external-secret-integration",
 		Namespace: stage.Namespace,
 	}, externalSecretIntegrationRole); err != nil {
@@ -84,12 +106,46 @@ func (h ConfigureManageSecretsRBAC) ServeRequest(stage *cdPipeApi.Stage) error {
 		return err
 	}
 
-	logger.Info("RBAC for external secret integration has been configured successfully")
+	logger.Info("External secret integration has been configured successfully")
 
-	return nextServeOrNil(h.next, stage)
+	return nil
 }
 
-func (h ConfigureManageSecretsRBAC) createServiceAccount(ctx context.Context, namespace string) (*corev1.ServiceAccount, error) {
+func (h ConfigureSecretManager) configureOwn(ctx context.Context, stage *cdPipeApi.Stage) error {
+	logger := ctrl.LoggerFrom(ctx)
+
+	logger.Info("Configuring own secrets management")
+
+	recred := &corev1.Secret{}
+	if err := h.internalClient.Get(ctx, client.ObjectKey{
+		Namespace: stage.Namespace,
+		Name:      externalSecretName,
+	}, recred); err != nil {
+		return fmt.Errorf("failed to get %s secret: %w", externalSecretName, err)
+	}
+
+	externalRecred := &corev1.Secret{
+		ObjectMeta: metaV1.ObjectMeta{
+			Name:      externalSecretName,
+			Namespace: stage.Spec.Namespace,
+		},
+		Data: recred.Data,
+	}
+
+	if err := h.multiClusterClient.Create(ctx, externalRecred); err != nil {
+		if !k8sErrors.IsAlreadyExists(err) {
+			return fmt.Errorf("failed to create %s secret: %w", externalSecretName, err)
+		}
+
+		logger.Info(fmt.Sprintf("Secret %s already exists", externalSecretName))
+	}
+
+	logger.Info("Own secrets management has been configured successfully")
+
+	return nil
+}
+
+func (h ConfigureSecretManager) createServiceAccount(ctx context.Context, namespace string) (*corev1.ServiceAccount, error) {
 	l := ctrl.LoggerFrom(ctx)
 
 	serviceAccount := &corev1.ServiceAccount{
@@ -98,7 +154,7 @@ func (h ConfigureManageSecretsRBAC) createServiceAccount(ctx context.Context, na
 			Namespace: namespace,
 		},
 	}
-	if err := h.client.Create(ctx, serviceAccount); err != nil {
+	if err := h.multiClusterClient.Create(ctx, serviceAccount); err != nil {
 		if !k8sErrors.IsAlreadyExists(err) {
 			return nil, fmt.Errorf("failed to create %s service account: %w", serviceAccount.Name, err)
 		}
@@ -109,7 +165,7 @@ func (h ConfigureManageSecretsRBAC) createServiceAccount(ctx context.Context, na
 	return serviceAccount, nil
 }
 
-func (h ConfigureManageSecretsRBAC) createRoleBinding(
+func (h ConfigureSecretManager) createRoleBinding(
 	ctx context.Context,
 	stageNamespace,
 	stageTargetNamespace,
@@ -137,7 +193,7 @@ func (h ConfigureManageSecretsRBAC) createRoleBinding(
 		},
 	}
 
-	if err := h.client.Create(ctx, secretManagerRoleBinding); err != nil {
+	if err := h.multiClusterClient.Create(ctx, secretManagerRoleBinding); err != nil {
 		if !k8sErrors.IsAlreadyExists(err) {
 			return nil, fmt.Errorf("failed to create %s rolebinding: %w", secretManagerRoleBinding.Name, err)
 		}
@@ -148,7 +204,7 @@ func (h ConfigureManageSecretsRBAC) createRoleBinding(
 	return secretManagerRoleBinding, nil
 }
 
-func (h ConfigureManageSecretsRBAC) createSecretStore(
+func (h ConfigureSecretManager) createSecretStore(
 	ctx context.Context,
 	stageNamespace,
 	stageTargetNamespace,
@@ -177,7 +233,7 @@ func (h ConfigureManageSecretsRBAC) createSecretStore(
 		},
 	}
 
-	if err := h.client.Create(ctx, secretStore); err != nil {
+	if err := h.multiClusterClient.Create(ctx, secretStore); err != nil {
 		if !k8sErrors.IsAlreadyExists(err) {
 			return nil, fmt.Errorf("failed to create %s secret store: %w", secretStore.GetName(), err)
 		}
@@ -188,7 +244,7 @@ func (h ConfigureManageSecretsRBAC) createSecretStore(
 	return secretStore, nil
 }
 
-func (h ConfigureManageSecretsRBAC) createExternalSecret(
+func (h ConfigureSecretManager) createExternalSecret(
 	ctx context.Context,
 	stageTargetNamespace,
 	secretStoreName string,
@@ -226,7 +282,7 @@ func (h ConfigureManageSecretsRBAC) createExternalSecret(
 		},
 	}
 
-	if err := h.client.Create(ctx, externalSecret); err != nil {
+	if err := h.multiClusterClient.Create(ctx, externalSecret); err != nil {
 		if !k8sErrors.IsAlreadyExists(err) {
 			return nil, fmt.Errorf("failed to create %s external secret: %w", externalSecret.GetName(), err)
 		}
@@ -235,18 +291,4 @@ func (h ConfigureManageSecretsRBAC) createExternalSecret(
 	}
 
 	return externalSecret, nil
-}
-
-func shouldManageSecretes() bool {
-	val, exists := os.LookupEnv(manageSecretsEnv)
-	if !exists {
-		return false
-	}
-
-	enabled, err := strconv.ParseBool(val)
-	if err != nil {
-		return false
-	}
-
-	return enabled
 }

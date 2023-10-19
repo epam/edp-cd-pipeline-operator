@@ -9,8 +9,8 @@ import (
 
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
 	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/stage/chain/handler"
+	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/multiclusterclient"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/rbac"
-	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/consts"
 )
 
 var log = ctrl.Log.WithName("stage")
@@ -23,6 +23,10 @@ const (
 	logKeyPutNamespace                            = "put-namespace"
 	logKeyManageSecretsRBAC                       = "manage-secrets-rbac"
 )
+
+// multiClusterClient is a internalClient for external cluster connection.
+// It will connect to internal cluster if stage.Spec.ClusterName is "in-cluster".
+type multiClusterClient client.Client
 
 func nextServeOrNil(next handler.CdStageHandler, stage *cdPipeApi.Stage) error {
 	if next != nil {
@@ -38,89 +42,43 @@ func nextServeOrNil(next handler.CdStageHandler, stage *cdPipeApi.Stage) error {
 	return nil
 }
 
-func CreateChain(ctx context.Context, c client.Client, stage *cdPipeApi.Stage) handler.CdStageHandler {
-	if !stage.InCluster() {
-		return createExternalClusterChain(ctx, c, stage.Spec.TriggerType)
-	}
-
-	return getTektonChain(c, stage.Spec.TriggerType)
-}
-
-func CreateDeleteChain(ctx context.Context, c client.Client, stage *cdPipeApi.Stage) handler.CdStageHandler {
-	if !stage.InCluster() {
-		return createExternalClusterDeleteChain(ctx, c)
-	}
-
-	return createDefDeleteChain(ctx, c)
-}
-
-// getTektonDeleteChain returns a chain of handlers for tekton flow.
-// nolint:funlen // it's a chain builder without any complex logic.
-func getTektonChain(c client.Client, triggerType string) handler.CdStageHandler {
+func CreateChain(ctx context.Context, c client.Client, stage *cdPipeApi.Stage) (handler.CdStageHandler, error) {
 	logger := ctrl.Log.WithName("create-chain")
-	rbacManager := rbac.NewRbacManager(c, ctrl.Log.WithName("rbac-manager"))
+
+	multiClusterCl, err := multiclusterclient.NewClientProvider(c).GetClusterClient(ctx, stage.Namespace, stage.Spec.ClusterName, client.Options{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get cluster internalClient: %w", err)
+	}
+
+	rbacManager := rbac.NewRbacManager(multiClusterCl, ctrl.Log.WithName("rbac-manager"))
 
 	logger.Info("Tekton chain is selected")
 
-	if consts.AutoDeployTriggerType == triggerType {
-		logger.Info("Auto-deploy chain is selected")
-
-		return PutCodebaseImageStream{
-			next: DelegateNamespaceCreation{
-				client: c,
-				log:    ctrl.Log.WithName(logKeyPutNamespace),
-				next: RemoveLabelsFromCodebaseDockerStreamsAfterCdPipelineUpdate{
-					client: c,
-					log:    ctrl.Log.WithName("remove-labels-from-codebase-docker-streams-after-cd-pipeline-update"),
-					next: DeleteEnvironmentLabelFromCodebaseImageStreams{
-						client: c,
-						log:    ctrl.Log.WithName(deleteEnvironmentLabelFromCodebaseImageStream),
-						next: PutEnvironmentLabelToCodebaseImageStreams{
-							client: c,
-							log:    ctrl.Log.WithName("put-environment-label-to-codebase-image-streams-chain"),
-							next: ConfigureRegistryViewerRbac{
-								client: c,
-								log:    ctrl.Log.WithName(logKeyRegistryViewerRbac),
-								rbac:   rbacManager,
-								next: ConfigureTenantAdminRbac{
-									client: c,
-									log:    ctrl.Log.WithName(logKeyTenantAdminRbac),
-									rbac:   rbacManager,
-									next: ConfigureManageSecretsRBAC{
-										client: c,
-										log:    ctrl.Log.WithName(logKeyManageSecretsRBAC),
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-			client: c,
-			log:    ctrl.Log.WithName(putCodebaseImageStreamChain),
-		}
-	}
-
-	logger.Info("Manual-deploy chain is selected")
-
 	return PutCodebaseImageStream{
 		next: DelegateNamespaceCreation{
-			client: c,
+			client: multiClusterCl,
 			log:    ctrl.Log.WithName(logKeyPutNamespace),
-			next: DeleteEnvironmentLabelFromCodebaseImageStreams{
+			next: RemoveLabelsFromCodebaseDockerStreamsAfterCdPipelineUpdate{
 				client: c,
-				log:    ctrl.Log.WithName(deleteEnvironmentLabelFromCodebaseImageStream),
-				next: ConfigureRegistryViewerRbac{
+				log:    ctrl.Log.WithName("remove-labels-from-codebase-docker-streams-after-cd-pipeline-update"),
+				next: DeleteEnvironmentLabelFromCodebaseImageStreams{
 					client: c,
-					log:    ctrl.Log.WithName(logKeyRegistryViewerRbac),
-					rbac:   rbacManager,
-					next: ConfigureTenantAdminRbac{
+					log:    ctrl.Log.WithName(deleteEnvironmentLabelFromCodebaseImageStream),
+					next: PutEnvironmentLabelToCodebaseImageStreams{
 						client: c,
-						log:    ctrl.Log.WithName(logKeyTenantAdminRbac),
-						rbac:   rbacManager,
-						next: ConfigureManageSecretsRBAC{
-							client: c,
-							log:    ctrl.Log.WithName(logKeyManageSecretsRBAC),
+						log:    ctrl.Log.WithName("put-environment-label-to-codebase-image-streams-chain"),
+						next: ConfigureRegistryViewerRbac{
+							log:  ctrl.Log.WithName(logKeyRegistryViewerRbac),
+							rbac: rbacManager,
+							next: ConfigureTenantAdminRbac{
+								log:  ctrl.Log.WithName(logKeyTenantAdminRbac),
+								rbac: rbacManager,
+								next: ConfigureSecretManager{
+									multiClusterClient: multiClusterCl,
+									internalClient:     c,
+									log:                ctrl.Log.WithName(logKeyManageSecretsRBAC),
+								},
+							},
 						},
 					},
 				},
@@ -128,7 +86,11 @@ func getTektonChain(c client.Client, triggerType string) handler.CdStageHandler 
 		},
 		client: c,
 		log:    ctrl.Log.WithName(putCodebaseImageStreamChain),
-	}
+	}, nil
+}
+
+func CreateDeleteChain(ctx context.Context, c client.Client) handler.CdStageHandler {
+	return createDefDeleteChain(ctx, c)
 }
 
 func createDefDeleteChain(ctx context.Context, c client.Client) handler.CdStageHandler {
@@ -147,56 +109,5 @@ func createDefDeleteChain(ctx context.Context, c client.Client) handler.CdStageH
 				log:    logger.WithName("delete-registry-viewer-rbac"),
 			},
 		},
-	}
-}
-
-// getExternalClusterChain returns a chain of handlers for external cluster flow.
-func createExternalClusterChain(ctx context.Context, c client.Client, triggerType string) handler.CdStageHandler {
-	logger := ctrl.LoggerFrom(ctx)
-
-	logger.Info("External cluster chain is selected")
-
-	if consts.AutoDeployTriggerType == triggerType {
-		logger.Info("Auto-deploy chain is selected")
-
-		return PutCodebaseImageStream{
-			client: c,
-			log:    ctrl.Log.WithName(putCodebaseImageStreamChain),
-			next: RemoveLabelsFromCodebaseDockerStreamsAfterCdPipelineUpdate{
-				client: c,
-				log:    ctrl.Log.WithName("remove-labels-from-codebase-docker-streams-after-cd-pipeline-update"),
-				next: DeleteEnvironmentLabelFromCodebaseImageStreams{
-					client: c,
-					log:    ctrl.Log.WithName(deleteEnvironmentLabelFromCodebaseImageStream),
-					next: PutEnvironmentLabelToCodebaseImageStreams{
-						client: c,
-						log:    ctrl.Log.WithName("put-environment-label-to-codebase-image-streams-chain"),
-					},
-				},
-			},
-		}
-	}
-
-	logger.Info("Manual-deploy chain is selected")
-
-	return PutCodebaseImageStream{
-		client: c,
-		log:    ctrl.Log.WithName(putCodebaseImageStreamChain),
-		next: DeleteEnvironmentLabelFromCodebaseImageStreams{
-			client: c,
-			log:    ctrl.Log.WithName(deleteEnvironmentLabelFromCodebaseImageStream),
-		},
-	}
-}
-
-// createExternalClusterDeleteChain returns a chain of handlers for external cluster delete flow.
-func createExternalClusterDeleteChain(ctx context.Context, c client.Client) handler.CdStageHandler {
-	logger := ctrl.LoggerFrom(ctx)
-
-	logger.Info("Delete in external cluster chain is selected")
-
-	return DeleteEnvironmentLabelFromCodebaseImageStreams{
-		client: c,
-		log:    logger.WithName(deleteEnvironmentLabelFromCodebaseImageStream),
 	}
 }

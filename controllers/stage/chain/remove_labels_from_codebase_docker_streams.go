@@ -12,6 +12,7 @@ import (
 	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/stage/chain/handler"
 	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/stage/chain/util"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/cluster"
+	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/consts"
 )
 
 type RemoveLabelsFromCodebaseDockerStreamsAfterCdPipelineUpdate struct {
@@ -24,6 +25,11 @@ const dockerStreamsBeforeUpdateAnnotationKey = "deploy.edp.epam.com/docker-strea
 
 func (h RemoveLabelsFromCodebaseDockerStreamsAfterCdPipelineUpdate) ServeRequest(stage *cdPipeApi.Stage) error {
 	log := h.log.WithValues("stage name", stage.Name)
+	if consts.AutoDeployTriggerType != stage.Spec.TriggerType {
+		log.Info("Trigger type is not auto deploy, skipping")
+		return nextServeOrNil(h.next, stage)
+	}
+
 	log.Info("start deleting environment labels from codebase image stream resources.")
 
 	pipe, err := util.GetCdPipeline(h.client, stage)
