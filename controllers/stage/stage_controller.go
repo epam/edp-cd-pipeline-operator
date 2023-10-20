@@ -185,7 +185,12 @@ func (r *ReconcileStage) tryToDeleteCDStage(ctx context.Context, stage *cdPipeAp
 
 	log.Info("Stage is last. Delete chain")
 
-	if err := chain.CreateDeleteChain(ctx, r.client).ServeRequest(stage); err != nil {
+	ch, err := chain.CreateDeleteChain(ctx, r.client, stage)
+	if err != nil {
+		return &reconcile.Result{}, fmt.Errorf("failed to create delete chain: %w", err)
+	}
+
+	if err = ch.ServeRequest(stage); err != nil {
 		return &reconcile.Result{}, fmt.Errorf("failed to delete Stage: %w", err)
 	}
 

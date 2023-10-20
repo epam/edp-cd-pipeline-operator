@@ -78,12 +78,12 @@ func TestDeleteOpenshiftProject_ServeRequest(t *testing.T) {
 			t.Parallel()
 
 			h := DeleteOpenshiftProject{
-				client: fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(tt.objects...).Build(),
-				log:    logr.Discard(),
+				multiClusterClient: fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(tt.objects...).Build(),
+				log:                logr.Discard(),
 			}
 
 			tt.wantErr(t, h.ServeRequest(tt.stage))
-			tt.wantAssert(t, h.client, tt.stage)
+			tt.wantAssert(t, h.multiClusterClient, tt.stage)
 		})
 	}
 }

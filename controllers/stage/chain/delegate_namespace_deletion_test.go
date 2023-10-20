@@ -44,7 +44,8 @@ func TestDelegateNamespaceDeletion_ServeRequest(t *testing.T) {
 					Namespace: "default",
 				},
 				Spec: cdPipeApi.StageSpec{
-					Namespace: "default-stage-1",
+					Namespace:   "default-stage-1",
+					ClusterName: cdPipeApi.InCluster,
 				},
 			},
 			objects: []client.Object{
@@ -75,7 +76,8 @@ func TestDelegateNamespaceDeletion_ServeRequest(t *testing.T) {
 					Namespace: "default",
 				},
 				Spec: cdPipeApi.StageSpec{
-					Namespace: "default-stage-1",
+					Namespace:   "default-stage-1",
+					ClusterName: cdPipeApi.InCluster,
 				},
 			},
 			objects: []client.Object{
@@ -107,7 +109,8 @@ func TestDelegateNamespaceDeletion_ServeRequest(t *testing.T) {
 					Namespace: "default",
 				},
 				Spec: cdPipeApi.StageSpec{
-					Namespace: "default-stage-1",
+					Namespace:   "default-stage-1",
+					ClusterName: cdPipeApi.InCluster,
 				},
 			},
 			objects: []client.Object{
@@ -134,7 +137,40 @@ func TestDelegateNamespaceDeletion_ServeRequest(t *testing.T) {
 					Namespace: "default",
 				},
 				Spec: cdPipeApi.StageSpec{
-					Namespace: "default-stage-1",
+					Namespace:   "default-stage-1",
+					ClusterName: cdPipeApi.InCluster,
+				},
+			},
+			objects: []client.Object{
+				&corev1.Namespace{
+					ObjectMeta: metaV1.ObjectMeta{
+						Name: "default-stage-1",
+					},
+				},
+			},
+			wantErr: require.NoError,
+			wantAssert: func(t *testing.T, c client.Client, s *cdPipeApi.Stage) {
+				err := c.Get(
+					context.Background(),
+					client.ObjectKey{Name: s.Spec.Namespace}, &corev1.Namespace{},
+				)
+				require.Error(t, err)
+			},
+		},
+		{
+			name: "external cluster is set",
+			prepare: func(t *testing.T) {
+				t.Setenv(platform.TenancyEngineEnv, platform.TenancyEngineKiosk)
+				t.Setenv(platform.TypeEnv, platform.Kubernetes)
+			},
+			stage: &cdPipeApi.Stage{
+				ObjectMeta: metaV1.ObjectMeta{
+					Name:      "stage-1",
+					Namespace: "default",
+				},
+				Spec: cdPipeApi.StageSpec{
+					Namespace:   "default-stage-1",
+					ClusterName: "external-cluster",
 				},
 			},
 			objects: []client.Object{
@@ -165,7 +201,8 @@ func TestDelegateNamespaceDeletion_ServeRequest(t *testing.T) {
 					Namespace: "default",
 				},
 				Spec: cdPipeApi.StageSpec{
-					Namespace: "default-stage-1",
+					Namespace:   "default-stage-1",
+					ClusterName: cdPipeApi.InCluster,
 				},
 			},
 			objects: []client.Object{
@@ -191,13 +228,13 @@ func TestDelegateNamespaceDeletion_ServeRequest(t *testing.T) {
 			tt.prepare(t)
 
 			c := DelegateNamespaceDeletion{
-				client: fake.NewClientBuilder().WithScheme(scheme).WithObjects(tt.objects...).Build(),
-				log:    logr.Discard(),
+				multiClusterClient: fake.NewClientBuilder().WithScheme(scheme).WithObjects(tt.objects...).Build(),
+				log:                logr.Discard(),
 			}
 
 			err := c.ServeRequest(tt.stage)
 			tt.wantErr(t, err)
-			tt.wantAssert(t, c.client, tt.stage)
+			tt.wantAssert(t, c.multiClusterClient, tt.stage)
 		})
 	}
 }

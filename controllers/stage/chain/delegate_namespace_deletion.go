@@ -2,7 +2,6 @@ package chain
 
 import (
 	"github.com/go-logr/logr"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
 	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/stage/chain/handler"
@@ -12,9 +11,9 @@ import (
 
 // DelegateNamespaceDeletion is a stage chain element that decides whether to delete a namespace or project.
 type DelegateNamespaceDeletion struct {
-	next   handler.CdStageHandler
-	client client.Client
-	log    logr.Logger
+	next               handler.CdStageHandler
+	multiClusterClient multiClusterClient
+	log                logr.Logger
 }
 
 // ServeRequest creates for kubernetes platform DeleteNamespace or DeleteSpace if kiosk is enabled.
@@ -37,12 +36,18 @@ func (c DelegateNamespaceDeletion) ServeRequest(stage *cdPipeApi.Stage) error {
 	if platform.IsKubernetes() {
 		logger.Info("Platform is kubernetes")
 
+		if !stage.InCluster() {
+			logger.Info("Stage is not in cluster. Skip multi-tenancy engines")
+
+			return nextServeOrNil(DeleteNamespace(c), stage)
+		}
+
 		if platform.KioskEnabled() {
 			logger.Info("Kiosk is enabled")
 
 			return nextServeOrNil(DeleteSpace{
 				next:  c.next,
-				space: kiosk.InitSpace(c.client),
+				space: kiosk.InitSpace(c.multiClusterClient),
 				log:   c.log,
 			}, stage)
 		}

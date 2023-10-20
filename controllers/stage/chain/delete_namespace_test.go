@@ -17,8 +17,8 @@ import (
 
 func TestDeleteNamespace_NSDoestExists(t *testing.T) {
 	ch := DeleteNamespace{
-		client: fake.NewClientBuilder().Build(),
-		log:    logr.Discard(),
+		multiClusterClient: fake.NewClientBuilder().Build(),
+		log:                logr.Discard(),
 	}
 
 	s := &cdPipeApi.Stage{
@@ -32,7 +32,7 @@ func TestDeleteNamespace_NSDoestExists(t *testing.T) {
 
 	ns := &v1.Namespace{}
 	n := fmt.Sprintf("%v-%v", namespace, name)
-	err = ch.client.Get(context.TODO(), types.NamespacedName{
+	err = ch.multiClusterClient.Get(context.TODO(), types.NamespacedName{
 		Name: n,
 	}, ns)
 	assert.Error(t, err, "ns doesn't exist")
@@ -47,8 +47,8 @@ func TestDeleteNamespace_DeleteNS(t *testing.T) {
 	}
 
 	ch := DeleteNamespace{
-		client: fake.NewClientBuilder().WithRuntimeObjects(ns).Build(),
-		log:    logr.Discard(),
+		multiClusterClient: fake.NewClientBuilder().WithRuntimeObjects(ns).Build(),
+		log:                logr.Discard(),
 	}
 
 	s := &cdPipeApi.Stage{
@@ -64,7 +64,7 @@ func TestDeleteNamespace_DeleteNS(t *testing.T) {
 	assert.NoError(t, err)
 
 	ns = &v1.Namespace{}
-	err = ch.client.Get(context.TODO(), types.NamespacedName{
+	err = ch.multiClusterClient.Get(context.TODO(), types.NamespacedName{
 		Name: n,
 	}, ns)
 	assert.Error(t, err, "ns doesn't exist")

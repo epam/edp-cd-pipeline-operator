@@ -68,11 +68,17 @@ func TestCreateDeleteChain(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			chain := CreateDeleteChain(
+			chain, err := CreateDeleteChain(
 				ctrl.LoggerInto(context.Background(), logr.Discard()),
 				fake.NewClientBuilder().Build(),
+				&cdPipeApi.Stage{
+					Spec: cdPipeApi.StageSpec{
+						ClusterName: cdPipeApi.InCluster,
+					},
+				},
 			)
 
+			assert.NoError(t, err)
 			assert.NotNil(t, chain)
 		})
 	}

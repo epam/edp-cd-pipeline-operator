@@ -9,16 +9,15 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
 	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/stage/chain/handler"
 )
 
 type DeleteNamespace struct {
-	next   handler.CdStageHandler
-	client client.Client
-	log    logr.Logger
+	next               handler.CdStageHandler
+	multiClusterClient multiClusterClient
+	log                logr.Logger
 }
 
 func (h DeleteNamespace) ServeRequest(stage *cdPipeApi.Stage) error {
@@ -31,7 +30,7 @@ func (h DeleteNamespace) ServeRequest(stage *cdPipeApi.Stage) error {
 		},
 	}
 
-	if err := h.client.Delete(ctx, ns); err != nil {
+	if err := h.multiClusterClient.Delete(ctx, ns); err != nil {
 		if apierrors.IsNotFound(err) {
 			l.Info("Namespace has already been deleted")
 

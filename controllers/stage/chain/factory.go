@@ -89,25 +89,26 @@ func CreateChain(ctx context.Context, c client.Client, stage *cdPipeApi.Stage) (
 	}, nil
 }
 
-func CreateDeleteChain(ctx context.Context, c client.Client) handler.CdStageHandler {
-	return createDefDeleteChain(ctx, c)
-}
-
-func createDefDeleteChain(ctx context.Context, c client.Client) handler.CdStageHandler {
+func CreateDeleteChain(ctx context.Context, c client.Client, stage *cdPipeApi.Stage) (handler.CdStageHandler, error) {
 	logger := ctrl.LoggerFrom(ctx)
 
 	logger.Info("Delete chain is selected")
+
+	multiClusterCl, err := multiclusterclient.NewClientProvider(c).GetClusterClient(ctx, stage.Namespace, stage.Spec.ClusterName, client.Options{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get cluster internalClient: %w", err)
+	}
 
 	return DeleteEnvironmentLabelFromCodebaseImageStreams{
 		client: c,
 		log:    logger.WithName(deleteEnvironmentLabelFromCodebaseImageStream),
 		next: DelegateNamespaceDeletion{
-			client: c,
-			log:    logger.WithName("delete-namespace"),
+			multiClusterClient: multiClusterCl,
+			log:                logger.WithName("delete-namespace"),
 			next: DeleteRegistryViewerRbac{
-				client: c,
-				log:    logger.WithName("delete-registry-viewer-rbac"),
+				multiClusterCl: multiClusterCl,
+				log:            logger.WithName("delete-registry-viewer-rbac"),
 			},
 		},
-	}
+	}, nil
 }

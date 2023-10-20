@@ -8,7 +8,6 @@ import (
 	rbacApi "k8s.io/api/rbac/v1"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
 	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/stage/chain/handler"
@@ -18,9 +17,9 @@ import (
 
 // DeleteRegistryViewerRbac deletes sa-registry-viewer RoleBinding.
 type DeleteRegistryViewerRbac struct {
-	next   handler.CdStageHandler
-	client client.Client
-	log    logr.Logger
+	next           handler.CdStageHandler
+	multiClusterCl multiClusterClient
+	log            logr.Logger
 }
 
 // ServeRequest deletes sa-registry-viewer RoleBinding.
@@ -37,7 +36,7 @@ func (h DeleteRegistryViewerRbac) ServeRequest(stage *cdPipeApi.Stage) error {
 		return nextServeOrNil(h.next, stage)
 	}
 
-	if err := h.client.Delete(context.TODO(), &rbacApi.RoleBinding{
+	if err := h.multiClusterCl.Delete(context.TODO(), &rbacApi.RoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      roleBindingName,
 			Namespace: stage.Namespace,

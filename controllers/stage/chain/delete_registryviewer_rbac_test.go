@@ -101,14 +101,14 @@ func TestDeleteRegistryViewerRbac_ServeRequest(t *testing.T) {
 			tt.prepare(t)
 
 			h := DeleteRegistryViewerRbac{
-				client: fake.NewClientBuilder().WithScheme(scheme).WithObjects(tt.objects...).Build(),
-				log:    logr.Discard(),
+				multiClusterCl: fake.NewClientBuilder().WithScheme(scheme).WithObjects(tt.objects...).Build(),
+				log:            logr.Discard(),
 			}
 
 			err := h.ServeRequest(tt.stage)
 
 			tt.wantErr(t, err)
-			tt.wantCheck(t, tt.stage, h.client)
+			tt.wantCheck(t, tt.stage, h.multiClusterCl)
 		})
 	}
 }
