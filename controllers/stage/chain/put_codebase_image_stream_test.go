@@ -6,19 +6,16 @@ import (
 	"testing"
 
 	"github.com/go-logr/logr"
-	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
-	v1 "k8s.io/api/apps/v1"
+	"github.com/stretchr/testify/require"
+	corev1 "k8s.io/api/core/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
-	k8sMockClient "github.com/epam/edp-common/pkg/mock/controller-runtime/client"
 	componentApi "github.com/epam/edp-component-operator/api/v1"
 )
 
@@ -70,9 +67,11 @@ func TestPutCodebaseImageStream_ShouldCreateCis(t *testing.T) {
 	}
 
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(v1.SchemeGroupVersion, cdp, s, ec)
-	scheme.AddKnownTypes(schema.GroupVersion{Group: "v2.edp.epam.com", Version: "v1"}, cis)
-	c := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(cdp, s, ec, cis).Build()
+	require.NoError(t, corev1.AddToScheme(scheme))
+	require.NoError(t, cdPipeApi.AddToScheme(scheme))
+	require.NoError(t, codebaseApi.AddToScheme(scheme))
+	require.NoError(t, componentApi.AddToScheme(scheme))
+	c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(cdp, s, ec, cis).Build()
 
 	cisChain := PutCodebaseImageStream{
 		client: c,
@@ -90,7 +89,7 @@ func TestPutCodebaseImageStream_ShouldCreateCis(t *testing.T) {
 		},
 		cisResp)
 	assert.NoError(t, err)
-	assert.Equal(t, cisResp.Spec.ImageName, "stub-url/stub-namespace/cb-name")
+	assert.Equal(t, cisResp.Spec.ImageName, "stub-url/cb-name")
 }
 
 func TestPutCodebaseImageStream_ShouldNotFindCDPipeline(t *testing.T) {
@@ -118,8 +117,11 @@ func TestPutCodebaseImageStream_ShouldNotFindCDPipeline(t *testing.T) {
 	}
 
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(v1.SchemeGroupVersion, s, cdp)
-	c := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(cdp, s).Build()
+	require.NoError(t, corev1.AddToScheme(scheme))
+	require.NoError(t, cdPipeApi.AddToScheme(scheme))
+	require.NoError(t, codebaseApi.AddToScheme(scheme))
+	require.NoError(t, componentApi.AddToScheme(scheme))
+	c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(cdp, s).Build()
 
 	cisChain := PutCodebaseImageStream{
 		client: c,
@@ -134,7 +136,7 @@ func TestPutCodebaseImageStream_ShouldNotFindCDPipeline(t *testing.T) {
 	}
 }
 
-func TestPutCodebaseImageStream_ShouldNotFindEDPComponent(t *testing.T) {
+func TestPutCodebaseImageStream_ShouldNotFindRegistryUrl(t *testing.T) {
 	cdp := &cdPipeApi.CDPipeline{
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "cdp-name",
@@ -159,8 +161,11 @@ func TestPutCodebaseImageStream_ShouldNotFindEDPComponent(t *testing.T) {
 	}
 
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(v1.SchemeGroupVersion, s, cdp)
-	c := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(cdp, s).Build()
+	require.NoError(t, corev1.AddToScheme(scheme))
+	require.NoError(t, cdPipeApi.AddToScheme(scheme))
+	require.NoError(t, codebaseApi.AddToScheme(scheme))
+	require.NoError(t, componentApi.AddToScheme(scheme))
+	c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(cdp, s).Build()
 
 	cisChain := PutCodebaseImageStream{
 		client: c,
@@ -168,11 +173,8 @@ func TestPutCodebaseImageStream_ShouldNotFindEDPComponent(t *testing.T) {
 	}
 
 	err := cisChain.ServeRequest(s)
-	assert.Error(t, err)
-
-	if !strings.Contains(err.Error(), "failed to get docker-registry EDP component") {
-		t.Fatalf("wrong error returned: %s", err.Error())
-	}
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "failed to get container registry url")
 }
 
 func TestPutCodebaseImageStream_ShouldNotFindCbis(t *testing.T) {
@@ -212,20 +214,12 @@ func TestPutCodebaseImageStream_ShouldNotFindCbis(t *testing.T) {
 		},
 	}
 
-	cis := &codebaseApi.CodebaseImageStream{
-		ObjectMeta: metaV1.ObjectMeta{
-			Name:      "cbis-name",
-			Namespace: "stub-namespace",
-		},
-		Spec: codebaseApi.CodebaseImageStreamSpec{
-			Codebase: "cb-name",
-		},
-	}
-
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(v1.SchemeGroupVersion, cdp, s, ec)
-	scheme.AddKnownTypes(schema.GroupVersion{Group: "v2.edp.epam.com", Version: "v1"}, cis)
-	c := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(cdp, s, ec).Build()
+	require.NoError(t, corev1.AddToScheme(scheme))
+	require.NoError(t, cdPipeApi.AddToScheme(scheme))
+	require.NoError(t, codebaseApi.AddToScheme(scheme))
+	require.NoError(t, componentApi.AddToScheme(scheme))
+	c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(cdp, s, ec).Build()
 
 	cisChain := PutCodebaseImageStream{
 		client: c,
@@ -298,9 +292,11 @@ func TestPutCodebaseImageStream_ShouldNotFailWithExistingCbis(t *testing.T) {
 	}
 
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(v1.SchemeGroupVersion, cdp, s, ec)
-	scheme.AddKnownTypes(schema.GroupVersion{Group: "v2.edp.epam.com", Version: "v1"}, cis, exsitingCis)
-	c := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(cdp, s, ec, cis, exsitingCis).Build()
+	require.NoError(t, corev1.AddToScheme(scheme))
+	require.NoError(t, cdPipeApi.AddToScheme(scheme))
+	require.NoError(t, codebaseApi.AddToScheme(scheme))
+	require.NoError(t, componentApi.AddToScheme(scheme))
+	c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(cdp, s, ec, cis, exsitingCis).Build()
 
 	cisChain := PutCodebaseImageStream{
 		client: c,
@@ -320,10 +316,8 @@ func TestPutCodebaseImageStream_ShouldNotFailWithExistingCbis(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestPutCodebaseImageStream_ShouldFailCreatingCbis(t *testing.T) {
-	mc := k8sMockClient.Client{}
-
-	cdp := &cdPipeApi.CDPipeline{
+func TestPutCodebaseImageStream_ShouldCreateCisFromConfigMap(t *testing.T) {
+	pipeline := &cdPipeApi.CDPipeline{
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "cdp-name",
 			Namespace: "stub-namespace",
@@ -335,7 +329,7 @@ func TestPutCodebaseImageStream_ShouldFailCreatingCbis(t *testing.T) {
 		},
 	}
 
-	s := &cdPipeApi.Stage{
+	stage := &cdPipeApi.Stage{
 		ObjectMeta: metaV1.ObjectMeta{
 			OwnerReferences: []metaV1.OwnerReference{{
 				Kind: "CDPipeline",
@@ -349,17 +343,18 @@ func TestPutCodebaseImageStream_ShouldFailCreatingCbis(t *testing.T) {
 		},
 	}
 
-	ec := &componentApi.EDPComponent{
+	config := &corev1.ConfigMap{
 		ObjectMeta: metaV1.ObjectMeta{
-			Name:      dockerRegistryName,
+			Name:      edpConfigMap,
 			Namespace: "stub-namespace",
 		},
-		Spec: componentApi.EDPComponentSpec{
-			Url: "stub-url",
+		Data: map[string]string{
+			edpConfigContainerRegistryHost:  "stub-host",
+			edpConfigContainerRegistrySpace: "stub-space",
 		},
 	}
 
-	cis := &codebaseApi.CodebaseImageStream{
+	imageStream := &codebaseApi.CodebaseImageStream{
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "cbis-name",
 			Namespace: "stub-namespace",
@@ -369,60 +364,30 @@ func TestPutCodebaseImageStream_ShouldFailCreatingCbis(t *testing.T) {
 		},
 	}
 
-	exsitingCis := &codebaseApi.CodebaseImageStream{
-		TypeMeta: metaV1.TypeMeta{
-			APIVersion: "v2.edp.epam.com/v1",
-			Kind:       "CodebaseImageStream",
-		},
-		ObjectMeta: metaV1.ObjectMeta{
-			Name:      "cdp-name-stage-name-cb-name-verified",
-			Namespace: "stub-namespace",
-		},
-		Spec: codebaseApi.CodebaseImageStreamSpec{
-			Codebase:  "cb-name",
-			ImageName: "stub-url/stub-namespace/cb-name",
-		},
-	}
-
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(v1.SchemeGroupVersion, cdp, s, ec)
-	scheme.AddKnownTypes(schema.GroupVersion{Group: "v2.edp.epam.com", Version: "v1"}, cis)
-	fakeCl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(cdp, s, ec, cis).Build()
-
-	mockErr := errors.New("fatal")
-
-	mc.On("Get", types.NamespacedName{
-		Namespace: "stub-namespace",
-		Name:      "cdp-name",
-	}, &cdPipeApi.CDPipeline{}).Return(fakeCl)
-
-	mc.On("Get", types.NamespacedName{
-		Namespace: "stub-namespace",
-		Name:      dockerRegistryName,
-	}, &componentApi.EDPComponent{}).Return(fakeCl)
-
-	mc.On("Get", types.NamespacedName{
-		Namespace: "stub-namespace",
-		Name:      "cbis-name",
-	}, &codebaseApi.CodebaseImageStream{}).Return(fakeCl)
-
-	var createOpts []client.CreateOption
-
-	mc.On("Create", exsitingCis, createOpts).Return(mockErr)
+	require.NoError(t, corev1.AddToScheme(scheme))
+	require.NoError(t, cdPipeApi.AddToScheme(scheme))
+	require.NoError(t, codebaseApi.AddToScheme(scheme))
+	require.NoError(t, componentApi.AddToScheme(scheme))
+	c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(pipeline, stage, config, imageStream).Build()
 
 	cisChain := PutCodebaseImageStream{
-		client: &mc,
+		client: c,
 		log:    logr.Discard(),
 	}
 
-	err := cisChain.ServeRequest(s)
-	assert.Error(t, err)
+	err := cisChain.ServeRequest(stage)
+	assert.NoError(t, err)
 
-	if !errors.Is(err, mockErr) {
-		t.Fatal("wrong error returned")
-	}
-
-	if !strings.Contains(err.Error(), "failed to create cdp-name-stage-name-cb-name-verified") {
-		t.Fatalf("wrong error returned: %s", err.Error())
-	}
+	cisResp := &codebaseApi.CodebaseImageStream{}
+	err = c.Get(
+		context.Background(),
+		types.NamespacedName{
+			Name:      "cdp-name-stage-name-cb-name-verified",
+			Namespace: "stub-namespace",
+		},
+		cisResp,
+	)
+	assert.NoError(t, err)
+	assert.Equal(t, cisResp.Spec.ImageName, "stub-host/stub-space/cb-name")
 }

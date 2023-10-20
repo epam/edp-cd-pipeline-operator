@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/go-logr/logr"
+	corev1 "k8s.io/api/core/v1"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -24,10 +25,17 @@ type PutCodebaseImageStream struct {
 	log    logr.Logger
 }
 
-const dockerRegistryName = "docker-registry"
+const (
+	dockerRegistryName              = "docker-registry"
+	edpConfigMap                    = "edp-config"
+	edpConfigContainerRegistryHost  = "container_registry_host"
+	edpConfigContainerRegistrySpace = "container_registry_space"
+)
 
 func (h PutCodebaseImageStream) ServeRequest(stage *cdPipeApi.Stage) error {
 	logger := h.log.WithValues("stage name", stage.Name)
+	ctx := context.TODO()
+
 	logger.Info("start creating codebase image streams.")
 
 	pipe, err := util.GetCdPipeline(h.client, stage)
@@ -35,9 +43,9 @@ func (h PutCodebaseImageStream) ServeRequest(stage *cdPipeApi.Stage) error {
 		return fmt.Errorf("failed to get %v cd pipeline: %w", stage.Spec.CdPipeline, err)
 	}
 
-	registryComponent, err := h.getDockerRegistryEdpComponent(stage.Namespace)
+	registryUrl, err := h.getDockerRegistryUrl(ctx, stage.Namespace)
 	if err != nil {
-		return fmt.Errorf("failed to get %v EDP component: %w", dockerRegistryName, err)
+		return fmt.Errorf("failed to get container registry url: %w", err)
 	}
 
 	for _, ids := range pipe.Spec.InputDockerStreams {
@@ -47,7 +55,7 @@ func (h PutCodebaseImageStream) ServeRequest(stage *cdPipeApi.Stage) error {
 		}
 
 		cisName := fmt.Sprintf("%v-%v-%v-verified", pipe.Name, stage.Spec.Name, stream.Spec.Codebase)
-		image := fmt.Sprintf("%v/%v/%v", registryComponent.Spec.Url, stage.Namespace, stream.Spec.Codebase)
+		image := fmt.Sprintf("%v/%v", registryUrl, stream.Spec.Codebase)
 
 		if err := h.createCodebaseImageStreamIfNotExists(cisName, image, stream.Spec.Codebase, stage.Namespace); err != nil {
 			return fmt.Errorf("failed to create %v codebase image stream: %w", cisName, err)
@@ -59,16 +67,38 @@ func (h PutCodebaseImageStream) ServeRequest(stage *cdPipeApi.Stage) error {
 	return nextServeOrNil(h.next, stage)
 }
 
-func (h PutCodebaseImageStream) getDockerRegistryEdpComponent(namespace string) (*componentApi.EDPComponent, error) {
-	ec := &componentApi.EDPComponent{}
-	if err := h.client.Get(context.TODO(), types.NamespacedName{
-		Name:      dockerRegistryName,
+func (h PutCodebaseImageStream) getDockerRegistryUrl(ctx context.Context, namespace string) (string, error) {
+	config := &corev1.ConfigMap{}
+	if err := h.client.Get(ctx, types.NamespacedName{
+		Name:      edpConfigMap,
 		Namespace: namespace,
-	}, ec); err != nil {
-		return nil, fmt.Errorf("failed to get docker registry edp component: %w", err)
+	}, config); err != nil {
+		if !k8sErrors.IsNotFound(err) {
+			return "", fmt.Errorf("failed to get %s config map: %w", edpConfigMap, err)
+		}
+
+		// to save backward compatibility we need to get docker registry url
+		// from edp component if config map doesn't exist. We can remove this in the future.
+		ec := &componentApi.EDPComponent{}
+		if err = h.client.Get(ctx, types.NamespacedName{
+			Name:      dockerRegistryName,
+			Namespace: namespace,
+		}, ec); err != nil {
+			return "", fmt.Errorf("failed to fetch %q resource %q: %w", ec.TypeMeta.Kind, dockerRegistryName, err)
+		}
+
+		return ec.Spec.Url, nil
 	}
 
-	return ec, nil
+	if _, ok := config.Data[edpConfigContainerRegistryHost]; !ok {
+		return "", fmt.Errorf("%s is not set in %s config map", edpConfigContainerRegistryHost, edpConfigMap)
+	}
+
+	if _, ok := config.Data[edpConfigContainerRegistrySpace]; !ok {
+		return "", fmt.Errorf("%s is not set in %s config map", edpConfigContainerRegistrySpace, edpConfigMap)
+	}
+
+	return fmt.Sprintf("%s/%s", config.Data[edpConfigContainerRegistryHost], config.Data[edpConfigContainerRegistrySpace]), nil
 }
 
 func (h PutCodebaseImageStream) createCodebaseImageStreamIfNotExists(name, imageName, codebaseName, namespace string) error {

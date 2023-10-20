@@ -327,9 +327,11 @@ func TestReconcileStage_Reconcile_Success(t *testing.T) {
 
 func TestReconcileStage_ReconcileReconcile_SetOwnerRef(t *testing.T) {
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(k8sApi.SchemeGroupVersion, &cdPipeApi.Stage{},
-		&cdPipeApi.CDPipeline{}, &codebaseApi.CodebaseImageStream{}, &corev1.Namespace{},
-		&componentApi.EDPComponent{}, &k8sApi.RoleBinding{}, &k8sApi.Role{})
+	require.NoError(t, corev1.AddToScheme(scheme))
+	require.NoError(t, cdPipeApi.AddToScheme(scheme))
+	require.NoError(t, codebaseApi.AddToScheme(scheme))
+	require.NoError(t, componentApi.AddToScheme(scheme))
+	require.NoError(t, k8sApi.AddToScheme(scheme))
 
 	edpComponent := &componentApi.EDPComponent{
 		TypeMeta: metaV1.TypeMeta{},
