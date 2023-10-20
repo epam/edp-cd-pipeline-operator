@@ -43,7 +43,8 @@ func TestDelegateNamespaceCreation_ServeRequest(t *testing.T) {
 					Namespace: "default",
 				},
 				Spec: cdPipeApi.StageSpec{
-					Namespace: "default-stage-1",
+					Namespace:   "default-stage-1",
+					ClusterName: cdPipeApi.InCluster,
 				},
 			},
 			wantErr: require.NoError,
@@ -67,7 +68,8 @@ func TestDelegateNamespaceCreation_ServeRequest(t *testing.T) {
 					Namespace: "default",
 				},
 				Spec: cdPipeApi.StageSpec{
-					Namespace: "default-stage-1",
+					Namespace:   "default-stage-1",
+					ClusterName: cdPipeApi.InCluster,
 				},
 			},
 			wantErr: require.NoError,
@@ -92,7 +94,8 @@ func TestDelegateNamespaceCreation_ServeRequest(t *testing.T) {
 					Namespace: "default",
 				},
 				Spec: cdPipeApi.StageSpec{
-					Namespace: "default-stage-1",
+					Namespace:   "default-stage-1",
+					ClusterName: cdPipeApi.InCluster,
 				},
 			},
 			wantErr: require.NoError,
@@ -115,7 +118,8 @@ func TestDelegateNamespaceCreation_ServeRequest(t *testing.T) {
 					Namespace: "default",
 				},
 				Spec: cdPipeApi.StageSpec{
-					Namespace: "default-stage-1",
+					Namespace:   "default-stage-1",
+					ClusterName: cdPipeApi.InCluster,
 				},
 			},
 			prepare: func(t *testing.T) {
@@ -138,7 +142,8 @@ func TestDelegateNamespaceCreation_ServeRequest(t *testing.T) {
 					Namespace: "default",
 				},
 				Spec: cdPipeApi.StageSpec{
-					Namespace: "default-stage-1",
+					Namespace:   "default-stage-1",
+					ClusterName: cdPipeApi.InCluster,
 				},
 			},
 			prepare: func(t *testing.T) {
@@ -163,7 +168,8 @@ func TestDelegateNamespaceCreation_ServeRequest(t *testing.T) {
 					Namespace: "default",
 				},
 				Spec: cdPipeApi.StageSpec{
-					Namespace: "default-stage-1",
+					Namespace:   "default-stage-1",
+					ClusterName: cdPipeApi.InCluster,
 				},
 			},
 			prepare: func(t *testing.T) {
@@ -175,6 +181,33 @@ func TestDelegateNamespaceCreation_ServeRequest(t *testing.T) {
 				require.Contains(t, err.Error(), "doesn't exist")
 			},
 			wantAssert: func(t *testing.T, c client.Client, s *cdPipeApi.Stage) {},
+		},
+		{
+			name: "skip multi-tenancy engines for kubernetes platform",
+			prepare: func(t *testing.T) {
+				t.Setenv(platform.TypeEnv, platform.Kubernetes)
+				t.Setenv(platform.ManageNamespaceEnv, "true")
+				t.Setenv(platform.TenancyEngineEnv, platform.TenancyEngineKiosk)
+			},
+			stage: &cdPipeApi.Stage{
+				ObjectMeta: metaV1.ObjectMeta{
+					Name:      "stage-1",
+					Namespace: "default",
+				},
+				Spec: cdPipeApi.StageSpec{
+					Namespace:   "default-stage-1",
+					ClusterName: "external-cluster",
+				},
+			},
+			wantErr: require.NoError,
+			wantAssert: func(t *testing.T, c client.Client, s *cdPipeApi.Stage) {
+				require.NoError(t,
+					c.Get(
+						context.Background(),
+						client.ObjectKey{Name: s.Spec.Namespace}, &corev1.Namespace{},
+					),
+				)
+			},
 		},
 	}
 

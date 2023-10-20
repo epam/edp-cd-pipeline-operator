@@ -129,6 +129,7 @@ func (h ConfigureSecretManager) configureOwn(ctx context.Context, stage *cdPipeA
 			Name:      externalSecretName,
 			Namespace: stage.Spec.Namespace,
 		},
+		Type: recred.Type,
 		Data: recred.Data,
 	}
 

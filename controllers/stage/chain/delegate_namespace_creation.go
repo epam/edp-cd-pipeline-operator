@@ -32,6 +32,12 @@ func (c DelegateNamespaceCreation) ServeRequest(stage *cdPipeApi.Stage) error {
 	if platform.IsKubernetes() {
 		logger.Info("Platform is kubernetes")
 
+		if !stage.InCluster() {
+			logger.Info("Stage is not in cluster. Skip multi-tenancy engines")
+
+			return nextServeOrNil(PutNamespace(c), stage)
+		}
+
 		if platform.KioskEnabled() {
 			logger.Info("Kiosk is enabled")
 
