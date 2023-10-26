@@ -9,6 +9,69 @@ name: cd-pipeline-operator
 # for Stages with external cluster tenancyEngine will be ignored
 tenancyEngine: "none"
 
+# -- Required tenancyEngine: capsule. Specify Capsule Tenant specification for Environments.
+capsuleTenant:
+  # Enable Capsule Tenant creation as a part of cd-pipeline-operator deployment.
+  create: true
+  spec:
+  #   ingressOptions:
+  #     allowWildcardHostnames: false
+  #     allowedHostnames:
+  #       # Enable restriction pattern for ingress hostname creation.
+  #       allowedRegex: ^.*example.com$
+  #     hostnameCollisionScope: Tenant
+  #   limitRanges:
+  #     items:
+  #       - limits:
+  #            # Default limits for cintainer if not specified in upstream manifest
+  #           - default:
+  #               cpu: 256m
+  #               memory: 512Mi
+  #             # Default requests for cintainer if not specified in upstream manifest
+  #             defaultRequest:
+  #               cpu: 128m
+  #               memory: 128Mi
+  #             type: Container
+  #         # Manage PVC creation
+  #       - limits:
+  #           - max:
+  #               storage: 0Gi
+  #             min:
+  #               storage: 0Gi
+  #             type: PersistentVolumeClaim
+  #   # Maximum count of namespace to be created by cd-pipeline-operator
+  #   namespaceOptions:
+  #     quota: 3
+  #   networkPolicies:
+  #     items:
+  #       - ingress:
+  #           - from:
+  #               - namespaceSelector:
+  #                   matchLabels:
+  #                     # Please fill namespace for match selector
+  #                     capsule.clastix.io/tenant: <namespace>
+  #               - podSelector: {}
+  #               - ipBlock:
+  #                   cidr: 172.16.0.0/16
+  #         podSelector: {}
+  #         policyTypes:
+  #           - Ingress
+  #   resourceQuotas:
+  #     items:
+  #       - hard:
+  #           limits.cpu: 512m
+  #           limits.memory: 512Mi
+  #       - hard:
+  #           # Maximum count of pods to be deployed
+  #           pods: '5'
+  #     scope: Tenant
+  #   serviceOptions:
+  #     allowedServices:
+  #       # Restrict 'externalName', 'LoadBalancer' and 'NodePort' service type creation
+  #       externalName: false
+  #       loadBalancer: false
+  #       nodePort: false
+
 annotations: {}
 nodeSelector: {}
 tolerations: []
