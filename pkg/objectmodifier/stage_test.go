@@ -156,12 +156,7 @@ func Test_updateStageNamespaceSpec(t *testing.T) {
 				},
 				Spec: cdPipeApi.StageSpec{
 					CdPipeline: "test-pipeline",
-					Namespace: util.GenerateNamespaceName(&cdPipeApi.Stage{
-						ObjectMeta: metav1.ObjectMeta{
-							Name:      "test-stage",
-							Namespace: "default",
-						},
-					}),
+					Namespace:  "test-stage-ns",
 				},
 			},
 			wantStage: &cdPipeApi.Stage{
@@ -171,12 +166,7 @@ func Test_updateStageNamespaceSpec(t *testing.T) {
 				},
 				Spec: cdPipeApi.StageSpec{
 					CdPipeline: "test-pipeline",
-					Namespace: util.GenerateNamespaceName(&cdPipeApi.Stage{
-						ObjectMeta: metav1.ObjectMeta{
-							Name:      "test-stage",
-							Namespace: "default",
-						},
-					}),
+					Namespace:  "test-stage-ns",
 				},
 			},
 			want:    false,
@@ -347,12 +337,7 @@ func TestStageBatchModifier_Apply(t *testing.T) {
 				},
 				Spec: cdPipeApi.StageSpec{
 					CdPipeline: "test-pipeline",
-					Namespace: util.GenerateNamespaceName(&cdPipeApi.Stage{
-						ObjectMeta: metav1.ObjectMeta{
-							Name:      "test-stage",
-							Namespace: "default",
-						},
-					}),
+					Namespace:  "test-stage-ns",
 				},
 			},
 			objects: []runtime.Object{
@@ -392,12 +377,7 @@ func TestStageBatchModifier_Apply(t *testing.T) {
 				},
 				Spec: cdPipeApi.StageSpec{
 					CdPipeline: "test-pipeline",
-					Namespace: util.GenerateNamespaceName(&cdPipeApi.Stage{
-						ObjectMeta: metav1.ObjectMeta{
-							Name:      "test-stage",
-							Namespace: "default",
-						},
-					}),
+					Namespace:  "test-stage-ns",
 				},
 			},
 			objects: []runtime.Object{
@@ -451,12 +431,7 @@ func TestStageBatchModifier_Apply(t *testing.T) {
 				},
 				Spec: cdPipeApi.StageSpec{
 					CdPipeline: "test-pipeline",
-					Namespace: util.GenerateNamespaceName(&cdPipeApi.Stage{
-						ObjectMeta: metav1.ObjectMeta{
-							Name:      "test-stage",
-							Namespace: "default",
-						},
-					}),
+					Namespace:  "test-stage-ns",
 				},
 			},
 			objects: []runtime.Object{

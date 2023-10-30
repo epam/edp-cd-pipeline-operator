@@ -14,7 +14,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
-	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/stage/chain/util"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/platform"
 )
 
@@ -38,6 +37,9 @@ func TestCheckNamespaceExist_ServeRequest(t *testing.T) {
 					Name:      "stage-1",
 					Namespace: "default",
 				},
+				Spec: cdPipeApi.StageSpec{
+					Namespace: "stage-1-ns",
+				},
 			},
 			prepare: func(t *testing.T) {
 				t.Setenv(platform.TypeEnv, platform.Kubernetes)
@@ -45,12 +47,7 @@ func TestCheckNamespaceExist_ServeRequest(t *testing.T) {
 			objects: []client.Object{
 				&corev1.Namespace{
 					ObjectMeta: metaV1.ObjectMeta{
-						Name: util.GenerateNamespaceName(&cdPipeApi.Stage{
-							ObjectMeta: metaV1.ObjectMeta{
-								Name:      "stage-1",
-								Namespace: "default",
-							},
-						}),
+						Name: "stage-1-ns",
 					},
 				},
 			},
@@ -62,6 +59,9 @@ func TestCheckNamespaceExist_ServeRequest(t *testing.T) {
 				ObjectMeta: metaV1.ObjectMeta{
 					Name:      "stage-1",
 					Namespace: "default",
+				},
+				Spec: cdPipeApi.StageSpec{
+					Namespace: "stage-1-ns",
 				},
 			},
 			prepare: func(t *testing.T) {
@@ -79,6 +79,9 @@ func TestCheckNamespaceExist_ServeRequest(t *testing.T) {
 					Name:      "stage-1",
 					Namespace: "default",
 				},
+				Spec: cdPipeApi.StageSpec{
+					Namespace: "stage-1-ns",
+				},
 			},
 			prepare: func(t *testing.T) {
 				t.Setenv(platform.TypeEnv, platform.Openshift)
@@ -86,12 +89,7 @@ func TestCheckNamespaceExist_ServeRequest(t *testing.T) {
 			objects: []client.Object{
 				&projectApi.Project{
 					ObjectMeta: metaV1.ObjectMeta{
-						Name: util.GenerateNamespaceName(&cdPipeApi.Stage{
-							ObjectMeta: metaV1.ObjectMeta{
-								Name:      "stage-1",
-								Namespace: "default",
-							},
-						}),
+						Name: "stage-1-ns",
 					},
 				},
 			},
@@ -103,6 +101,9 @@ func TestCheckNamespaceExist_ServeRequest(t *testing.T) {
 				ObjectMeta: metaV1.ObjectMeta{
 					Name:      "stage-1",
 					Namespace: "default",
+				},
+				Spec: cdPipeApi.StageSpec{
+					Namespace: "stage-1-ns",
 				},
 			},
 			prepare: func(t *testing.T) {

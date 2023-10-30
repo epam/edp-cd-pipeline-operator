@@ -11,7 +11,6 @@ import (
 
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
 	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/stage/chain/handler"
-	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/stage/chain/util"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/platform"
 )
 
@@ -24,7 +23,7 @@ type DeleteRegistryViewerRbac struct {
 
 // ServeRequest deletes sa-registry-viewer RoleBinding.
 func (h DeleteRegistryViewerRbac) ServeRequest(stage *cdPipeApi.Stage) error {
-	targetNamespace := util.GenerateNamespaceName(stage)
+	targetNamespace := stage.Spec.Namespace
 	roleBindingName := generateSaRegistryViewerRoleBindingName(stage)
 	logger := h.log.WithValues("stage", stage.Name, "targetNamespace", targetNamespace, "roleBindingName", roleBindingName)
 

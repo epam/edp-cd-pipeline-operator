@@ -14,7 +14,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
-	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/stage/chain/util"
 )
 
 func TestPutOpenshiftProject_ServeRequest(t *testing.T) {
@@ -38,6 +37,9 @@ func TestPutOpenshiftProject_ServeRequest(t *testing.T) {
 					Name:      "stage-1",
 					Namespace: "default",
 				},
+				Spec: cdPipeApi.StageSpec{
+					Namespace: "stage-1-ns",
+				},
 			},
 			wantErr: require.NoError,
 			wantAssert: func(t *testing.T, c client.Client, s *cdPipeApi.Stage) {
@@ -45,7 +47,7 @@ func TestPutOpenshiftProject_ServeRequest(t *testing.T) {
 					t,
 					c.Get(
 						context.Background(),
-						types.NamespacedName{Name: util.GenerateNamespaceName(s)}, &projectApi.ProjectRequest{},
+						types.NamespacedName{Name: s.Spec.Namespace}, &projectApi.ProjectRequest{},
 					),
 				)
 			},
@@ -57,16 +59,14 @@ func TestPutOpenshiftProject_ServeRequest(t *testing.T) {
 					Name:      "stage-1",
 					Namespace: "default",
 				},
+				Spec: cdPipeApi.StageSpec{
+					Namespace: "stage-1-ns",
+				},
 			},
 			objects: []client.Object{
 				&projectApi.ProjectRequest{
 					ObjectMeta: metaV1.ObjectMeta{
-						Name: util.GenerateNamespaceName(&cdPipeApi.Stage{
-							ObjectMeta: metaV1.ObjectMeta{
-								Name:      "stage-1",
-								Namespace: "default",
-							},
-						}),
+						Name: "stage-1-ns",
 					},
 				},
 			},
@@ -76,7 +76,7 @@ func TestPutOpenshiftProject_ServeRequest(t *testing.T) {
 					t,
 					c.Get(
 						context.Background(),
-						types.NamespacedName{Name: util.GenerateNamespaceName(s)}, &projectApi.ProjectRequest{},
+						types.NamespacedName{Name: s.Spec.Namespace}, &projectApi.ProjectRequest{},
 					),
 				)
 			},

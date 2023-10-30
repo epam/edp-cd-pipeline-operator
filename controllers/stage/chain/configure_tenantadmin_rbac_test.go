@@ -13,7 +13,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
-	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/stage/chain/util"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/rbac"
 )
 
@@ -40,12 +39,15 @@ func TestConfigureTenantAdminRbac_ServeRequest(t *testing.T) {
 					Namespace: namespace,
 					Name:      "test-stage",
 				},
+				Spec: cdPipeApi.StageSpec{
+					Namespace: "stage-1-ns",
+				},
 			},
 			wantErr: require.NoError,
 			wantCheck: func(t *testing.T, stage *cdPipeApi.Stage, k8sClient client.Client) {
 				require.NoError(t, k8sClient.Get(context.Background(), client.ObjectKey{
 					Name:      tenantAdminRbName,
-					Namespace: util.GenerateNamespaceName(stage),
+					Namespace: stage.Spec.Namespace,
 				}, &rbacApi.RoleBinding{}))
 			},
 		},
@@ -56,17 +58,15 @@ func TestConfigureTenantAdminRbac_ServeRequest(t *testing.T) {
 					Namespace: namespace,
 					Name:      "test-stage",
 				},
+				Spec: cdPipeApi.StageSpec{
+					Namespace: "stage-1-ns",
+				},
 			},
 			objects: []runtime.Object{
 				&rbacApi.RoleBinding{
 					ObjectMeta: metaV1.ObjectMeta{
-						Name: tenantAdminRbName,
-						Namespace: util.GenerateNamespaceName(&cdPipeApi.Stage{
-							ObjectMeta: metaV1.ObjectMeta{
-								Namespace: namespace,
-								Name:      "test-stage",
-							},
-						}),
+						Name:      tenantAdminRbName,
+						Namespace: "stage-1-ns",
 					},
 				},
 			},
@@ -74,7 +74,7 @@ func TestConfigureTenantAdminRbac_ServeRequest(t *testing.T) {
 			wantCheck: func(t *testing.T, stage *cdPipeApi.Stage, k8sClient client.Client) {
 				require.NoError(t, k8sClient.Get(context.Background(), client.ObjectKey{
 					Name:      tenantAdminRbName,
-					Namespace: util.GenerateNamespaceName(stage),
+					Namespace: stage.Spec.Namespace,
 				}, &rbacApi.RoleBinding{}))
 			},
 		},

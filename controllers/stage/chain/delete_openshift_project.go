@@ -11,7 +11,6 @@ import (
 
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
 	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/stage/chain/handler"
-	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/stage/chain/util"
 )
 
 // DeleteOpenshiftProject is a handler that deletes an openshift project for a stage.
@@ -23,7 +22,7 @@ type DeleteOpenshiftProject struct {
 
 // ServeRequest is a function that deletes openshift project.
 func (h DeleteOpenshiftProject) ServeRequest(stage *cdPipeApi.Stage) error {
-	projectName := util.GenerateNamespaceName(stage)
+	projectName := stage.Spec.Namespace
 	logger := h.log.WithValues("name", projectName)
 
 	project := &projectApi.Project{

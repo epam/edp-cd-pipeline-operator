@@ -9,7 +9,6 @@ import (
 
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
 	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/stage/chain/handler"
-	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/stage/chain/util"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/platform"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/rbac"
 )
@@ -21,7 +20,7 @@ type ConfigureRegistryViewerRbac struct {
 }
 
 func (h ConfigureRegistryViewerRbac) ServeRequest(stage *cdPipeApi.Stage) error {
-	targetNamespace := util.GenerateNamespaceName(stage)
+	targetNamespace := stage.Spec.Namespace
 	roleBindingName := generateSaRegistryViewerRoleBindingName(stage)
 	logger := h.log.WithValues("stage", stage.Name, "targetNamespace", targetNamespace, "roleBindingName", roleBindingName)
 
@@ -60,5 +59,5 @@ func (h ConfigureRegistryViewerRbac) ServeRequest(stage *cdPipeApi.Stage) error 
 
 // generateSaRegistryViewerRoleBindingName generates name for RoleBinding for registry-viewer role.
 func generateSaRegistryViewerRoleBindingName(stage *cdPipeApi.Stage) string {
-	return fmt.Sprintf("%s-%s", "sa-registry-viewer", util.GenerateNamespaceName(stage))
+	return fmt.Sprintf("%s-%s", "sa-registry-viewer", stage.Spec.Namespace)
 }

@@ -13,7 +13,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
-	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/stage/chain/util"
 )
 
 func TestDeleteOpenshiftProject_ServeRequest(t *testing.T) {
@@ -37,16 +36,14 @@ func TestDeleteOpenshiftProject_ServeRequest(t *testing.T) {
 					Name:      "stage-1",
 					Namespace: "default",
 				},
+				Spec: cdPipeApi.StageSpec{
+					Namespace: "stage-1-ns",
+				},
 			},
 			objects: []runtime.Object{
 				&projectApi.Project{
 					ObjectMeta: metaV1.ObjectMeta{
-						Name: util.GenerateNamespaceName(&cdPipeApi.Stage{
-							ObjectMeta: metaV1.ObjectMeta{
-								Name:      "stage-1",
-								Namespace: "default",
-							},
-						}),
+						Name: "stage-1-ns",
 					},
 				},
 			},
@@ -55,7 +52,7 @@ func TestDeleteOpenshiftProject_ServeRequest(t *testing.T) {
 				require.NoError(
 					t,
 					client.IgnoreNotFound(
-						c.Get(context.Background(), client.ObjectKey{Name: util.GenerateNamespaceName(s)}, &projectApi.Project{}),
+						c.Get(context.Background(), client.ObjectKey{Name: s.Spec.Namespace}, &projectApi.Project{}),
 					),
 				)
 			},
@@ -66,6 +63,9 @@ func TestDeleteOpenshiftProject_ServeRequest(t *testing.T) {
 				ObjectMeta: metaV1.ObjectMeta{
 					Name:      "stage-1",
 					Namespace: "default",
+				},
+				Spec: cdPipeApi.StageSpec{
+					Namespace: "stage-1-ns",
 				},
 			},
 			wantErr:    require.NoError,

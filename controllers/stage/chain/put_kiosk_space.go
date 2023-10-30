@@ -11,7 +11,6 @@ import (
 
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
 	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/stage/chain/handler"
-	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/stage/chain/util"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/kiosk"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/consts"
 )
@@ -24,7 +23,7 @@ type PutKioskSpace struct {
 }
 
 func (h PutKioskSpace) ServeRequest(stage *cdPipeApi.Stage) error {
-	name := util.GenerateNamespaceName(stage)
+	name := stage.Spec.Namespace
 	h.log.Info("try to create namespace", "name", name)
 
 	if err := h.createSpace(name, stage.Namespace); err != nil {

@@ -9,7 +9,6 @@ import (
 
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
 	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/stage/chain/handler"
-	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/stage/chain/util"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/rbac"
 )
 
@@ -24,7 +23,7 @@ type ConfigureTenantAdminRbac struct {
 }
 
 func (h ConfigureTenantAdminRbac) ServeRequest(stage *cdPipeApi.Stage) error {
-	targetNamespace := util.GenerateNamespaceName(stage)
+	targetNamespace := stage.Spec.Namespace
 	logger := h.log.WithValues("stage", stage.Name, "target-ns", targetNamespace)
 	logger.Info("Configuring tenant admin RBAC")
 

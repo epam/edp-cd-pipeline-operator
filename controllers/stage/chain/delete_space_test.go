@@ -14,7 +14,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
-	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/stage/chain/util"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/kiosk"
 	commonmock "github.com/epam/edp-common/pkg/mock"
 )
@@ -27,13 +26,16 @@ func emptyStageInit(t *testing.T) *cdPipeApi.Stage {
 			Name:      name,
 			Namespace: namespace,
 		},
+		Spec: cdPipeApi.StageSpec{
+			Namespace: "stage-1-ns",
+		},
 	}
 }
 
 func TestDeleteSpace_DeleteSpaceSuccess(t *testing.T) {
 	logger := commonmock.NewLogr()
 	stage := emptyStageInit(t)
-	spaceName := util.GenerateNamespaceName(stage)
+	spaceName := stage.Spec.Namespace
 	space := &unstructured.Unstructured{}
 	space.Object = map[string]interface{}{
 		"kind":       "Space",

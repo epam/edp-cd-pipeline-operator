@@ -8,7 +8,6 @@ import (
 
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
 	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/stage/chain/handler"
-	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/stage/chain/util"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/kiosk"
 )
 
@@ -19,7 +18,7 @@ type DeleteSpace struct {
 }
 
 func (h DeleteSpace) ServeRequest(stage *cdPipeApi.Stage) error {
-	name := util.GenerateNamespaceName(stage)
+	name := stage.Spec.Namespace
 	logger := h.log.WithValues("stage name", stage.Name, "space", name, "namespace", name)
 	logger.Info("deleting loft kiosk space resource and namespace related to this space")
 

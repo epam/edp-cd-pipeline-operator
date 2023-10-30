@@ -12,7 +12,6 @@ import (
 
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
 	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/stage/chain/handler"
-	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/stage/chain/util"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/platform"
 )
 
@@ -25,7 +24,7 @@ type CheckNamespaceExist struct {
 
 // ServeRequest serves request to check if namespace/project exists.
 func (h CheckNamespaceExist) ServeRequest(stage *cdPipeApi.Stage) error {
-	name := util.GenerateNamespaceName(stage)
+	name := stage.Spec.Namespace
 
 	if platform.IsOpenshift() {
 		if err := h.projectExist(context.Background(), name); err != nil {
