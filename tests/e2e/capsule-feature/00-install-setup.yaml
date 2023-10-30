@@ -1,0 +1,59 @@
+apiVersion: kuttl.dev/v1beta1
+kind: TestStep
+commands:
+  # TestSuit namespace creation doesn't work, so we need to create this namespace manually
+  - command: kubectl create namespace edp
+    namespaced: false
+  # install CRD first, since the default deployment will fail otherwise
+  - command: kubectl apply -f https://raw.githubusercontent.com/projectcapsule/capsule/v0.4.0-rc.3/charts/capsule/crds/capsuleconfiguration-crd.yaml
+    namespaced: false
+  # install capsule
+  - command: kubectl apply -f https://raw.githubusercontent.com/projectcapsule/capsule/v0.4.0-rc.3/config/install.yaml
+    namespaced: false
+  # install codebaseimagestreams CRD
+  - command: kubectl apply -f https://raw.githubusercontent.com/epam/edp-codebase-operator/master/deploy-templates/crds/v2.edp.epam.com_codebaseimagestreams.yaml
+    namespaced: false
+
+# We need to add system:serviceaccounts:edp to the list of userGroups, where `edp` is the namespace where EDP is installed
+# see https://epam.github.io/edp-install/operator-guide/capsule/
+---
+apiVersion: capsule.clastix.io/v1beta2
+kind: CapsuleConfiguration
+metadata:
+  name: capsule-default
+spec:
+  enableTLSReconciler: true
+  forceTenantPrefix: false
+  overrides:
+    TLSSecretName: capsule-tls
+    mutatingWebhookConfigurationName: capsule-mutating-webhook-configuration
+    validatingWebhookConfigurationName: capsule-validating-webhook-configuration
+  protectedNamespaceRegex: ''
+  userGroups:
+    - capsule.clastix.io
+    - system:serviceaccounts:edp
+
+# We "grab" registry URL from the edp-config configmap, if no configmap is found, we use EDPComponent CRD,
+# so let's avoid this and create configmap manually
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: edp-config
+data:
+  container_registry_host: registry.host.local
+  container_registry_space: registry-space
+
+# We need to have codebaseimagestream which is going to be used in the test
+# This codebaseimagestream is created by edp-codebase-operator and used in the Stage Spec
+---
+apiVersion: v2.edp.epam.com/v1
+kind: CodebaseImageStream
+metadata:
+  name: test-main
+spec:
+  codebase: test
+  imageName: registry.host.local/registry-space/test
+  tags:
+    - created: '2023-10-19T14:05:05Z'
+      name: 0.1.0-SNAPSHOT.1

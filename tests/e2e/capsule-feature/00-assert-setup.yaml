@@ -1,0 +1,29 @@
+apiVersion: kuttl.dev/v1beta1
+kind: TestAssert
+collectors:
+- type: pod
+  selector: control-plane
+  namespace: capsule-system
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: capsule-controller-manager
+  namespace: capsule-system
+status:
+  readyReplicas: 1
+
+# ClusterRole is created by capsule-operator and guarantees that webhook is configured properly
+# and capsule-operator is ready to process requests
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: capsule-namespace-deleter
+rules:
+  - verbs:
+      - delete
+    apiGroups:
+      - ''
+    resources:
+      - namespaces

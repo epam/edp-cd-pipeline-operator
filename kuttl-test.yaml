@@ -1,0 +1,8 @@
+apiVersion: kuttl.dev/v1beta1
+kind: TestSuite
+testDirs:
+  - tests/e2e/
+skipClusterDelete: false
+# hardcode namespace since we need to have predictable rolebindings
+namespace: edp
+timeout: 100

@@ -1,0 +1,138 @@
+apiVersion: v2.edp.epam.com/v1
+kind: CDPipeline
+metadata:
+  name: mypipeline
+  finalizers:
+    - edp.epam.com/ownedStages
+status:
+  available: true
+  value: active
+spec:
+  applications:
+    - test
+  applicationsToPromote:
+    - test
+  deploymentType: container
+  inputDockerStreams:
+    - test-main
+  name: mypipeline
+
+---
+apiVersion: v2.edp.epam.com/v1
+kind: Stage
+metadata:
+  name: mypipeline-dev
+  labels:
+    app.edp.epam.com/cdPipelineName: mypipeline
+  finalizers:
+    - envLabelDeletion
+  ownerReferences:
+    - apiVersion: v2.edp.epam.com/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: CDPipeline
+      name: mypipeline
+status:
+  available: true
+  value: active
+spec:
+  cdPipeline: mypipeline
+  clusterName: in-cluster
+  description: Development Environment
+  jobProvisioning: default
+  name: dev
+  namespace: edp-mypipeline-dev
+  order: 0
+  qualityGates:
+    - autotestName: null
+      branchName: null
+      qualityGateType: manual
+      stepName: approve
+  source:
+    library:
+      name: default
+    type: default
+  triggerType: Manual
+
+# Create CodebaseImageStream which stores verified (promoted) images
+---
+apiVersion: v2.edp.epam.com/v1
+kind: CodebaseImageStream
+metadata:
+  name: mypipeline-dev-test-verified
+spec:
+  codebase: test
+  imageName: registry.host.local/registry-space/test
+
+# We've created namespace under the Tenant, so we need to check that namespace is created
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    app.edp.epam.com/tenant: edp
+    capsule.clastix.io/tenant: edp-workload-edp
+    kubernetes.io/metadata.name: edp-mypipeline-dev
+    name: edp-mypipeline-dev
+  name: edp-mypipeline-dev
+spec:
+  finalizers:
+  - kubernetes
+status:
+  phase: Active
+
+### Let's ansure that all RBACs are created
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: tenant-admin
+  namespace: edp-mypipeline-dev
+subjects:
+  - kind: Group
+    apiGroup: rbac.authorization.k8s.io
+    name: edp-oidc-admins
+  - kind: Group
+    apiGroup: rbac.authorization.k8s.io
+    name: edp-oidc-developers
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: admin
+
+# cd-pipeline-operator can manage Stage namespace
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: capsule-edp-workload-edp-1-capsule-namespace-deleter
+  namespace: edp-mypipeline-dev
+  labels:
+    capsule.clastix.io/tenant: edp-workload-edp
+subjects:
+  - kind: ServiceAccount
+    name: edp-cd-pipeline-operator
+    namespace: edp
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: capsule-namespace-deleter
+
+# cd-pipeline-operator is admin in the Stage namespace
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: capsule-edp-workload-edp-0-admin
+  namespace: edp-mypipeline-dev
+  labels:
+    capsule.clastix.io/tenant: edp-workload-edp
+subjects:
+  - kind: ServiceAccount
+    name: edp-cd-pipeline-operator
+    namespace: edp
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: admin
+### End of RBACs

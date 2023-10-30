@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cd-pipeline-operator
+status:
+  readyReplicas: 1
+
+# This Tenant is created by helm chart, so we need to check that it is created
+# cd-pipeline-operator is deployed in edp namespace and has permissions to manage resources in tenant scope
+---
+apiVersion: capsule.clastix.io/v1beta2
+kind: Tenant
+metadata:
+  name: edp-workload-edp
+status:
+  size: 0
+  state: Active
+spec:
+  ingressOptions:
+    hostnameCollisionScope: Disabled
+  limitRanges: {}
+  networkPolicies: {}
+  owners:
+    - clusterRoles:
+        - admin
+        - capsule-namespace-deleter
+      kind: ServiceAccount
+      name: system:serviceaccount:edp:edp-cd-pipeline-operator
+  resourceQuotas:
+    scope: Tenant

@@ -12,6 +12,15 @@ GIT_COMMIT=$(shell git rev-parse HEAD)
 GIT_TAG=$(shell if [ -z "`git status --porcelain`" ]; then git describe --exact-match --tags HEAD 2>/dev/null; fi)
 KUBECTL_VERSION=$(shell go list -m all | grep k8s.io/client-go| cut -d' ' -f2)
 
+# Use kind cluster for testing
+START_KIND_CLUSTER?=true
+KIND_CLUSTER_NAME?="cd-pipeline-operator"
+KUBE_VERSION?=1.27
+KIND_CONFIG?=./hack/kind-$(KUBE_VERSION).yaml
+
+E2E_IMAGE_REPOSITORY?="cd-pipeline-operator-image"
+E2E_IMAGE_TAG?="latest"
+
 override LDFLAGS += \
   -X ${PACKAGE}.version=${VERSION} \
   -X ${PACKAGE}.buildDate=${BUILD_DATE} \
@@ -72,6 +81,12 @@ validate-docs: api-docs helm-docs  ## Validate helm and api docs
 # Run tests
 test: fmt vet
 	go test ./... -coverprofile=coverage.out `go list ./...`
+
+## Run e2e tests. Requires kind with running cluster and kuttl tool.
+e2e: build
+	docker build --no-cache -t ${E2E_IMAGE_REPOSITORY}:${E2E_IMAGE_TAG} .
+	kind load --name $(KIND_CLUSTER_NAME) docker-image ${E2E_IMAGE_REPOSITORY}:${E2E_IMAGE_TAG}
+	E2E_IMAGE_REPOSITORY=${E2E_IMAGE_REPOSITORY} E2E_IMAGE_TAG=${E2E_IMAGE_TAG} kubectl-kuttl test
 
 .PHONY: fmt
 fmt:  ## Run go fmt
@@ -177,3 +192,9 @@ bundle: manifests kustomize ## Generate bundle manifests and metadata, then vali
 	cd config/manager && $(KUSTOMIZE) edit set image controller=$(IMG)
 	$(KUSTOMIZE) build config/manifests | operator-sdk generate bundle $(BUNDLE_GEN_FLAGS)
 	operator-sdk bundle validate ./bundle
+
+.PHONY: start-kind
+start-kind:	## Start kind cluster
+ifeq (true,$(START_KIND_CLUSTER))
+	kind create cluster --name $(KIND_CLUSTER_NAME) --config $(KIND_CONFIG)
+endif
