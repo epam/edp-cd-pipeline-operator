@@ -60,6 +60,9 @@ apiVersion: v2.edp.epam.com/v1
 kind: CodebaseImageStream
 metadata:
   name: mypipeline-dev-test-verified
+  # we have autodeploy enabled for the next stage so this label will be added by the operator
+  labels:
+    mypipeline/qa: ''
 spec:
   codebase: test
   imageName: registry.host.local/registry-space/test
@@ -136,3 +139,73 @@ roleRef:
   kind: ClusterRole
   name: admin
 ### End of RBACs
+
+## Stage with custom namespace and auto-deploy enabled
+---
+apiVersion: v2.edp.epam.com/v1
+kind: Stage
+metadata:
+  name: mypipeline-qa
+  labels:
+    app.edp.epam.com/cdPipelineName: mypipeline
+  finalizers:
+    - envLabelDeletion
+  ownerReferences:
+    - apiVersion: v2.edp.epam.com/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: CDPipeline
+      name: mypipeline
+status:
+  available: true
+  value: active
+spec:
+  cdPipeline: mypipeline
+  clusterName: in-cluster
+  description: QA Environment
+  jobProvisioning: default
+  name: qa
+  namespace: custom-namespace
+  order: 1
+  qualityGates:
+    - autotestName: null
+      branchName: null
+      qualityGateType: manual
+      stepName: approve
+  source:
+    library:
+      name: default
+    type: default
+  triggerType: Auto
+
+---
+apiVersion: v2.edp.epam.com/v1
+kind: CodebaseImageStream
+metadata:
+  name: mypipeline-qa-test-verified
+spec:
+  codebase: test
+  imageName: registry.host.local/registry-space/test
+
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    app.edp.epam.com/tenant: edp
+    capsule.clastix.io/tenant: edp-workload-edp
+    kubernetes.io/metadata.name: custom-namespace
+    name: custom-namespace
+  name: custom-namespace
+spec:
+  finalizers:
+  - kubernetes
+status:
+  phase: Active
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: tenant-admin
+  namespace: custom-namespace

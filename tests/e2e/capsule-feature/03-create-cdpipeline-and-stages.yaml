@@ -35,3 +35,28 @@ spec:
       name: default
     type: default
   triggerType: Manual
+
+---
+apiVersion: v2.edp.epam.com/v1
+kind: Stage
+metadata:
+  name: mypipeline-qa
+spec:
+  cdPipeline: mypipeline
+  clusterName: in-cluster
+  description: QA Environment
+  jobProvisioning: default
+  name: qa
+  # here we have custom namespace name instead of EDP pattern
+  namespace: custom-namespace
+  order: 1
+  qualityGates:
+    - autotestName: null
+      branchName: null
+      qualityGateType: manual
+      stepName: approve
+  source:
+    library:
+      name: default
+    type: default
+  triggerType: Auto
