@@ -53,4 +53,11 @@ rules:
       - create
       - delete
       - update
+- apiGroups: [ "" ]
+  resources:
+    - secrets
+  verbs:
+    - get
+    - list
+    - watch
 {{- end -}}
