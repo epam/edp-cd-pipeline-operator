@@ -5,16 +5,15 @@ import (
 	"testing"
 
 	"github.com/go-logr/logr"
-	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/kiosk"
-	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/consts"
 )
 
 const (
@@ -38,10 +37,9 @@ func TestSpaceExist_NotFound(t *testing.T) {
 	putKioskSpace := PutKioskSpace{
 		space:  space,
 		client: client,
-		log:    logr.Discard(),
 	}
 
-	exists, err := putKioskSpace.spaceExists(name)
+	exists, err := putKioskSpace.spaceExists(ctrl.LoggerInto(context.Background(), logr.Discard()), name)
 	assert.NoError(t, err)
 	assert.False(t, exists)
 }
@@ -63,10 +61,9 @@ func TestSpaceExist_Success(t *testing.T) {
 	putKioskSpace := PutKioskSpace{
 		space:  spaceManager,
 		client: client,
-		log:    logr.Discard(),
 	}
 
-	exists, err := putKioskSpace.spaceExists(name)
+	exists, err := putKioskSpace.spaceExists(ctrl.LoggerInto(context.Background(), logr.Discard()), name)
 	assert.NoError(t, err)
 	assert.True(t, exists)
 }
@@ -79,10 +76,9 @@ func TestCreateSpace_Success(t *testing.T) {
 	putKioskSpace := PutKioskSpace{
 		space:  spaceManager,
 		client: client,
-		log:    logr.Discard(),
 	}
 
-	err := putKioskSpace.createSpace(name, account)
+	err := putKioskSpace.createSpace(ctrl.LoggerInto(context.Background(), logr.Discard()), name, account)
 	assert.NoError(t, err)
 
 	space, err := spaceManager.Get(name)
@@ -107,32 +103,13 @@ func TestCreateSpace_AlreadyExists(t *testing.T) {
 	putKioskSpace := PutKioskSpace{
 		space:  spaceManager,
 		client: client,
-		log:    logr.Discard(),
 	}
 
 	_, err := spaceManager.Get(name)
 	assert.NoError(t, err)
 
-	err = putKioskSpace.createSpace(name, account)
+	err = putKioskSpace.createSpace(ctrl.LoggerInto(context.Background(), logr.Discard()), name, account)
 	assert.NoError(t, err)
-}
-
-func TestSetFailedStatus_Success(t *testing.T) {
-	stage := emptyStageInit(t)
-
-	client := fake.NewClientBuilder().WithScheme(kioskSpaceScheme(t)).WithObjects(stage).Build()
-
-	spaceManager := kiosk.InitSpace(client)
-
-	putKioskSpace := PutKioskSpace{
-		space:  spaceManager,
-		client: client,
-		log:    logr.Discard(),
-	}
-
-	err := putKioskSpace.setFailedStatus(context.Background(), stage, errors.New(""))
-	assert.NoError(t, err)
-	assert.Equal(t, consts.FailedStatus, stage.Status.Status)
 }
 
 func TestPutKioskSpace_ServeRequest_Success(t *testing.T) {
@@ -143,12 +120,11 @@ func TestPutKioskSpace_ServeRequest_Success(t *testing.T) {
 	putKioskSpace := PutKioskSpace{
 		space:  spaceManager,
 		client: client,
-		log:    logr.Discard(),
 	}
 
 	stage := emptyStageInit(t)
 
-	err := putKioskSpace.ServeRequest(stage)
+	err := putKioskSpace.ServeRequest(ctrl.LoggerInto(context.Background(), logr.Discard()), stage)
 	assert.NoError(t, err)
 
 	space, err := spaceManager.Get(stage.Spec.Namespace)

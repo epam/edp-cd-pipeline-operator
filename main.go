@@ -120,7 +120,7 @@ func main() {
 	}
 
 	ctrlLog := ctrl.Log.WithName("controllers")
-	cdPipeCtrl := cdpipeline.NewReconcileCDPipeline(cl, mgr.GetScheme(), ctrlLog)
+	cdPipeCtrl := cdpipeline.NewReconcileCDPipeline(cl, mgr.GetScheme())
 
 	if err = cdPipeCtrl.SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "cd-pipeline")

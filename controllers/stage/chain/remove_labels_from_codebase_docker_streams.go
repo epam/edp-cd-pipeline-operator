@@ -5,29 +5,26 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/go-logr/logr"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
-	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/stage/chain/handler"
 	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/stage/chain/util"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/cluster"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/consts"
 )
 
 type RemoveLabelsFromCodebaseDockerStreamsAfterCdPipelineUpdate struct {
-	next   handler.CdStageHandler
 	client client.Client
-	log    logr.Logger
 }
 
 const dockerStreamsBeforeUpdateAnnotationKey = "deploy.edp.epam.com/docker-streams-before-update"
 
-func (h RemoveLabelsFromCodebaseDockerStreamsAfterCdPipelineUpdate) ServeRequest(stage *cdPipeApi.Stage) error {
-	log := h.log.WithValues("stage name", stage.Name)
+func (h RemoveLabelsFromCodebaseDockerStreamsAfterCdPipelineUpdate) ServeRequest(ctx context.Context, stage *cdPipeApi.Stage) error {
+	log := ctrl.LoggerFrom(ctx)
 	if consts.AutoDeployTriggerType != stage.Spec.TriggerType {
 		log.Info("Trigger type is not auto deploy, skipping")
-		return nextServeOrNil(h.next, stage)
+		return nil
 	}
 
 	log.Info("start deleting environment labels from codebase image stream resources.")
@@ -39,9 +36,9 @@ func (h RemoveLabelsFromCodebaseDockerStreamsAfterCdPipelineUpdate) ServeRequest
 
 	annotations := pipe.GetAnnotations()[dockerStreamsBeforeUpdateAnnotationKey]
 	if annotations == "" {
-		h.log.Info("CodebaseImageStream doesn't contain %v annotation." +
+		log.Info("CodebaseImageStream doesn't contain %v annotation." +
 			" skip deleting env labels from CodebaseImageStream resources")
-		return nextServeOrNil(h.next, stage)
+		return nil
 	}
 
 	streams := strings.Split(annotations, ",")
@@ -61,5 +58,5 @@ func (h RemoveLabelsFromCodebaseDockerStreamsAfterCdPipelineUpdate) ServeRequest
 
 	log.Info("environment labels have been deleted from codebase image stream resources.")
 
-	return nextServeOrNil(h.next, stage)
+	return nil
 }

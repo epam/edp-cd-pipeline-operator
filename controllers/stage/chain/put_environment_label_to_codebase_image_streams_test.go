@@ -1,6 +1,7 @@
 package chain
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
@@ -10,6 +11,7 @@ import (
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
@@ -77,10 +79,9 @@ func TestPutEnvironmentLabelToCodebaseImageStreams_ServeRequest_Success(t *testi
 
 	putEnvLabel := PutEnvironmentLabelToCodebaseImageStreams{
 		client: fake.NewClientBuilder().WithScheme(schemeInit(t)).WithObjects(&stage, &cdPipeline, &image).Build(),
-		log:    logr.Discard(),
 	}
 
-	err := putEnvLabel.ServeRequest(&stage)
+	err := putEnvLabel.ServeRequest(ctrl.LoggerInto(context.Background(), logr.Discard()), &stage)
 	assert.NoError(t, err)
 
 	imageStream, err := cluster.GetCodebaseImageStream(putEnvLabel.client, dockerImageName, namespace)
@@ -132,10 +133,9 @@ func TestPutEnvironmentLabelToCodebaseImageStreams_ServeRequest_PreviousStageIma
 
 	putEnvLabel := PutEnvironmentLabelToCodebaseImageStreams{
 		client: fake.NewClientBuilder().WithScheme(schemeInit(t)).WithObjects(&stage, &prevStage, &cdPipeline, &image, &previousImage).Build(),
-		log:    logr.Discard(),
 	}
 
-	err := putEnvLabel.ServeRequest(&stage)
+	err := putEnvLabel.ServeRequest(ctrl.LoggerInto(context.Background(), logr.Discard()), &stage)
 	assert.NoError(t, err)
 
 	imageStream, err := cluster.GetCodebaseImageStream(putEnvLabel.client, cisName, namespace)
@@ -150,10 +150,9 @@ func TestPutEnvironmentLabelToCodebaseImageStreams_ServeRequest_CantGetCdPipelin
 
 	putEnvLabel := PutEnvironmentLabelToCodebaseImageStreams{
 		client: fake.NewClientBuilder().WithScheme(schemeInit(t)).WithObjects(&stage).Build(),
-		log:    logr.Discard(),
 	}
 
-	err := putEnvLabel.ServeRequest(&stage)
+	err := putEnvLabel.ServeRequest(ctrl.LoggerInto(context.Background(), logr.Discard()), &stage)
 	assert.True(t, k8sErrors.IsNotFound(err))
 }
 
@@ -174,10 +173,9 @@ func TestPutEnvironmentLabelToCodebaseImageStreams_ServeRequest_EmptyInputDocker
 
 	putEnvLabel := PutEnvironmentLabelToCodebaseImageStreams{
 		client: fake.NewClientBuilder().WithScheme(schemeInit(t)).WithObjects(&stage, &cdPipeline).Build(),
-		log:    logr.Discard(),
 	}
 
-	err := putEnvLabel.ServeRequest(&stage)
+	err := putEnvLabel.ServeRequest(ctrl.LoggerInto(context.Background(), logr.Discard()), &stage)
 	assert.Equal(t, fmt.Errorf("pipeline %s doesn't contain codebase image streams", cdPipeline.Name), err)
 }
 
@@ -198,10 +196,9 @@ func TestPutEnvironmentLabelToCodebaseImageStreams_ServeRequest_CantGetImage(t *
 
 	putEnvLabel := PutEnvironmentLabelToCodebaseImageStreams{
 		client: fake.NewClientBuilder().WithScheme(schemeInit(t)).WithObjects(&stage, &cdPipeline).Build(),
-		log:    logr.Discard(),
 	}
 
-	err := putEnvLabel.ServeRequest(&stage)
+	err := putEnvLabel.ServeRequest(ctrl.LoggerInto(context.Background(), logr.Discard()), &stage)
 	assert.True(t, k8sErrors.IsNotFound(err))
 }
 
@@ -238,9 +235,8 @@ func TestPutEnvironmentLabelToCodebaseImageStreams_ServeRequest_CantGetPreviousS
 
 	putEnvLabel := PutEnvironmentLabelToCodebaseImageStreams{
 		client: fake.NewClientBuilder().WithScheme(schemeInit(t)).WithObjects(&stage, &prevStage, &cdPipeline, &image).Build(),
-		log:    logr.Discard(),
 	}
 
-	err := putEnvLabel.ServeRequest(&stage)
+	err := putEnvLabel.ServeRequest(ctrl.LoggerInto(context.Background(), logr.Discard()), &stage)
 	assert.Equal(t, edpErr.CISNotFoundError(fmt.Sprintf("couldn't get %v codebase image stream", dockerImageName)), err)
 }

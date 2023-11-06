@@ -4,14 +4,13 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/go-logr/logr"
 	"golang.org/x/exp/slices"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
-	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/stage/chain/handler"
 	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/stage/chain/util"
 	edpErr "github.com/epam/edp-cd-pipeline-operator/v2/pkg/error"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/cluster"
@@ -19,24 +18,23 @@ import (
 )
 
 type DeleteEnvironmentLabelFromCodebaseImageStreams struct {
-	next   handler.CdStageHandler
 	client client.Client
-	log    logr.Logger
 }
 
-func (h DeleteEnvironmentLabelFromCodebaseImageStreams) ServeRequest(stage *cdPipeApi.Stage) error {
-	h.log.Info("Start deleting environment labels from codebase image streams")
+func (h DeleteEnvironmentLabelFromCodebaseImageStreams) ServeRequest(ctx context.Context, stage *cdPipeApi.Stage) error {
+	log := ctrl.LoggerFrom(ctx)
+	log.Info("Start deleting environment labels from codebase image streams")
 
-	if err := h.deleteEnvironmentLabel(stage); err != nil {
+	if err := h.deleteEnvironmentLabel(ctx, stage); err != nil {
 		return fmt.Errorf("failed to set environment status: %w", err)
 	}
 
-	h.log.Info("Environment labels have been deleted from codebase image streams")
+	log.Info("Environment labels have been deleted from codebase image streams")
 
-	return nextServeOrNil(h.next, stage)
+	return nil
 }
 
-func (h DeleteEnvironmentLabelFromCodebaseImageStreams) deleteEnvironmentLabel(stage *cdPipeApi.Stage) error {
+func (h DeleteEnvironmentLabelFromCodebaseImageStreams) deleteEnvironmentLabel(ctx context.Context, stage *cdPipeApi.Stage) error {
 	pipe, err := util.GetCdPipeline(h.client, stage)
 	if err != nil {
 		return fmt.Errorf("failed to get %s cd pipeline: %w", stage.Spec.CdPipeline, err)
@@ -53,19 +51,19 @@ func (h DeleteEnvironmentLabelFromCodebaseImageStreams) deleteEnvironmentLabel(s
 		}
 
 		if stage.IsFirst() {
-			if envErr := h.setEnvLabel(stage.Spec.Name, pipe.Spec.Name, stream); envErr != nil {
+			if envErr := h.setEnvLabel(ctx, stage.Spec.Name, pipe.Spec.Name, stream); envErr != nil {
 				return envErr
 			}
 
 			continue
 		}
 
-		if envErr := h.setEnvLabelForVerifiedImageStream(stage, stream, pipe.Spec.Name, name); envErr != nil {
+		if envErr := h.setEnvLabelForVerifiedImageStream(ctx, stage, stream, pipe.Spec.Name, name); envErr != nil {
 			return envErr
 		}
 
 		if !slices.Contains(pipe.Spec.ApplicationsToPromote, stream.Spec.Codebase) {
-			if envErr := h.setEnvLabel(stage.Spec.Name, pipe.Spec.Name, stream); envErr != nil {
+			if envErr := h.setEnvLabel(ctx, stage.Spec.Name, pipe.Spec.Name, stream); envErr != nil {
 				return envErr
 			}
 		}
@@ -74,21 +72,24 @@ func (h DeleteEnvironmentLabelFromCodebaseImageStreams) deleteEnvironmentLabel(s
 	return nil
 }
 
-func (h DeleteEnvironmentLabelFromCodebaseImageStreams) setEnvLabel(stageName, pipeName string, stream *codebaseApi.CodebaseImageStream) error {
+func (h DeleteEnvironmentLabelFromCodebaseImageStreams) setEnvLabel(ctx context.Context, stageName, pipeName string, stream *codebaseApi.CodebaseImageStream) error {
+	log := ctrl.LoggerFrom(ctx)
 	env := createLabelName(pipeName, stageName)
 	deleteLabel(&stream.ObjectMeta, env)
 
-	if err := h.client.Update(context.Background(), stream); err != nil {
+	if err := h.client.Update(ctx, stream); err != nil {
 		return fmt.Errorf("failed to update %v codebase image stream: %w", stream, err)
 	}
 
-	h.log.Info("Label has been deleted from CodebaseImageStream", "label", env, "codebaseImageStream", stream.Name)
+	log.Info("Label has been deleted from CodebaseImageStream", "label", env, "codebaseImageStream", stream.Name)
 
 	return nil
 }
 
-func (h DeleteEnvironmentLabelFromCodebaseImageStreams) setEnvLabelForVerifiedImageStream(stage *cdPipeApi.Stage, stream *codebaseApi.CodebaseImageStream, pipeName, dockerStreamName string) error {
-	previousStageName, err := util.FindPreviousStageName(context.TODO(), h.client, stage)
+func (h DeleteEnvironmentLabelFromCodebaseImageStreams) setEnvLabelForVerifiedImageStream(ctx context.Context, stage *cdPipeApi.Stage, stream *codebaseApi.CodebaseImageStream, pipeName, dockerStreamName string) error {
+	log := ctrl.LoggerFrom(ctx)
+
+	previousStageName, err := util.FindPreviousStageName(ctx, h.client, stage)
 	if err != nil {
 		return fmt.Errorf("failed to previous stage name: %w", err)
 	}
@@ -107,11 +108,11 @@ func (h DeleteEnvironmentLabelFromCodebaseImageStreams) setEnvLabelForVerifiedIm
 	env := createLabelName(pipeName, stage.Spec.Name)
 	deleteLabel(&stream.ObjectMeta, env)
 
-	if err = h.client.Update(context.Background(), stream); err != nil {
+	if err = h.client.Update(ctx, stream); err != nil {
 		return fmt.Errorf("failed to update %v codebase image stream: %w", stream, err)
 	}
 
-	h.log.Info("Label has been deleted from CodebaseImageStream", "label", env, "dockerStream", dockerStreamName, "codebaseImageStream", stream.Name)
+	log.Info("Label has been deleted from CodebaseImageStream", "label", env, "dockerStream", dockerStreamName, "codebaseImageStream", stream.Name)
 
 	return nil
 }

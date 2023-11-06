@@ -1,25 +1,23 @@
 package chain
 
 import (
+	"context"
 	"fmt"
 
-	"github.com/go-logr/logr"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
+	ctrl "sigs.k8s.io/controller-runtime"
 
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
-	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/stage/chain/handler"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/kiosk"
 )
 
 type DeleteSpace struct {
-	next  handler.CdStageHandler
-	log   logr.Logger
 	space kiosk.SpaceManager
 }
 
-func (h DeleteSpace) ServeRequest(stage *cdPipeApi.Stage) error {
+func (h DeleteSpace) ServeRequest(ctx context.Context, stage *cdPipeApi.Stage) error {
 	name := stage.Spec.Namespace
-	logger := h.log.WithValues("stage name", stage.Name, "space", name, "namespace", name)
+	logger := ctrl.LoggerFrom(ctx).WithValues("space", name, "namespace", name)
 	logger.Info("deleting loft kiosk space resource and namespace related to this space")
 
 	if err := h.space.Delete(name); err != nil {
@@ -33,5 +31,5 @@ func (h DeleteSpace) ServeRequest(stage *cdPipeApi.Stage) error {
 
 	logger.Info("namespace has been deleted.")
 
-	return nextServeOrNil(h.next, stage)
+	return nil
 }

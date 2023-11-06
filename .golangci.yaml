@@ -114,6 +114,7 @@ issues:
     # we need refactoring to enable this linter
     - linters:
         - cyclop
+        - funlen
       text: "Reconcile"
 
   # Independently of option `exclude` we use default exclude patterns,

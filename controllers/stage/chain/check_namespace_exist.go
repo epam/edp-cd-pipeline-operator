@@ -4,45 +4,43 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/go-logr/logr"
 	projectApi "github.com/openshift/api/project/v1"
 	v1 "k8s.io/api/core/v1"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
+	ctrl "sigs.k8s.io/controller-runtime"
 
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
-	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/stage/chain/handler"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/platform"
 )
 
 // CheckNamespaceExist checks if namespace exists.
 type CheckNamespaceExist struct {
-	next   handler.CdStageHandler
 	client multiClusterClient
-	log    logr.Logger
 }
 
 // ServeRequest serves request to check if namespace/project exists.
-func (h CheckNamespaceExist) ServeRequest(stage *cdPipeApi.Stage) error {
+func (h CheckNamespaceExist) ServeRequest(ctx context.Context, stage *cdPipeApi.Stage) error {
 	name := stage.Spec.Namespace
 
 	if platform.IsOpenshift() {
-		if err := h.projectExist(context.Background(), name); err != nil {
+		if err := h.projectExist(ctx, name); err != nil {
 			return err
 		}
 	}
 
 	if platform.IsKubernetes() {
-		if err := h.namespaceExist(context.Background(), name); err != nil {
+		if err := h.namespaceExist(ctx, name); err != nil {
 			return err
 		}
 	}
 
-	return nextServeOrNil(h.next, stage)
+	return nil
 }
 
 func (h CheckNamespaceExist) namespaceExist(ctx context.Context, name string) error {
-	h.log.Info("Checking existence of namespace", "name", name)
+	log := ctrl.LoggerFrom(ctx)
+	log.Info("Checking existence of namespace", "name", name)
 
 	if err := h.client.Get(ctx, types.NamespacedName{
 		Name: name,
@@ -58,7 +56,8 @@ func (h CheckNamespaceExist) namespaceExist(ctx context.Context, name string) er
 }
 
 func (h CheckNamespaceExist) projectExist(ctx context.Context, name string) error {
-	h.log.Info("Checking existence of project", "name", name)
+	log := ctrl.LoggerFrom(ctx)
+	log.Info("Checking existence of project", "name", name)
 
 	if err := h.client.Get(ctx, types.NamespacedName{
 		Name: name,

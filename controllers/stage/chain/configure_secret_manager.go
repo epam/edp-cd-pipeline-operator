@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	rbacApi "k8s.io/api/rbac/v1"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
@@ -15,7 +14,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
-	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/stage/chain/handler"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/externalsecrets"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/rbac"
 )
@@ -32,18 +30,14 @@ const (
 
 // ConfigureSecretManager is a stage chain element that configures secret management.
 type ConfigureSecretManager struct {
-	next               handler.CdStageHandler
 	multiClusterClient multiClusterClient
 	internalClient     client.Client
-	log                logr.Logger
 }
 
 // ServeRequest implements the logic to configure secret management.
-func (h ConfigureSecretManager) ServeRequest(stage *cdPipeApi.Stage) error {
-	ctx := context.Background() // TODO: pass ctx from the caller
+func (h ConfigureSecretManager) ServeRequest(ctx context.Context, stage *cdPipeApi.Stage) error {
 	secretManager := os.Getenv(secretManagerEnv)
-	logger := h.log.WithValues(
-		"stage", stage.Name,
+	logger := ctrl.LoggerFrom(ctx).WithValues(
 		"target-ns", stage.Spec.Namespace,
 		"secret-manager", secretManager,
 	)
@@ -59,10 +53,10 @@ func (h ConfigureSecretManager) ServeRequest(stage *cdPipeApi.Stage) error {
 		}
 	default:
 		logger.Info("Secrets management is disabled, skipping")
-		return nextServeOrNil(h.next, stage)
+		return nil
 	}
 
-	return nextServeOrNil(h.next, stage)
+	return nil
 }
 
 func (h ConfigureSecretManager) configureEso(ctx context.Context, stage *cdPipeApi.Stage) error {

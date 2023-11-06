@@ -10,6 +10,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
@@ -18,7 +19,6 @@ import (
 func TestDeleteNamespace_NSDoestExists(t *testing.T) {
 	ch := DeleteNamespace{
 		multiClusterClient: fake.NewClientBuilder().Build(),
-		log:                logr.Discard(),
 	}
 
 	s := &cdPipeApi.Stage{
@@ -27,7 +27,7 @@ func TestDeleteNamespace_NSDoestExists(t *testing.T) {
 			Namespace: namespace,
 		},
 	}
-	err := ch.ServeRequest(s)
+	err := ch.ServeRequest(ctrl.LoggerInto(context.Background(), logr.Discard()), s)
 	assert.NoError(t, err)
 
 	ns := &v1.Namespace{}
@@ -48,7 +48,6 @@ func TestDeleteNamespace_DeleteNS(t *testing.T) {
 
 	ch := DeleteNamespace{
 		multiClusterClient: fake.NewClientBuilder().WithRuntimeObjects(ns).Build(),
-		log:                logr.Discard(),
 	}
 
 	s := &cdPipeApi.Stage{
@@ -60,11 +59,11 @@ func TestDeleteNamespace_DeleteNS(t *testing.T) {
 			Namespace: n,
 		},
 	}
-	err := ch.ServeRequest(s)
+	err := ch.ServeRequest(ctrl.LoggerInto(context.Background(), logr.Discard()), s)
 	assert.NoError(t, err)
 
 	ns = &v1.Namespace{}
-	err = ch.multiClusterClient.Get(context.TODO(), types.NamespacedName{
+	err = ch.multiClusterClient.Get(context.Background(), types.NamespacedName{
 		Name: n,
 	}, ns)
 	assert.Error(t, err, "ns doesn't exist")

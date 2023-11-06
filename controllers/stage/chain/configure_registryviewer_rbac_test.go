@@ -10,6 +10,7 @@ import (
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
@@ -114,11 +115,10 @@ func TestConfigureRegistryViewerRbac_ServeRequest(t *testing.T) {
 			k8sClient := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(tt.objects...).Build()
 
 			h := ConfigureRegistryViewerRbac{
-				log:  logr.Discard(),
 				rbac: rbac.NewRbacManager(k8sClient, logr.Discard()),
 			}
 
-			err := h.ServeRequest(tt.stage)
+			err := h.ServeRequest(ctrl.LoggerInto(context.Background(), logr.Discard()), tt.stage)
 			tt.wantErr(t, err)
 			tt.wantCheck(t, tt.stage, k8sClient)
 		})

@@ -10,6 +10,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
@@ -217,10 +218,9 @@ func TestDelegateNamespaceCreation_ServeRequest(t *testing.T) {
 
 			c := DelegateNamespaceCreation{
 				client: fake.NewClientBuilder().WithScheme(scheme).WithObjects(tt.objects...).Build(),
-				log:    logr.Discard(),
 			}
 
-			err := c.ServeRequest(tt.stage)
+			err := c.ServeRequest(ctrl.LoggerInto(context.Background(), logr.Discard()), tt.stage)
 			tt.wantErr(t, err)
 			tt.wantAssert(t, c.client, tt.stage)
 		})

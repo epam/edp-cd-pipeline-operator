@@ -4,11 +4,10 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/go-logr/logr"
 	rbacApi "k8s.io/api/rbac/v1"
+	ctrl "sigs.k8s.io/controller-runtime"
 
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
-	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/stage/chain/handler"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/rbac"
 )
 
@@ -17,18 +16,16 @@ const (
 )
 
 type ConfigureTenantAdminRbac struct {
-	next handler.CdStageHandler
-	log  logr.Logger
 	rbac rbac.Manager
 }
 
-func (h ConfigureTenantAdminRbac) ServeRequest(stage *cdPipeApi.Stage) error {
+func (h ConfigureTenantAdminRbac) ServeRequest(ctx context.Context, stage *cdPipeApi.Stage) error {
 	targetNamespace := stage.Spec.Namespace
-	logger := h.log.WithValues("stage", stage.Name, "target-ns", targetNamespace)
+	logger := ctrl.LoggerFrom(ctx).WithValues("target-ns", targetNamespace)
 	logger.Info("Configuring tenant admin RBAC")
 
 	if err := h.rbac.CreateRoleBindingIfNotExists(
-		context.TODO(),
+		ctx,
 		tenantAdminRbName,
 		targetNamespace,
 		[]rbacApi.Subject{
@@ -54,5 +51,5 @@ func (h ConfigureTenantAdminRbac) ServeRequest(stage *cdPipeApi.Stage) error {
 
 	logger.Info("RBAC for tenant admin has been configured successfully")
 
-	return nextServeOrNil(h.next, stage)
+	return nil
 }

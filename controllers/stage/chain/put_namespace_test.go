@@ -10,6 +10,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
@@ -23,7 +24,6 @@ var (
 func TestPutNamespace_CreateNs(t *testing.T) {
 	ch := PutNamespace{
 		client: fake.NewClientBuilder().Build(),
-		log:    logr.Discard(),
 	}
 	s := &cdPipeApi.Stage{
 		ObjectMeta: metaV1.ObjectMeta{
@@ -34,7 +34,7 @@ func TestPutNamespace_CreateNs(t *testing.T) {
 			Namespace: "default-stage-1",
 		},
 	}
-	err := ch.ServeRequest(s)
+	err := ch.ServeRequest(ctrl.LoggerInto(context.Background(), logr.Discard()), s)
 	assert.NoError(t, err)
 
 	ns := &v1.Namespace{}
@@ -53,7 +53,6 @@ func TestPutNamespace_NSExists(t *testing.T) {
 
 	ch := PutNamespace{
 		client: fake.NewClientBuilder().WithRuntimeObjects(ns).Build(),
-		log:    logr.Discard(),
 	}
 	s := &cdPipeApi.Stage{
 		ObjectMeta: metaV1.ObjectMeta{
@@ -64,6 +63,6 @@ func TestPutNamespace_NSExists(t *testing.T) {
 			Namespace: ns.Name,
 		},
 	}
-	err := ch.ServeRequest(s)
+	err := ch.ServeRequest(ctrl.LoggerInto(context.Background(), logr.Discard()), s)
 	assert.NoError(t, err)
 }

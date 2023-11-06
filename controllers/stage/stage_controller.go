@@ -126,10 +126,14 @@ func (r *ReconcileStage) Reconcile(ctx context.Context, request reconcile.Reques
 
 	ch, err := chain.CreateChain(ctx, r.client, stage)
 	if err != nil {
+		if statusErr := r.setFailedStatus(ctx, stage, err); statusErr != nil {
+			log.Error(statusErr, "Failed to set failed status")
+		}
+
 		return reconcile.Result{}, fmt.Errorf("failed to create chain: %w", err)
 	}
 
-	if err = ch.ServeRequest(stage); err != nil {
+	if err = ch.ServeRequest(ctx, stage); err != nil {
 		var e edpError.CISNotFoundError
 		if errors.As(err, &e) {
 			log.Error(err, "cis wasn't found. reconcile again...")
@@ -190,7 +194,7 @@ func (r *ReconcileStage) tryToDeleteCDStage(ctx context.Context, stage *cdPipeAp
 		return &reconcile.Result{}, fmt.Errorf("failed to create delete chain: %w", err)
 	}
 
-	if err = ch.ServeRequest(stage); err != nil {
+	if err = ch.ServeRequest(ctx, stage); err != nil {
 		return &reconcile.Result{}, fmt.Errorf("failed to delete Stage: %w", err)
 	}
 

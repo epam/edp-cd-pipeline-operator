@@ -12,6 +12,7 @@ import (
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
@@ -75,10 +76,9 @@ func TestPutCodebaseImageStream_ShouldCreateCis(t *testing.T) {
 
 	cisChain := PutCodebaseImageStream{
 		client: c,
-		log:    logr.Discard(),
 	}
 
-	err := cisChain.ServeRequest(s)
+	err := cisChain.ServeRequest(ctrl.LoggerInto(context.Background(), logr.Discard()), s)
 	assert.NoError(t, err)
 
 	cisResp := &codebaseApi.CodebaseImageStream{}
@@ -125,10 +125,9 @@ func TestPutCodebaseImageStream_ShouldNotFindCDPipeline(t *testing.T) {
 
 	cisChain := PutCodebaseImageStream{
 		client: c,
-		log:    logr.Discard(),
 	}
 
-	err := cisChain.ServeRequest(s)
+	err := cisChain.ServeRequest(ctrl.LoggerInto(context.Background(), logr.Discard()), s)
 	assert.Error(t, err)
 
 	if !strings.Contains(err.Error(), "non-existing-pipeline") {
@@ -169,10 +168,9 @@ func TestPutCodebaseImageStream_ShouldNotFindRegistryUrl(t *testing.T) {
 
 	cisChain := PutCodebaseImageStream{
 		client: c,
-		log:    logr.Discard(),
 	}
 
-	err := cisChain.ServeRequest(s)
+	err := cisChain.ServeRequest(ctrl.LoggerInto(context.Background(), logr.Discard()), s)
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "failed to get container registry url")
 }
@@ -223,10 +221,9 @@ func TestPutCodebaseImageStream_ShouldNotFindCbis(t *testing.T) {
 
 	cisChain := PutCodebaseImageStream{
 		client: c,
-		log:    logr.Discard(),
 	}
 
-	err := cisChain.ServeRequest(s)
+	err := cisChain.ServeRequest(ctrl.LoggerInto(context.Background(), logr.Discard()), s)
 	assert.Error(t, err)
 
 	if !strings.Contains(err.Error(), "failed to get cbis-name codebase image stream") {
@@ -300,10 +297,9 @@ func TestPutCodebaseImageStream_ShouldNotFailWithExistingCbis(t *testing.T) {
 
 	cisChain := PutCodebaseImageStream{
 		client: c,
-		log:    logr.Discard(),
 	}
 
-	err := cisChain.ServeRequest(s)
+	err := cisChain.ServeRequest(ctrl.LoggerInto(context.Background(), logr.Discard()), s)
 	assert.NoError(t, err)
 
 	cisResp := &codebaseApi.CodebaseImageStream{}
@@ -373,10 +369,9 @@ func TestPutCodebaseImageStream_ShouldCreateCisFromConfigMap(t *testing.T) {
 
 	cisChain := PutCodebaseImageStream{
 		client: c,
-		log:    logr.Discard(),
 	}
 
-	err := cisChain.ServeRequest(stage)
+	err := cisChain.ServeRequest(ctrl.LoggerInto(context.Background(), logr.Discard()), stage)
 	assert.NoError(t, err)
 
 	cisResp := &codebaseApi.CodebaseImageStream{}

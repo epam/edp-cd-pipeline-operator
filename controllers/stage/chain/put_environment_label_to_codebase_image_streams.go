@@ -4,13 +4,12 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/go-logr/logr"
 	"golang.org/x/exp/slices"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
-	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/stage/chain/handler"
 	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/stage/chain/util"
 	edpError "github.com/epam/edp-cd-pipeline-operator/v2/pkg/error"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/cluster"
@@ -19,17 +18,15 @@ import (
 )
 
 type PutEnvironmentLabelToCodebaseImageStreams struct {
-	next   handler.CdStageHandler
 	client client.Client
-	log    logr.Logger
 }
 
 // nolint
-func (h PutEnvironmentLabelToCodebaseImageStreams) ServeRequest(stage *cdPipeApi.Stage) error {
-	logger := h.log.WithValues("stage name", stage.Name)
+func (h PutEnvironmentLabelToCodebaseImageStreams) ServeRequest(ctx context.Context, stage *cdPipeApi.Stage) error {
+	logger := ctrl.LoggerFrom(ctx)
 	if consts.AutoDeployTriggerType != stage.Spec.TriggerType {
 		logger.Info("Trigger type is not auto deploy, skipping")
-		return nextServeOrNil(h.next, stage)
+		return nil
 	}
 
 	logger.Info("start creating environment labels in codebase image stream resources.")
@@ -50,14 +47,14 @@ func (h PutEnvironmentLabelToCodebaseImageStreams) ServeRequest(stage *cdPipeApi
 		}
 
 		if stage.IsFirst() || !slices.Contains(pipe.Spec.ApplicationsToPromote, stream.Spec.Codebase) {
-			if updErr := h.updateLabel(stream, pipe.Name, stage.Spec.Name); updErr != nil {
+			if updErr := h.updateLabel(ctx, stream, pipe.Name, stage.Spec.Name); updErr != nil {
 				return updErr
 			}
 
 			continue
 		}
 
-		previousStageName, err := util.FindPreviousStageName(context.TODO(), h.client, stage)
+		previousStageName, err := util.FindPreviousStageName(ctx, h.client, stage)
 		if err != nil {
 			return fmt.Errorf("failed to previous stage name: %w", err)
 		}
@@ -69,24 +66,26 @@ func (h PutEnvironmentLabelToCodebaseImageStreams) ServeRequest(stage *cdPipeApi
 			return edpError.CISNotFoundError(fmt.Sprintf("couldn't get %s codebase image stream", name))
 		}
 
-		if err := h.updateLabel(verifiedStream, pipe.Name, stage.Spec.Name); err != nil {
+		if err := h.updateLabel(ctx, verifiedStream, pipe.Name, stage.Spec.Name); err != nil {
 			return err
 		}
 	}
 
 	logger.Info("environment labels have been added to codebase image stream resources.")
 
-	return nextServeOrNil(h.next, stage)
+	return nil
 }
 
-func (h PutEnvironmentLabelToCodebaseImageStreams) updateLabel(cis *codebaseApi.CodebaseImageStream, pipeName, stageName string) error {
+func (h PutEnvironmentLabelToCodebaseImageStreams) updateLabel(ctx context.Context, cis *codebaseApi.CodebaseImageStream, pipeName, stageName string) error {
+	log := ctrl.LoggerFrom(ctx)
+
 	setLabel(&cis.ObjectMeta, pipeName, stageName)
 
-	if err := h.client.Update(context.Background(), cis); err != nil {
+	if err := h.client.Update(ctx, cis); err != nil {
 		return fmt.Errorf("couldn't update %s codebase image stream: %w", cis.Name, err)
 	}
 
-	h.log.Info("label has been added to codebase image stream",
+	log.Info("label has been added to codebase image stream",
 		"label", fmt.Sprintf("%s/%s", pipeName, stageName), "stream", cis.Name)
 
 	return nil

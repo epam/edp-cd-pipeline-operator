@@ -4,25 +4,20 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
-	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/stage/chain/handler"
 )
 
 type DeleteNamespace struct {
-	next               handler.CdStageHandler
 	multiClusterClient multiClusterClient
-	log                logr.Logger
 }
 
-func (h DeleteNamespace) ServeRequest(stage *cdPipeApi.Stage) error {
-	l := h.log.WithValues("namespace", stage.Spec.Namespace)
-	ctx := ctrl.LoggerInto(context.TODO(), l)
+func (h DeleteNamespace) ServeRequest(ctx context.Context, stage *cdPipeApi.Stage) error {
+	l := ctrl.LoggerFrom(ctx).WithValues("namespace", stage.Spec.Namespace)
 
 	ns := &corev1.Namespace{
 		ObjectMeta: metaV1.ObjectMeta{
@@ -42,5 +37,5 @@ func (h DeleteNamespace) ServeRequest(stage *cdPipeApi.Stage) error {
 
 	l.Info("Namespace has been deleted")
 
-	return nextServeOrNil(h.next, stage)
+	return nil
 }

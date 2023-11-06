@@ -1,21 +1,20 @@
 package chain
 
 import (
-	"github.com/go-logr/logr"
+	"context"
+
+	ctrl "sigs.k8s.io/controller-runtime"
 
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
-	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/stage/chain/handler"
 )
 
 // Skip is a stage chain element that do nothing.
-type Skip struct {
-	next handler.CdStageHandler
-	log  logr.Logger
-}
+type Skip struct{}
 
 // ServeRequest does nothing.
-func (c Skip) ServeRequest(stage *cdPipeApi.Stage) error {
-	c.log.Info("skip chain", "name", stage.Name)
+func (Skip) ServeRequest(ctx context.Context, _ *cdPipeApi.Stage) error {
+	log := ctrl.LoggerFrom(ctx)
+	log.Info("Skip chain")
 
-	return nextServeOrNil(c.next, stage)
+	return nil
 }

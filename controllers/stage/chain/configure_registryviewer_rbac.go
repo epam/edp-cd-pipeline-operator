@@ -4,36 +4,33 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/go-logr/logr"
 	rbacApi "k8s.io/api/rbac/v1"
+	ctrl "sigs.k8s.io/controller-runtime"
 
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
-	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/stage/chain/handler"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/platform"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/rbac"
 )
 
 type ConfigureRegistryViewerRbac struct {
-	next handler.CdStageHandler
-	log  logr.Logger
 	rbac rbac.Manager
 }
 
-func (h ConfigureRegistryViewerRbac) ServeRequest(stage *cdPipeApi.Stage) error {
+func (h ConfigureRegistryViewerRbac) ServeRequest(ctx context.Context, stage *cdPipeApi.Stage) error {
 	targetNamespace := stage.Spec.Namespace
 	roleBindingName := generateSaRegistryViewerRoleBindingName(stage)
-	logger := h.log.WithValues("stage", stage.Name, "targetNamespace", targetNamespace, "roleBindingName", roleBindingName)
+	logger := ctrl.LoggerFrom(ctx).WithValues("targetNamespace", targetNamespace, "roleBindingName", roleBindingName)
 
 	logger.Info("Configuring RoleBinding sa-registry-viewer")
 
 	if !platform.IsOpenshift() {
 		logger.Info("Skip configuring RoleBinding sa-registry-viewer for non-openshift platform")
 
-		return nextServeOrNil(h.next, stage)
+		return nil
 	}
 
 	if err := h.rbac.CreateRoleBindingIfNotExists(
-		context.TODO(),
+		ctx,
 		roleBindingName,
 		stage.Namespace,
 		[]rbacApi.Subject{
@@ -54,7 +51,7 @@ func (h ConfigureRegistryViewerRbac) ServeRequest(stage *cdPipeApi.Stage) error 
 
 	logger.Info("RoleBinding sa-registry-viewer has been configured")
 
-	return nextServeOrNil(h.next, stage)
+	return nil
 }
 
 // generateSaRegistryViewerRoleBindingName generates name for RoleBinding for registry-viewer role.

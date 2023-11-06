@@ -6,7 +6,6 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/go-logr/logr"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -22,18 +21,16 @@ import (
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/consts"
 )
 
-func NewReconcileCDPipeline(c client.Client, scheme *runtime.Scheme, log logr.Logger) *ReconcileCDPipeline {
+func NewReconcileCDPipeline(c client.Client, scheme *runtime.Scheme) *ReconcileCDPipeline {
 	return &ReconcileCDPipeline{
 		client: c,
 		scheme: scheme,
-		log:    log.WithName("cd-pipeline"),
 	}
 }
 
 type ReconcileCDPipeline struct {
 	client client.Client
 	scheme *runtime.Scheme
-	log    logr.Logger
 }
 
 const (

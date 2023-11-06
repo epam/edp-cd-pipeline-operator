@@ -4,15 +4,14 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
-	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/stage/chain/handler"
 	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/stage/chain/util"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/cluster"
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
@@ -20,9 +19,7 @@ import (
 )
 
 type PutCodebaseImageStream struct {
-	next   handler.CdStageHandler
 	client client.Client
-	log    logr.Logger
 }
 
 const (
@@ -32,11 +29,10 @@ const (
 	edpConfigContainerRegistrySpace = "container_registry_space"
 )
 
-func (h PutCodebaseImageStream) ServeRequest(stage *cdPipeApi.Stage) error {
-	logger := h.log.WithValues("stage name", stage.Name)
-	ctx := context.TODO()
+func (h PutCodebaseImageStream) ServeRequest(ctx context.Context, stage *cdPipeApi.Stage) error {
+	log := ctrl.LoggerFrom(ctx)
 
-	logger.Info("start creating codebase image streams.")
+	log.Info("start creating codebase image streams.")
 
 	pipe, err := util.GetCdPipeline(h.client, stage)
 	if err != nil {
@@ -57,14 +53,14 @@ func (h PutCodebaseImageStream) ServeRequest(stage *cdPipeApi.Stage) error {
 		cisName := fmt.Sprintf("%v-%v-%v-verified", pipe.Name, stage.Spec.Name, stream.Spec.Codebase)
 		image := fmt.Sprintf("%v/%v", registryUrl, stream.Spec.Codebase)
 
-		if err := h.createCodebaseImageStreamIfNotExists(cisName, image, stream.Spec.Codebase, stage.Namespace); err != nil {
+		if err := h.createCodebaseImageStreamIfNotExists(ctx, cisName, image, stream.Spec.Codebase, stage.Namespace); err != nil {
 			return fmt.Errorf("failed to create %v codebase image stream: %w", cisName, err)
 		}
 	}
 
-	logger.Info("codebase image stream have been created.")
+	log.Info("codebase image stream have been created.")
 
-	return nextServeOrNil(h.next, stage)
+	return nil
 }
 
 func (h PutCodebaseImageStream) getDockerRegistryUrl(ctx context.Context, namespace string) (string, error) {
@@ -101,7 +97,8 @@ func (h PutCodebaseImageStream) getDockerRegistryUrl(ctx context.Context, namesp
 	return fmt.Sprintf("%s/%s", config.Data[edpConfigContainerRegistryHost], config.Data[edpConfigContainerRegistrySpace]), nil
 }
 
-func (h PutCodebaseImageStream) createCodebaseImageStreamIfNotExists(name, imageName, codebaseName, namespace string) error {
+func (h PutCodebaseImageStream) createCodebaseImageStreamIfNotExists(ctx context.Context, name, imageName, codebaseName, namespace string) error {
+	log := ctrl.LoggerFrom(ctx)
 	cis := &codebaseApi.CodebaseImageStream{
 		TypeMeta: metaV1.TypeMeta{
 			APIVersion: "v2.edp.epam.com/v1",
@@ -117,16 +114,16 @@ func (h PutCodebaseImageStream) createCodebaseImageStreamIfNotExists(name, image
 		},
 	}
 
-	if err := h.client.Create(context.TODO(), cis); err != nil {
+	if err := h.client.Create(ctx, cis); err != nil {
 		if k8sErrors.IsAlreadyExists(err) {
-			h.log.Info("codebase image stream already exists. skip creating...", "name", cis.Name)
+			log.Info("codebase image stream already exists. skip creating...", "name", cis.Name)
 			return nil
 		}
 
 		return fmt.Errorf("failed to create codebase stream: %w", err)
 	}
 
-	h.log.Info("codebase image stream has been created", "name", name)
+	log.Info("codebase image stream has been created", "name", name)
 
 	return nil
 }
