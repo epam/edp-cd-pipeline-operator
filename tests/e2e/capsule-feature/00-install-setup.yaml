@@ -4,34 +4,23 @@ commands:
   # TestSuit namespace creation doesn't work, so we need to create this namespace manually
   - command: kubectl create namespace edp
     namespaced: false
-  # install CRD first, since the default deployment will fail otherwise
-  - command: kubectl apply -f https://raw.githubusercontent.com/projectcapsule/capsule/v0.4.0-rc.3/charts/capsule/crds/capsuleconfiguration-crd.yaml
-    namespaced: false
   # install capsule
-  - command: kubectl apply -f https://raw.githubusercontent.com/projectcapsule/capsule/v0.4.0-rc.3/config/install.yaml
+  - command: helm repo add projectcapsule https://projectcapsule.github.io/charts
+    namespaced: false
+  - command: helm repo update
+    namespaced: false
+  # We need to add system:serviceaccounts:edp to the list of userGroups, where `edp` is the namespace where EDP is installed
+  # see https://epam.github.io/edp-install/operator-guide/capsule/
+  - command: |
+      helm install capsule projectcapsule/capsule --version 0.5.2
+        --set manager.options.capsuleUserGroups[0]=capsule.clastix.io
+        --set manager.options.capsuleUserGroups[1]=system:serviceaccounts:edp
+        --create-namespace
+        --namespace capsule-system
     namespaced: false
   # install codebaseimagestreams CRD
   - command: kubectl apply -f https://raw.githubusercontent.com/epam/edp-codebase-operator/master/deploy-templates/crds/v2.edp.epam.com_codebaseimagestreams.yaml
     namespaced: false
-
-# We need to add system:serviceaccounts:edp to the list of userGroups, where `edp` is the namespace where EDP is installed
-# see https://epam.github.io/edp-install/operator-guide/capsule/
----
-apiVersion: capsule.clastix.io/v1beta2
-kind: CapsuleConfiguration
-metadata:
-  name: capsule-default
-spec:
-  enableTLSReconciler: true
-  forceTenantPrefix: false
-  overrides:
-    TLSSecretName: capsule-tls
-    mutatingWebhookConfigurationName: capsule-mutating-webhook-configuration
-    validatingWebhookConfigurationName: capsule-validating-webhook-configuration
-  protectedNamespaceRegex: ''
-  userGroups:
-    - capsule.clastix.io
-    - system:serviceaccounts:edp
 
 # We "grab" registry URL from the edp-config configmap, if no configmap is found, we use EDPComponent CRD,
 # so let's avoid this and create configmap manually

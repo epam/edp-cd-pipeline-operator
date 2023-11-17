@@ -209,3 +209,28 @@ kind: RoleBinding
 metadata:
   name: tenant-admin
   namespace: custom-namespace
+
+---
+apiVersion: capsule.clastix.io/v1beta2
+kind: Tenant
+metadata:
+  name: edp-workload-edp
+status:
+  namespaces:
+    - custom-namespace
+    - edp-mypipeline-dev
+  size: 2
+  state: Active
+spec:
+  ingressOptions:
+    hostnameCollisionScope: Disabled
+  limitRanges: {}
+  networkPolicies: {}
+  owners:
+    - clusterRoles:
+        - admin
+        - capsule-namespace-deleter
+      kind: ServiceAccount
+      name: system:serviceaccount:edp:edp-cd-pipeline-operator
+  resourceQuotas:
+    scope: Tenant
