@@ -3,7 +3,7 @@
 
 
 <a name="v2.18.0"></a>
-## v2.18.0 - 2023-11-25
+## v2.18.0 - 2023-12-18
 ### Features
 
 - Enable Capsule Tenant modification from values.yaml ([#13](https://github.com/epam/edp-cd-pipeline-operator/issues/13))
