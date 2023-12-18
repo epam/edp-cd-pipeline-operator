@@ -2,6 +2,24 @@
 ## [Unreleased]
 
 
+<a name="v2.18.0"></a>
+## [v2.18.0] - 2023-12-18
+### Bug Fixes
+
+- Deleting Stage with invalid cluster configuration ([#10](https://github.com/epam/edp-cd-pipeline-operator/issues/10))
+
+### Testing
+
+- Update caspule version to the latest stable ([#28](https://github.com/epam/edp-cd-pipeline-operator/issues/28))
+- Update caspule version to the latest stable ([#14](https://github.com/epam/edp-cd-pipeline-operator/issues/14))
+
+### Routine
+
+- Update release flow GH Action ([#17](https://github.com/epam/edp-cd-pipeline-operator/issues/17))
+- Update GH Actions version of the steps ([#17](https://github.com/epam/edp-cd-pipeline-operator/issues/17))
+- Update current development version ([#16](https://github.com/epam/edp-cd-pipeline-operator/issues/16))
+
+
 <a name="v2.17.0"></a>
 ## [v2.17.0] - 2023-11-03
 ### Features
@@ -63,7 +81,8 @@ Helm parameter kioskEnabled was removed. Use instead --set global.tenancyEngine=
 <a name="v2.15.0"></a>
 ## [v2.15.0] - 2023-08-17
 
-[Unreleased]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.17.0...HEAD
+[Unreleased]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.18.0...HEAD
+[v2.18.0]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.17.0...v2.18.0
 [v2.17.0]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.16.1...v2.17.0
 [v2.16.1]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.16.0...v2.16.1
 [v2.16.0]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.15.0...v2.16.0
