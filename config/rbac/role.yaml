@@ -7,6 +7,17 @@ metadata:
   namespace: placeholder
 rules:
 - apiGroups:
+  - argoproj.io
+  resources:
+  - applicationsets
+  verbs:
+  - create
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
   - v2.edp.epam.com
   resources:
   - cdpipelines

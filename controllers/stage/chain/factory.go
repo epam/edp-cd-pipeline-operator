@@ -9,6 +9,7 @@ import (
 
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
 	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/stage/chain/handler"
+	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/argocd"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/multiclusterclient"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/rbac"
 )
@@ -52,6 +53,9 @@ func CreateChain(ctx context.Context, c client.Client, stage *cdPipeApi.Stage) (
 			multiClusterClient: multiClusterCl,
 			internalClient:     c,
 		},
+		AddApplicationSetGenerators{
+			applicationSetManager: argocd.NewArgoApplicationSetManager(c),
+		},
 	)
 
 	return ch, nil
@@ -64,6 +68,9 @@ func CreateDeleteChain(ctx context.Context, c client.Client, stage *cdPipeApi.St
 	ch.Use(
 		DeleteEnvironmentLabelFromCodebaseImageStreams{
 			client: c,
+		},
+		RemoveApplicationSetGenerators{
+			applicationSetManager: argocd.NewArgoApplicationSetManager(c),
 		},
 	)
 

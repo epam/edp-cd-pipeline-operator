@@ -7,6 +7,17 @@ metadata:
   name: edp-{{ .Values.name }}
 rules:
 - apiGroups:
+    - argoproj.io
+  resources:
+    - applicationsets
+  verbs:
+    - get
+    - list
+    - patch
+    - update
+    - watch
+    - create
+- apiGroups:
     - '*'
   resources:
     - cdpipelines

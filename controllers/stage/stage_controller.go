@@ -90,6 +90,7 @@ func (r *ReconcileStage) SetupWithManager(mgr ctrl.Manager) error {
 //+kubebuilder:rbac:groups=v2.edp.epam.com,namespace=placeholder,resources=stages,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=v2.edp.epam.com,namespace=placeholder,resources=stages/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=v2.edp.epam.com,namespace=placeholder,resources=stages/finalizers,verbs=update
+//+kubebuilder:rbac:groups=argoproj.io,namespace=placeholder,resources=applicationsets,verbs=get;list;watch;update;patch;create
 
 func (r *ReconcileStage) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	log := ctrl.LoggerFrom(ctx)

@@ -51,17 +51,8 @@ func createScheme(t *testing.T) *runtime.Scheme {
 	return scheme
 }
 
-func TestNewReconcileCDPipeline_Success(t *testing.T) {
-	scheme := runtime.NewScheme()
-	client := fake.NewClientBuilder().Build()
-
-	expectedReconcileCdPipeline := &ReconcileCDPipeline{
-		client: client,
-		scheme: scheme,
-	}
-
-	reconciledCdPipeline := NewReconcileCDPipeline(client, scheme)
-	assert.Equal(t, expectedReconcileCdPipeline, reconciledCdPipeline)
+func createApplicationSetMock(ctx context.Context, pipeline *cdPipeApi.CDPipeline) error {
+	return nil
 }
 
 func TestReconcile_Success(t *testing.T) {
@@ -69,7 +60,7 @@ func TestReconcile_Success(t *testing.T) {
 	scheme := createScheme(t)
 	client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(emptyCdPipeline).Build()
 
-	reconcileCDPipeline := NewReconcileCDPipeline(client, scheme)
+	reconcileCDPipeline := NewReconcileCDPipeline(client, scheme, createApplicationSetMock)
 
 	_, err := reconcileCDPipeline.Reconcile(context.Background(), reconcile.Request{NamespacedName: types.NamespacedName{
 		Namespace: namespace,
@@ -93,7 +84,7 @@ func TestReconcile_PipelineIsNotFound(t *testing.T) {
 	scheme := createScheme(t)
 	client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&cdPipeline).Build()
 
-	reconcileCDPipeline := NewReconcileCDPipeline(client, scheme)
+	reconcileCDPipeline := NewReconcileCDPipeline(client, scheme, createApplicationSetMock)
 
 	_, err := reconcileCDPipeline.Reconcile(context.Background(), reconcile.Request{NamespacedName: types.NamespacedName{
 		Namespace: namespace,
@@ -107,7 +98,7 @@ func TestReconcile_GetCdPipelineError(t *testing.T) {
 	scheme := runtime.NewScheme()
 	client := fake.NewClientBuilder().WithScheme(scheme).Build()
 
-	reconcileCDPipeline := NewReconcileCDPipeline(client, scheme)
+	reconcileCDPipeline := NewReconcileCDPipeline(client, scheme, createApplicationSetMock)
 
 	_, err := reconcileCDPipeline.Reconcile(context.Background(), reconcile.Request{NamespacedName: types.NamespacedName{
 		Namespace: namespace,
@@ -131,7 +122,7 @@ func TestAddFinalizer_DeletionTimestampNotZero(t *testing.T) {
 	scheme := createScheme(t)
 	client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&cdPipeline).Build()
 
-	reconcileCdPipeline := NewReconcileCDPipeline(client, scheme)
+	reconcileCdPipeline := NewReconcileCDPipeline(client, scheme, createApplicationSetMock)
 
 	res, err := reconcileCdPipeline.tryToDeletePipeline(ctrl.LoggerInto(context.Background(), logr.Discard()), &cdPipeline)
 	assert.NoError(t, err)
@@ -170,7 +161,7 @@ func TestAddFinalizer_PostponeDeletion(t *testing.T) {
 	scheme := createScheme(t)
 	client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&cdPipeline, stage).Build()
 
-	reconcileCdPipeline := NewReconcileCDPipeline(client, scheme)
+	reconcileCdPipeline := NewReconcileCDPipeline(client, scheme, createApplicationSetMock)
 
 	res, err := reconcileCdPipeline.tryToDeletePipeline(ctrl.LoggerInto(context.Background(), logr.Discard()), &cdPipeline)
 	assert.NoError(t, err)
@@ -190,7 +181,7 @@ func TestAddFinalizer_DeletionTimestampIsZero(t *testing.T) {
 	scheme := createScheme(t)
 	client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(cdPipeline).Build()
 
-	reconcileCdPipeline := NewReconcileCDPipeline(client, scheme)
+	reconcileCdPipeline := NewReconcileCDPipeline(client, scheme, createApplicationSetMock)
 
 	res, err := reconcileCdPipeline.tryToDeletePipeline(ctrl.LoggerInto(context.Background(), logr.Discard()), cdPipeline)
 	assert.NoError(t, err)
@@ -210,7 +201,7 @@ func TestSetFinishStatus_Success(t *testing.T) {
 	scheme := createScheme(t)
 	client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(cdPipeline).Build()
 
-	reconcileCdPipeline := NewReconcileCDPipeline(client, scheme)
+	reconcileCdPipeline := NewReconcileCDPipeline(client, scheme, createApplicationSetMock)
 
 	err := reconcileCdPipeline.setFinishStatus(context.Background(), cdPipeline)
 	assert.NoError(t, err)

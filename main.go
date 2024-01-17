@@ -6,7 +6,8 @@ import (
 
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
-	projectApi "github.com/openshift/api/project/v1"
+	argoApi "github.com/argoproj/argo-cd/v2/pkg/apis/application/v1alpha1"
+	projectApi "github.com/openshift/api/project"
 	corev1 "k8s.io/api/core/v1"
 	k8sApi "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -21,6 +22,7 @@ import (
 	cdPipeApiV1Alpha1 "github.com/epam/edp-cd-pipeline-operator/v2/api/v1alpha1"
 	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/cdpipeline"
 	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/stage"
+	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/argocd"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/objectmodifier"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/cluster"
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
@@ -70,7 +72,8 @@ func main() {
 	utilruntime.Must(edpCompApi.AddToScheme(scheme))
 	utilruntime.Must(k8sApi.AddToScheme(scheme))
 	utilruntime.Must(corev1.AddToScheme(scheme))
-	utilruntime.Must(projectApi.AddToScheme(scheme))
+	utilruntime.Must(projectApi.Install(scheme))
+	utilruntime.Must(argoApi.AddToScheme(scheme))
 
 	v := buildInfo.Get()
 
@@ -119,13 +122,16 @@ func main() {
 		os.Exit(1)
 	}
 
-	ctrlLog := ctrl.Log.WithName("controllers")
-	cdPipeCtrl := cdpipeline.NewReconcileCDPipeline(cl, mgr.GetScheme())
-
-	if err = cdPipeCtrl.SetupWithManager(mgr); err != nil {
+	if err = cdpipeline.NewReconcileCDPipeline(
+		cl,
+		mgr.GetScheme(),
+		argocd.NewArgoApplicationSetManager(cl).CreateApplicationSet,
+	).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "cd-pipeline")
 		os.Exit(1)
 	}
+
+	ctrlLog := ctrl.Log.WithName("controllers")
 
 	if err = stage.NewReconcileStage(
 		cl,

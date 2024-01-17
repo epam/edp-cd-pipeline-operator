@@ -21,16 +21,22 @@ import (
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/consts"
 )
 
-func NewReconcileCDPipeline(c client.Client, scheme *runtime.Scheme) *ReconcileCDPipeline {
+func NewReconcileCDPipeline(
+	c client.Client,
+	scheme *runtime.Scheme,
+	createApplicationSet func(ctx context.Context, pipeline *cdPipeApi.CDPipeline) error,
+) *ReconcileCDPipeline {
 	return &ReconcileCDPipeline{
-		client: c,
-		scheme: scheme,
+		client:               c,
+		scheme:               scheme,
+		createApplicationSet: createApplicationSet,
 	}
 }
 
 type ReconcileCDPipeline struct {
-	client client.Client
-	scheme *runtime.Scheme
+	client               client.Client
+	scheme               *runtime.Scheme
+	createApplicationSet func(ctx context.Context, pipeline *cdPipeApi.CDPipeline) error
 }
 
 const (
@@ -70,6 +76,7 @@ func (r *ReconcileCDPipeline) SetupWithManager(mgr ctrl.Manager) error {
 //+kubebuilder:rbac:groups=v2.edp.epam.com,namespace=placeholder,resources=cdpipelines,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=v2.edp.epam.com,namespace=placeholder,resources=cdpipelines/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=v2.edp.epam.com,namespace=placeholder,resources=cdpipelines/finalizers,verbs=update
+//+kubebuilder:rbac:groups=argoproj.io,namespace=placeholder,resources=applicationsets,verbs=get;list;watch;update;patch;create
 
 func (r *ReconcileCDPipeline) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	log := ctrl.LoggerFrom(ctx)
@@ -95,6 +102,14 @@ func (r *ReconcileCDPipeline) Reconcile(ctx context.Context, request reconcile.R
 
 	if result != nil {
 		return *result, nil
+	}
+
+	if err = r.createApplicationSet(ctx, pipeline); err != nil {
+		if statusErr := r.setFailedStatus(ctx, pipeline, err); statusErr != nil {
+			return reconcile.Result{}, statusErr
+		}
+
+		return reconcile.Result{}, fmt.Errorf("failed to create application set: %w", err)
 	}
 
 	if err := r.setFinishStatus(ctx, pipeline); err != nil {
@@ -177,6 +192,28 @@ func (r *ReconcileCDPipeline) setFinishStatus(ctx context.Context, p *cdPipeApi.
 			return fmt.Errorf("failed to update pipeline status: %w", err)
 		}
 	}
+
+	return nil
+}
+
+func (r *ReconcileCDPipeline) setFailedStatus(ctx context.Context, p *cdPipeApi.CDPipeline, err error) error {
+	log := ctrl.LoggerFrom(ctx)
+
+	p.Status = cdPipeApi.CDPipelineStatus{
+		Status:          consts.FailedStatus,
+		Available:       false,
+		LastTimeUpdated: metaV1.Now(),
+		Username:        "system",
+		Result:          cdPipeApi.Error,
+		DetailedMessage: err.Error(),
+		Value:           consts.FailedStatus,
+	}
+
+	if err = r.client.Status().Update(ctx, p); err != nil {
+		return fmt.Errorf("failed to update CDPipeline status: %w", err)
+	}
+
+	log.Info("CDPipeline failed status has been updated")
 
 	return nil
 }

@@ -21,6 +21,12 @@ commands:
   # install codebaseimagestreams CRD
   - command: kubectl apply -f https://raw.githubusercontent.com/epam/edp-codebase-operator/master/deploy-templates/crds/v2.edp.epam.com_codebaseimagestreams.yaml
     namespaced: false
+  - command: kubectl apply -f https://raw.githubusercontent.com/epam/edp-codebase-operator/master/deploy-templates/crds/v2.edp.epam.com_codebases.yaml
+    namespaced: false
+  - command: kubectl apply -f https://raw.githubusercontent.com/epam/edp-codebase-operator/master/deploy-templates/crds/v2.edp.epam.com_gitservers.yaml
+    namespaced: false
+  - command: kubectl apply -f https://raw.githubusercontent.com/argoproj/argo-cd/v2.9.3/manifests/crds/applicationset-crd.yaml
+    namespaced: false
 
 # We "grab" registry URL from the edp-config configmap, if no configmap is found, we use EDPComponent CRD,
 # so let's avoid this and create configmap manually

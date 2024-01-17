@@ -60,3 +60,48 @@ spec:
       name: default
     type: default
   triggerType: Auto
+
+---
+
+apiVersion: v2.edp.epam.com/v1
+kind: Codebase
+metadata:
+  name: test
+spec:
+  buildTool: go
+  ciTool: tekton
+  defaultBranch: main
+  deploymentScript: helm-chart
+  description: app1
+  emptyProject: false
+  framework: gin
+  gitServer: gerrit
+  gitUrlPath: /test
+  lang: go
+  strategy: create
+  type: application
+  versioning:
+    type: default
+
+---
+
+apiVersion: v2.edp.epam.com/v1
+kind: GitServer
+metadata:
+  name: gerrit
+spec:
+  gitHost: gerrit-dev
+  gitProvider: gerrit
+  gitUser: git
+  httpsPort: 443
+  nameSshKeySecret: gerrit-ciuser-sshkey
+  sshPort: 30000
+
+---
+apiVersion: v2.edp.epam.com/v1
+kind: CodebaseImageStream
+metadata:
+  name: test-main
+spec:
+  codebase: test
+  imageName: registry.host.local/registry-space/test

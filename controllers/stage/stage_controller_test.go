@@ -6,8 +6,9 @@ import (
 	"testing"
 	"time"
 
+	argoApi "github.com/argoproj/argo-cd/v2/pkg/apis/application/v1alpha1"
 	"github.com/go-logr/logr"
-	projectApi "github.com/openshift/api/project/v1"
+	projectApi "github.com/openshift/api/project"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -89,13 +90,12 @@ func TestTryToDeleteCDStage_DeletionTimestampIsZero(t *testing.T) {
 
 func TestTryToDeleteCDStage_Success(t *testing.T) {
 	scheme := runtime.NewScheme()
-	err := cdPipeApi.AddToScheme(scheme)
-	require.NoError(t, err)
-	err = codebaseApi.AddToScheme(scheme)
-	require.NoError(t, err)
-	err = corev1.AddToScheme(scheme)
-	require.NoError(t, err)
-	require.NoError(t, projectApi.AddToScheme(scheme))
+
+	require.NoError(t, cdPipeApi.AddToScheme(scheme))
+	require.NoError(t, codebaseApi.AddToScheme(scheme))
+	require.NoError(t, corev1.AddToScheme(scheme))
+	require.NoError(t, projectApi.Install(scheme))
+	require.NoError(t, argoApi.AddToScheme(scheme))
 
 	stage := &cdPipeApi.Stage{
 		TypeMeta: metaV1.TypeMeta{},
@@ -148,7 +148,7 @@ func TestTryToDeleteCDStage_Success(t *testing.T) {
 		log:    logr.Discard(),
 	}
 
-	_, err = reconcileStage.tryToDeleteCDStage(ctrl.LoggerInto(context.Background(), logr.Discard()), stage)
+	_, err := reconcileStage.tryToDeleteCDStage(ctrl.LoggerInto(context.Background(), logr.Discard()), stage)
 	assert.NoError(t, err)
 
 	previousImageStream, err := cluster.GetCodebaseImageStream(reconcileStage.client, dockerImageName, namespace)
@@ -240,15 +240,12 @@ func TestSetFinishStatus_Success(t *testing.T) {
 
 func TestReconcileStage_Reconcile_Success(t *testing.T) {
 	scheme := runtime.NewScheme()
-	err := cdPipeApi.AddToScheme(scheme)
-	require.NoError(t, err)
-	err = codebaseApi.AddToScheme(scheme)
-	require.NoError(t, err)
-	err = k8sApi.AddToScheme(scheme)
-	require.NoError(t, err)
-	err = corev1.AddToScheme(scheme)
-	require.NoError(t, err)
-	require.NoError(t, projectApi.AddToScheme(scheme))
+
+	require.NoError(t, cdPipeApi.AddToScheme(scheme))
+	require.NoError(t, codebaseApi.AddToScheme(scheme))
+	require.NoError(t, corev1.AddToScheme(scheme))
+	require.NoError(t, projectApi.Install(scheme))
+	require.NoError(t, argoApi.AddToScheme(scheme))
 
 	stage := &cdPipeApi.Stage{
 		TypeMeta: metaV1.TypeMeta{},
@@ -302,7 +299,7 @@ func TestReconcileStage_Reconcile_Success(t *testing.T) {
 		objectmodifier.NewStageBatchModifier(fakeClient, []objectmodifier.StageModifier{}),
 	)
 
-	_, err = reconcileStage.Reconcile(ctrl.LoggerInto(context.Background(), logr.Discard()), reconcile.Request{NamespacedName: types.NamespacedName{
+	_, err := reconcileStage.Reconcile(ctrl.LoggerInto(context.Background(), logr.Discard()), reconcile.Request{NamespacedName: types.NamespacedName{
 		Namespace: namespace,
 		Name:      name,
 	}})
@@ -327,11 +324,13 @@ func TestReconcileStage_Reconcile_Success(t *testing.T) {
 
 func TestReconcileStage_ReconcileReconcile_SetOwnerRef(t *testing.T) {
 	scheme := runtime.NewScheme()
+
 	require.NoError(t, corev1.AddToScheme(scheme))
 	require.NoError(t, cdPipeApi.AddToScheme(scheme))
 	require.NoError(t, codebaseApi.AddToScheme(scheme))
 	require.NoError(t, componentApi.AddToScheme(scheme))
 	require.NoError(t, k8sApi.AddToScheme(scheme))
+	require.NoError(t, argoApi.AddToScheme(scheme))
 
 	edpComponent := &componentApi.EDPComponent{
 		TypeMeta: metaV1.TypeMeta{},
@@ -383,7 +382,14 @@ func TestReconcileStage_ReconcileReconcile_SetOwnerRef(t *testing.T) {
 		},
 	}
 
-	fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(cdPipeline, image, stage, edpComponent).Build()
+	appset := &argoApi.ApplicationSet{
+		ObjectMeta: metaV1.ObjectMeta{
+			Name:      cdPipeline.Name,
+			Namespace: namespace,
+		},
+	}
+
+	fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(cdPipeline, image, stage, edpComponent, appset).Build()
 
 	reconcileStage := NewReconcileStage(
 		fakeClient,
