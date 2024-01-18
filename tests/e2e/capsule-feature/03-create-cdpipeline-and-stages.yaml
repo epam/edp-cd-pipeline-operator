@@ -34,6 +34,7 @@ spec:
       name: default
     type: default
   triggerType: Manual
+  triggerTemplate: cd-stage-deploy
 
 ---
 apiVersion: v2.edp.epam.com/v1
@@ -58,6 +59,7 @@ spec:
       name: default
     type: default
   triggerType: Auto
+  triggerTemplate: cd-stage-deploy
 
 ---
 

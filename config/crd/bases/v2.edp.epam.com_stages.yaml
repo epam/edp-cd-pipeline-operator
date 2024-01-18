@@ -32,6 +32,15 @@ spec:
       jsonPath: .spec.order
       name: Order
       type: integer
+    - description: The name of cluster where the application will be deployed
+      jsonPath: .spec.clusterName
+      name: Cluster Name
+      type: string
+    - description: The name of Tekton TriggerTemplate used as a blueprint for deployment
+        pipeline
+      jsonPath: .spec.triggerTemplate
+      name: Trigger Template
+      type: string
     name: v1
     schema:
       openAPIV3Schema:
@@ -125,6 +134,14 @@ spec:
                     description: Type of pipeline library, e.g. default, library
                     type: string
                 type: object
+              triggerTemplate:
+                default: cd-stage-deploy
+                description: Specifies a name of Tekton TriggerTemplate which will
+                  be used as a blueprint for deployment pipeline. Default value is
+                  "cd-stage-deploy" which means that default TriggerTemplate will
+                  be used. The default TriggerTemplate is delivered using edp-tekton
+                  helm chart.
+                type: string
               triggerType:
                 description: Stage deployment trigger type. E.g. Manual, Auto
                 type: string

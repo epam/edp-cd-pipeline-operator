@@ -47,6 +47,13 @@ type StageSpec struct {
 	// Namespace where the application will be deployed.
 	Namespace string `json:"namespace,omitempty"`
 
+	// Specifies a name of Tekton TriggerTemplate which will be used as a blueprint for deployment pipeline.
+	// Default value is "cd-stage-deploy" which means that default TriggerTemplate will be used.
+	// The default TriggerTemplate is delivered using edp-tekton helm chart.
+	// +optional
+	// +kubebuilder:default:="cd-stage-deploy"
+	TriggerTemplate string `json:"triggerTemplate,omitempty"`
+
 	// Specifies a name of cluster where the application will be deployed.
 	// Default value is "in-cluster" which means that application will be deployed in the same cluster where CD Pipeline is running.
 	// +optional
@@ -138,6 +145,8 @@ type StageStatus struct {
 // +kubebuilder:printcolumn:name="CDPipeline Name",type="string",JSONPath=".spec.cdPipeline",description="CDPipeline that owns the Stage"
 // +kubebuilder:printcolumn:name="Trigger Type",type="string",JSONPath=".spec.triggerType",description="Stage deployment trigger type. E.g. Manual, Auto"
 // +kubebuilder:printcolumn:name="Order",type="integer",JSONPath=".spec.order",description="The order in the CDPipeline promotion flow (starts from 0)"
+// +kubebuilder:printcolumn:name="Cluster Name",type="string",JSONPath=".spec.clusterName",description="The name of cluster where the application will be deployed"
+// +kubebuilder:printcolumn:name="Trigger Template",type="string",JSONPath=".spec.triggerTemplate",description="The name of Tekton TriggerTemplate used as a blueprint for deployment pipeline"
 
 // Stage is the Schema for the stages API.
 type Stage struct {
