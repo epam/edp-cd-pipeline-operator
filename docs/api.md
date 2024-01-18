@@ -48,7 +48,7 @@ CDPipeline is the Schema for the cdpipelines API.
       <td>true</td>
       </tr>
       <tr>
-      <td><b><a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#objectmeta-v1-meta">metadata</a></b></td>
+      <td><b><a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#objectmeta-v1-meta">metadata</a></b></td>
       <td>object</td>
       <td>Refer to the Kubernetes API documentation for the fields of the `metadata` field.</td>
       <td>true</td>
@@ -236,7 +236,7 @@ Stage is the Schema for the stages API.
       <td>true</td>
       </tr>
       <tr>
-      <td><b><a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#objectmeta-v1-meta">metadata</a></b></td>
+      <td><b><a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#objectmeta-v1-meta">metadata</a></b></td>
       <td>object</td>
       <td>Refer to the Kubernetes API documentation for the fields of the `metadata` field.</td>
       <td>true</td>
@@ -323,15 +323,6 @@ StageSpec defines the desired state of Stage. NOTE: for deleting the stage use s
           Specifies a name of cluster where the application will be deployed. Default value is "in-cluster" which means that application will be deployed in the same cluster where CD Pipeline is running.<br/>
           <br/>
             <i>Default</i>: in-cluster<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>jobProvisioning</b></td>
-        <td>string</td>
-        <td>
-          CD Job Provisioner for Pipeline. E.g.<br/>
-          <br/>
-            <i>Default</i>: default<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -601,7 +592,7 @@ CDPipeline is the Schema for the cdpipelines API.
       <td>true</td>
       </tr>
       <tr>
-      <td><b><a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#objectmeta-v1-meta">metadata</a></b></td>
+      <td><b><a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#objectmeta-v1-meta">metadata</a></b></td>
       <td>object</td>
       <td>Refer to the Kubernetes API documentation for the fields of the `metadata` field.</td>
       <td>true</td>
@@ -789,7 +780,7 @@ Stage is the Schema for the stages API.
       <td>true</td>
       </tr>
       <tr>
-      <td><b><a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#objectmeta-v1-meta">metadata</a></b></td>
+      <td><b><a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#objectmeta-v1-meta">metadata</a></b></td>
       <td>object</td>
       <td>Refer to the Kubernetes API documentation for the fields of the `metadata` field.</td>
       <td>true</td>
@@ -839,13 +830,6 @@ StageSpec defines the desired state of Stage.
         <td>string</td>
         <td>
           A description of a stage.<br/>
-        </td>
-        <td>true</td>
-      </tr><tr>
-        <td><b>jobProvisioning</b></td>
-        <td>string</td>
-        <td>
-          CD Job Provisioner for Pipeline. E.g.<br/>
         </td>
         <td>true</td>
       </tr><tr>

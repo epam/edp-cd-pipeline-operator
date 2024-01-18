@@ -17,7 +17,6 @@ When deploying several applications within a single CD pipeline, applications ar
 
 ### Autodeploy in Argo CD
 
-Autodeploy logic differs depending on the CI tool that is used for EDP, whether it is Argo CD or Jenkins.
 The scheme below illustrates how autodeploy works in the Tekton deploy scenario:
 
 ![Autodeploy in Tekton deploy scenario](https://github.com/epam/edp-cd-pipeline-operator/blob/master/docs/puml/autodeploy_argo_cd.png)
@@ -31,17 +30,3 @@ Under the hood, the autodeploy logic is implemented in the following way:
 5. Lastly, Argo CD deploys the newer image.
 
 **Note:**  In Tekton deploy scenario, autodeploy will start working only after the first manual deploy.
-
-### Autodeploy in Jenkins
-
-The scheme below illustrates the logic of the autodeploy feature in the Jenkins deploy scenario:
-
-![Autodeploy in Jenkins deploy scenario](https://github.com/epam/edp-cd-pipeline-operator/blob/master/docs/puml/autodeploy_jenkins.png "Autodeploy in Jenkins deploy scenario")
-
-Overall, autodeploy in Jenkins can be explained in the following way:
-
-1. Once the stage with the enabled autodeploy feature is created, CD pipeline processes this stage and creates corresponding Jenkins job with the **autodeploy: true** parameter.
-2. User clicks the **Build** button or merges patch to VCS.
-3. When the application build is launched, Jenkins attaches a specific tag to the CodebaseImageStream. This tag is further processed by the **codebase-operator**. As a result, the **CDStageDeploy** resource is created at the end of the process.
-4. Next, the **codebase-operator** processes the **CDStageDeploy** resource. The **CDStageJenkinsDeployment** is created at the end of the process.
-5. Finally, the **jenkins-operator** processes the **CDStageJenkinsDeployment** resource and triggers the Jenkins deploy job.

@@ -67,10 +67,6 @@ spec:
                 description: A description of a stage.
                 minLength: 0
                 type: string
-              jobProvisioning:
-                default: default
-                description: CD Job Provisioner for Pipeline. E.g.
-                type: string
               name:
                 description: Name of a stage.
                 minLength: 2
@@ -220,9 +216,6 @@ spec:
                 description: A description of a stage.
                 minLength: 0
                 type: string
-              jobProvisioning:
-                description: CD Job Provisioner for Pipeline. E.g.
-                type: string
               name:
                 description: Name of a stage.
                 minLength: 2
@@ -282,7 +275,6 @@ spec:
             required:
             - cdPipeline
             - description
-            - jobProvisioning
             - name
             - order
             - qualityGates

@@ -21,7 +21,6 @@ spec:
   cdPipeline: mypipeline
   clusterName: in-cluster
   description: Development Environment
-  jobProvisioning: default
   name: dev
   namespace: edp-mypipeline-dev
   order: 0
@@ -45,7 +44,6 @@ spec:
   cdPipeline: mypipeline
   clusterName: in-cluster
   description: QA Environment
-  jobProvisioning: default
   name: qa
   # here we have custom namespace name instead of EDP pattern
   namespace: custom-namespace

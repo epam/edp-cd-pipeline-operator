@@ -39,7 +39,6 @@ spec:
   cdPipeline: mypipeline
   clusterName: in-cluster
   description: Development Environment
-  jobProvisioning: default
   name: dev
   namespace: edp-mypipeline-dev
   order: 0
@@ -163,7 +162,6 @@ spec:
   cdPipeline: mypipeline
   clusterName: in-cluster
   description: QA Environment
-  jobProvisioning: default
   name: qa
   namespace: custom-namespace
   order: 1

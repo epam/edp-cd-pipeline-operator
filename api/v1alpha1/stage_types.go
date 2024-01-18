@@ -34,9 +34,6 @@ type StageSpec struct {
 
 	// Specifies a source of a pipeline library which will run release
 	Source Source `json:"source" valid:"Required"`
-
-	// CD Job Provisioner for Pipeline. E.g.
-	JobProvisioning string `json:"jobProvisioning"`
 }
 
 // QualityGate defines a single quality for a release.

@@ -58,7 +58,6 @@ annotations:
       spec:
         cdPipeline: release-github-javascript
         description: dev
-        jobProvisioning: default
         name: dev
         order: 0
         qualityGates:

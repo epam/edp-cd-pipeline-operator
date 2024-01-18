@@ -44,11 +44,6 @@ type StageSpec struct {
 	// +kubebuilder:default:={type: "default"}
 	Source Source `json:"source"`
 
-	// CD Job Provisioner for Pipeline. E.g.
-	// +optional
-	// +kubebuilder:default:="default"
-	JobProvisioning string `json:"jobProvisioning,omitempty"`
-
 	// Namespace where the application will be deployed.
 	Namespace string `json:"namespace,omitempty"`
 
