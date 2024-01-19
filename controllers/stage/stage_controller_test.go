@@ -23,6 +23,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
+	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/argocd"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/objectmodifier"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/cluster"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/consts"
@@ -384,7 +385,7 @@ func TestReconcileStage_ReconcileReconcile_SetOwnerRef(t *testing.T) {
 
 	appset := &argoApi.ApplicationSet{
 		ObjectMeta: metaV1.ObjectMeta{
-			Name:      cdPipeline.Name,
+			Name:      argocd.GetArgoApplicationSetName(cdPipeline),
 			Namespace: namespace,
 		},
 	}
