@@ -47,7 +47,7 @@ func (c *ArgoApplicationSetManager) CreateApplicationSet(ctx context.Context, pi
 
 	err := c.client.Get(ctx, client.ObjectKey{
 		Namespace: pipeline.Namespace,
-		Name:      GetArgoApplicationSetName(pipeline),
+		Name:      pipeline.Name,
 	}, appset)
 	if client.IgnoreNotFound(err) != nil {
 		return fmt.Errorf("failed to get ArgoApplicationSet: %w", err)
@@ -93,15 +93,18 @@ func (c *ArgoApplicationSetManager) CreateApplicationSetGenerators(ctx context.C
 
 	log.Info("Creating ArgoApplicationSetGenerator")
 
-	pipeline, err := c.getCDPipeline(ctx, stage)
-	if err != nil {
-		return err
+	pipeline := &cdPipeApi.CDPipeline{}
+	if err := c.client.Get(ctx, client.ObjectKey{
+		Namespace: stage.Namespace,
+		Name:      stage.Spec.CdPipeline,
+	}, pipeline); err != nil {
+		return fmt.Errorf("failed to get CDPipeline: %w", err)
 	}
 
 	appset := &argoApi.ApplicationSet{}
-	if err = c.client.Get(ctx, client.ObjectKey{
+	if err := c.client.Get(ctx, client.ObjectKey{
 		Namespace: stage.Namespace,
-		Name:      GetArgoApplicationSetName(pipeline),
+		Name:      pipeline.Name,
 	}, appset); err != nil {
 		return fmt.Errorf("failed to get ArgoApplicationSet: %w", err)
 	}
@@ -141,15 +144,10 @@ func (c *ArgoApplicationSetManager) RemoveApplicationSetGenerators(ctx context.C
 
 	log.Info("Removing ArgoApplicationSetGenerator")
 
-	pipeline, err := c.getCDPipeline(ctx, stage)
-	if err != nil {
-		return err
-	}
-
 	appset := &argoApi.ApplicationSet{}
-	if err = c.client.Get(ctx, client.ObjectKey{
+	if err := c.client.Get(ctx, client.ObjectKey{
 		Namespace: stage.Namespace,
-		Name:      GetArgoApplicationSetName(pipeline),
+		Name:      stage.Labels[cdPipeApi.StageCdPipelineLabelName],
 	}, appset); err != nil {
 		if errors.IsNotFound(err) {
 			log.Info("ArgoApplicationSet is not found. Skip removing generators")
@@ -159,12 +157,6 @@ func (c *ArgoApplicationSetManager) RemoveApplicationSetGenerators(ctx context.C
 
 		return fmt.Errorf("failed to get ArgoApplicationSet: %w", err)
 	}
-
-	return c.removeGeneratorsFromArgoApplicationSet(ctx, stage, appset)
-}
-
-func (c *ArgoApplicationSetManager) removeGeneratorsFromArgoApplicationSet(ctx context.Context, stage *cdPipeApi.Stage, appset *argoApi.ApplicationSet) error {
-	log := ctrl.LoggerFrom(ctx)
 
 	for i := 0; i < len(appset.Spec.Generators); i++ {
 		if appset.Spec.Generators[i].List == nil {
@@ -203,18 +195,6 @@ func (c *ArgoApplicationSetManager) removeGeneratorsFromArgoApplicationSet(ctx c
 	log.Info("Stage generators are not found in ArgoApplicationSet")
 
 	return nil
-}
-
-func (c *ArgoApplicationSetManager) getCDPipeline(ctx context.Context, stage *cdPipeApi.Stage) (*cdPipeApi.CDPipeline, error) {
-	pipeline := &cdPipeApi.CDPipeline{}
-	if err := c.client.Get(ctx, client.ObjectKey{
-		Namespace: stage.Namespace,
-		Name:      stage.Spec.CdPipeline,
-	}, pipeline); err != nil {
-		return nil, fmt.Errorf("failed to get CDPipeline: %w", err)
-	}
-
-	return pipeline, nil
 }
 
 func (c *ArgoApplicationSetManager) makeStageGenerators(
@@ -312,7 +292,7 @@ func (c *ArgoApplicationSetManager) getGitServer(ctx context.Context, ns string,
 func generateApplicationSet(pipeline *cdPipeApi.CDPipeline, gitServer *codebaseApi.GitServer) *argoApi.ApplicationSet {
 	return &argoApi.ApplicationSet{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      GetArgoApplicationSetName(pipeline),
+			Name:      pipeline.Name,
 			Namespace: pipeline.Namespace,
 		},
 		Spec: argoApi.ApplicationSetSpec{
@@ -414,8 +394,4 @@ func processGeneratorListElements(stageName string, generator *argoApi.Applicati
 	}
 
 	return false, nil
-}
-
-func GetArgoApplicationSetName(pipeline *cdPipeApi.CDPipeline) string {
-	return fmt.Sprintf("%s-%s", pipeline.Namespace, pipeline.Name)
 }

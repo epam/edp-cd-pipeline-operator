@@ -90,7 +90,7 @@ func TestArgoApplicationSetManager_CreateApplicationSet(t *testing.T) {
 					cl.Get(context.Background(),
 						client.ObjectKey{
 							Namespace: ns,
-							Name:      "default-pipe1",
+							Name:      "pipe1",
 						},
 						&argoApi.ApplicationSet{},
 					),
@@ -236,7 +236,7 @@ func TestArgoApplicationSetManager_CreateApplicationSet(t *testing.T) {
 					WithObjects(
 						&argoApi.ApplicationSet{
 							ObjectMeta: metav1.ObjectMeta{
-								Name:      "default-pipe1",
+								Name:      "pipe1",
 								Namespace: ns,
 							},
 						},
@@ -356,7 +356,7 @@ func TestArgoApplicationSetManager_CreateApplicationSetGenerators(t *testing.T) 
 						},
 						&argoApi.ApplicationSet{
 							ObjectMeta: metav1.ObjectMeta{
-								Name:      "default-pipe1",
+								Name:      "pipe1",
 								Namespace: ns,
 							},
 							Spec: argoApi.ApplicationSetSpec{
@@ -389,7 +389,7 @@ func TestArgoApplicationSetManager_CreateApplicationSetGenerators(t *testing.T) 
 					cl.Get(context.Background(),
 						client.ObjectKey{
 							Namespace: ns,
-							Name:      "default-pipe1",
+							Name:      "pipe1",
 						},
 						appset,
 					),
@@ -465,7 +465,7 @@ func TestArgoApplicationSetManager_CreateApplicationSetGenerators(t *testing.T) 
 						},
 						&argoApi.ApplicationSet{
 							ObjectMeta: metav1.ObjectMeta{
-								Name:      "default-pipe1",
+								Name:      "pipe1",
 								Namespace: ns,
 							},
 							Spec: argoApi.ApplicationSetSpec{},
@@ -480,7 +480,7 @@ func TestArgoApplicationSetManager_CreateApplicationSetGenerators(t *testing.T) 
 					cl.Get(context.Background(),
 						client.ObjectKey{
 							Namespace: ns,
-							Name:      "default-pipe1",
+							Name:      "pipe1",
 						},
 						appset,
 					),
@@ -547,7 +547,7 @@ func TestArgoApplicationSetManager_CreateApplicationSetGenerators(t *testing.T) 
 						},
 						&argoApi.ApplicationSet{
 							ObjectMeta: metav1.ObjectMeta{
-								Name:            "default-pipe1",
+								Name:            "pipe1",
 								Namespace:       ns,
 								ResourceVersion: "1",
 							},
@@ -575,7 +575,7 @@ func TestArgoApplicationSetManager_CreateApplicationSetGenerators(t *testing.T) 
 					cl.Get(context.Background(),
 						client.ObjectKey{
 							Namespace: ns,
-							Name:      "default-pipe1",
+							Name:      "pipe1",
 						},
 						appset,
 					),
@@ -620,7 +620,7 @@ func TestArgoApplicationSetManager_CreateApplicationSetGenerators(t *testing.T) 
 						},
 						&argoApi.ApplicationSet{
 							ObjectMeta: metav1.ObjectMeta{
-								Name:            "default-pipe1",
+								Name:            "pipe1",
 								Namespace:       ns,
 								ResourceVersion: "1",
 							},
@@ -676,7 +676,7 @@ func TestArgoApplicationSetManager_CreateApplicationSetGenerators(t *testing.T) 
 						},
 						&argoApi.ApplicationSet{
 							ObjectMeta: metav1.ObjectMeta{
-								Name:            "default-pipe1",
+								Name:            "pipe1",
 								Namespace:       ns,
 								ResourceVersion: "1",
 							},
@@ -721,7 +721,7 @@ func TestArgoApplicationSetManager_CreateApplicationSetGenerators(t *testing.T) 
 						},
 						&argoApi.ApplicationSet{
 							ObjectMeta: metav1.ObjectMeta{
-								Name:            "default-pipe1",
+								Name:            "pipe1",
 								Namespace:       ns,
 								ResourceVersion: "1",
 							},
@@ -839,25 +839,21 @@ func TestArgoApplicationSetManager_RemoveApplicationSetGenerators(t *testing.T) 
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "pipe1-stage1",
 					Namespace: ns,
+					Labels: map[string]string{
+						cdPipeApi.StageCdPipelineLabelName: "pipe1",
+					},
 				},
 				Spec: cdPipeApi.StageSpec{
-					Name:       "stage1",
-					CdPipeline: "pipe1",
+					Name: "stage1",
 				},
 			},
 			client: func(t *testing.T) client.Client {
 				return fake.NewClientBuilder().
 					WithScheme(scheme).
 					WithObjects(
-						&cdPipeApi.CDPipeline{
-							ObjectMeta: metav1.ObjectMeta{
-								Name:      "pipe1",
-								Namespace: ns,
-							},
-						},
 						&argoApi.ApplicationSet{
 							ObjectMeta: metav1.ObjectMeta{
-								Name:      "default-pipe1",
+								Name:      "pipe1",
 								Namespace: ns,
 							},
 							Spec: argoApi.ApplicationSetSpec{
@@ -887,7 +883,7 @@ func TestArgoApplicationSetManager_RemoveApplicationSetGenerators(t *testing.T) 
 					cl.Get(context.Background(),
 						client.ObjectKey{
 							Namespace: ns,
-							Name:      "default-pipe1",
+							Name:      "pipe1",
 						},
 						appset,
 					),
@@ -904,25 +900,21 @@ func TestArgoApplicationSetManager_RemoveApplicationSetGenerators(t *testing.T) 
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "pipe1-stage1",
 					Namespace: ns,
+					Labels: map[string]string{
+						cdPipeApi.StageCdPipelineLabelName: "pipe1",
+					},
 				},
 				Spec: cdPipeApi.StageSpec{
-					Name:       "stage1",
-					CdPipeline: "pipe1",
+					Name: "stage1",
 				},
 			},
 			client: func(t *testing.T) client.Client {
 				return fake.NewClientBuilder().
 					WithScheme(scheme).
 					WithObjects(
-						&cdPipeApi.CDPipeline{
-							ObjectMeta: metav1.ObjectMeta{
-								Name:      "pipe1",
-								Namespace: ns,
-							},
-						},
 						&argoApi.ApplicationSet{
 							ObjectMeta: metav1.ObjectMeta{
-								Name:      "default-pipe1",
+								Name:      "pipe1",
 								Namespace: ns,
 							},
 						},
@@ -938,23 +930,18 @@ func TestArgoApplicationSetManager_RemoveApplicationSetGenerators(t *testing.T) 
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "pipe1-stage1",
 					Namespace: ns,
+					Labels: map[string]string{
+						cdPipeApi.StageCdPipelineLabelName: "pipe1",
+					},
 				},
 				Spec: cdPipeApi.StageSpec{
-					Name:       "stage1",
-					CdPipeline: "pipe1",
+					Name: "stage1",
 				},
 			},
 			client: func(t *testing.T) client.Client {
 				return fake.NewClientBuilder().
 					WithScheme(scheme).
-					WithObjects(
-						&cdPipeApi.CDPipeline{
-							ObjectMeta: metav1.ObjectMeta{
-								Name:      "pipe1",
-								Namespace: ns,
-							},
-						},
-					).
+					WithObjects().
 					Build()
 			},
 			wantErr:    require.NoError,
