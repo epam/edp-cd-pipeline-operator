@@ -234,3 +234,69 @@ spec:
       name: system:serviceaccount:edp:edp-cd-pipeline-operator
   resourceQuotas:
     scope: Tenant
+
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: mypipeline
+  namespace: edp
+  ownerReferences:
+    - apiVersion: v2.edp.epam.com/v1
+      kind: CDPipeline
+      name: mypipeline
+spec:
+  generators:
+    - list:
+        elements:
+          - cluster: in-cluster
+            codebase: test
+            gitUrlPath: test
+            imageRepository: registry.host.local/registry-space/test
+            imageTag: NaN
+            namespace: edp-mypipeline-dev
+            stage: dev
+            versionType: default
+          - cluster: in-cluster
+            codebase: test
+            gitUrlPath: test
+            imageRepository: registry.host.local/registry-space/test
+            imageTag: NaN
+            namespace: custom-namespace
+            stage: qa
+            versionType: default
+        template:
+          metadata: {}
+          spec:
+            destination: {}
+            project: ''
+  goTemplate: true
+  goTemplateOptions:
+    - missingkey=error
+  template:
+    metadata:
+      finalizers:
+        - resources-finalizer.argocd.argoproj.io
+      labels:
+        app.edp.epam.com/app-name: '{{ .codebase }}'
+        app.edp.epam.com/pipeline: mypipeline
+        app.edp.epam.com/stage: '{{ .stage }}'
+      name: mypipeline-{{ .stage }}-{{ .codebase }}
+    spec:
+      destination:
+        name: '{{ .cluster }}'
+        namespace: '{{ .namespace }}'
+      project: edp
+      source:
+        helm:
+          parameters:
+            - name: image.tag
+              value: '{{ .imageTag }}'
+            - name: image.repository
+              value: '{{ .imageRepository }}'
+          releaseName: '{{ .codebase }}'
+        path: deploy-templates
+        repoURL: ssh://git@gerrit-dev:30000/{{ .gitUrlPath }}
+        targetRevision: >-
+          {{ if eq .versionType "edp" }}build/{{ .imageTag }}{{ else }}{{
+          .imageTag }}{{ end }}
