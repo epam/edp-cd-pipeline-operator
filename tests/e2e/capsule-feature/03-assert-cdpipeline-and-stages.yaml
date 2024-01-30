@@ -257,6 +257,7 @@ spec:
             namespace: edp-mypipeline-dev
             stage: dev
             versionType: default
+            customValues: false
           - cluster: in-cluster
             codebase: test
             gitUrlPath: test
@@ -265,6 +266,7 @@ spec:
             namespace: custom-namespace
             stage: qa
             versionType: default
+            customValues: false
         template:
           metadata: {}
           spec:

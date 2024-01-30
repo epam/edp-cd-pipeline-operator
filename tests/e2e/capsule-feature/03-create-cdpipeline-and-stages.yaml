@@ -86,6 +86,33 @@ spec:
 ---
 
 apiVersion: v2.edp.epam.com/v1
+kind: Codebase
+metadata:
+  name: gitops
+  labels:
+    "app.edp.epam.com/codebaseType": "system"
+    "app.edp.epam.com/systemType": "gitops"
+spec:
+  buildTool: helm
+  ciTool: tekton
+  defaultBranch: main
+  deploymentScript: helm-chart
+  description: Custom values for deploy applications
+  emptyProject: false
+  framework: gitops
+  gitServer: gerrit
+  gitUrlPath: /edp-gitops
+  jiraIssueMetadataPayload: null
+  lang: helm
+  strategy: create
+  type: system
+  versioning:
+    startFrom: 0.1.0-SNAPSHOT
+    type: edp
+
+---
+
+apiVersion: v2.edp.epam.com/v1
 kind: GitServer
 metadata:
   name: gerrit

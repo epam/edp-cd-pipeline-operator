@@ -70,6 +70,17 @@ func TestArgoApplicationSetManager_CreateApplicationSet(t *testing.T) {
 								GitServer: "git-server",
 							},
 						},
+						&codebaseApi.Codebase{
+							ObjectMeta: metav1.ObjectMeta{
+								Name:      "gitops",
+								Namespace: ns,
+								Labels:    gitOpsCodebaseLabels,
+							},
+							Spec: codebaseApi.CodebaseSpec{
+								GitUrlPath: "/company/gitops",
+								Type:       codebaseTypeSystem,
+							},
+						},
 						&codebaseApi.GitServer{
 							ObjectMeta: metav1.ObjectMeta{
 								Name:      "git-server",
@@ -96,6 +107,201 @@ func TestArgoApplicationSetManager_CreateApplicationSet(t *testing.T) {
 					),
 				)
 			},
+		},
+		{
+			name: "failed - multiple gitops codebases exist",
+			pipeline: &cdPipeApi.CDPipeline{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "pipe1",
+					Namespace: ns,
+				},
+				Spec: cdPipeApi.CDPipelineSpec{
+					Name:         "pipe1",
+					Applications: []string{"app1", "app2"},
+				},
+			},
+			client: func(t *testing.T) client.Client {
+				return fake.NewClientBuilder().
+					WithScheme(scheme).
+					WithObjects(
+						&codebaseApi.Codebase{
+							ObjectMeta: metav1.ObjectMeta{
+								Name:      "app1",
+								Namespace: ns,
+							},
+							Spec: codebaseApi.CodebaseSpec{
+								GitServer: "git-server",
+							},
+						},
+						&codebaseApi.Codebase{
+							ObjectMeta: metav1.ObjectMeta{
+								Name:      "app2",
+								Namespace: ns,
+							},
+							Spec: codebaseApi.CodebaseSpec{
+								GitServer: "git-server",
+							},
+						},
+						&codebaseApi.Codebase{
+							ObjectMeta: metav1.ObjectMeta{
+								Name:      "gitops",
+								Namespace: ns,
+								Labels:    gitOpsCodebaseLabels,
+							},
+							Spec: codebaseApi.CodebaseSpec{
+								GitUrlPath: "/company/gitops",
+								Type:       codebaseTypeSystem,
+							},
+						},
+						&codebaseApi.Codebase{
+							ObjectMeta: metav1.ObjectMeta{
+								Name:      "gitops2",
+								Namespace: ns,
+								Labels:    gitOpsCodebaseLabels,
+							},
+							Spec: codebaseApi.CodebaseSpec{
+								GitUrlPath: "/company/gitops",
+								Type:       codebaseTypeSystem,
+							},
+						},
+						&codebaseApi.GitServer{
+							ObjectMeta: metav1.ObjectMeta{
+								Name:      "git-server",
+								Namespace: ns,
+							},
+							Spec: codebaseApi.GitServerSpec{
+								GitHost: "github.com",
+								GitUser: "git",
+								SshPort: 22,
+							},
+						},
+					).
+					Build()
+			},
+			wantErr: func(t require.TestingT, err error, i ...interface{}) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "found more than one GitOps codebase")
+			},
+			wantAssert: func(t *testing.T, cl client.Client) {},
+		},
+		{
+			name: "failed - wrong gitops codebases type",
+			pipeline: &cdPipeApi.CDPipeline{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "pipe1",
+					Namespace: ns,
+				},
+				Spec: cdPipeApi.CDPipelineSpec{
+					Name:         "pipe1",
+					Applications: []string{"app1", "app2"},
+				},
+			},
+			client: func(t *testing.T) client.Client {
+				return fake.NewClientBuilder().
+					WithScheme(scheme).
+					WithObjects(
+						&codebaseApi.Codebase{
+							ObjectMeta: metav1.ObjectMeta{
+								Name:      "app1",
+								Namespace: ns,
+							},
+							Spec: codebaseApi.CodebaseSpec{
+								GitServer: "git-server",
+							},
+						},
+						&codebaseApi.Codebase{
+							ObjectMeta: metav1.ObjectMeta{
+								Name:      "app2",
+								Namespace: ns,
+							},
+							Spec: codebaseApi.CodebaseSpec{
+								GitServer: "git-server",
+							},
+						},
+						&codebaseApi.Codebase{
+							ObjectMeta: metav1.ObjectMeta{
+								Name:      "gitops",
+								Namespace: ns,
+								Labels:    gitOpsCodebaseLabels,
+							},
+							Spec: codebaseApi.CodebaseSpec{
+								GitUrlPath: "/company/gitops",
+								Type:       "wrong-type",
+							},
+						},
+						&codebaseApi.GitServer{
+							ObjectMeta: metav1.ObjectMeta{
+								Name:      "git-server",
+								Namespace: ns,
+							},
+							Spec: codebaseApi.GitServerSpec{
+								GitHost: "github.com",
+								GitUser: "git",
+								SshPort: 22,
+							},
+						},
+					).
+					Build()
+			},
+			wantErr: func(t require.TestingT, err error, i ...interface{}) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), `gitOps codebase does not have "system" type`)
+			},
+			wantAssert: func(t *testing.T, cl client.Client) {},
+		},
+		{
+			name: "failed - gitops codebase doesn't exist",
+			pipeline: &cdPipeApi.CDPipeline{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "pipe1",
+					Namespace: ns,
+				},
+				Spec: cdPipeApi.CDPipelineSpec{
+					Name:         "pipe1",
+					Applications: []string{"app1", "app2"},
+				},
+			},
+			client: func(t *testing.T) client.Client {
+				return fake.NewClientBuilder().
+					WithScheme(scheme).
+					WithObjects(
+						&codebaseApi.Codebase{
+							ObjectMeta: metav1.ObjectMeta{
+								Name:      "app1",
+								Namespace: ns,
+							},
+							Spec: codebaseApi.CodebaseSpec{
+								GitServer: "git-server",
+							},
+						},
+						&codebaseApi.Codebase{
+							ObjectMeta: metav1.ObjectMeta{
+								Name:      "app2",
+								Namespace: ns,
+							},
+							Spec: codebaseApi.CodebaseSpec{
+								GitServer: "git-server",
+							},
+						},
+						&codebaseApi.GitServer{
+							ObjectMeta: metav1.ObjectMeta{
+								Name:      "git-server",
+								Namespace: ns,
+							},
+							Spec: codebaseApi.GitServerSpec{
+								GitHost: "github.com",
+								GitUser: "git",
+								SshPort: 22,
+							},
+						},
+					).
+					Build()
+			},
+			wantErr: func(t require.TestingT, err error, i ...interface{}) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "no GitOps codebases found")
+			},
+			wantAssert: func(t *testing.T, cl client.Client) {},
 		},
 		{
 			name: "failed - codebases have different git servers",
@@ -398,8 +604,8 @@ func TestArgoApplicationSetManager_CreateApplicationSetGenerators(t *testing.T) 
 				require.Len(t, appset.Spec.Generators, 1)
 				require.Len(t, appset.Spec.Generators[0].List.Elements, 3)
 
-				contains := map[string]string{
-					"app1":   `{"cluster":"in-cluster", "codebase":"app1", "gitUrlPath":"company/app1", "imageRepository":"app1-main-image", "imageTag":"NaN", "namespace":"default", "stage":"stage1", "versionType":"default"}`,
+				expected := map[string]string{
+					"app1":   `{"cluster":"in-cluster", "codebase":"app1", "gitUrlPath":"company/app1", "imageRepository":"app1-main-image", "imageTag":"NaN", "namespace":"default", "stage":"stage1", "versionType":"default", "customValues":false}`,
 					"app2":   `{"stage":"stage1", "codebase": "app2"}`,
 					"go-app": `{"stage":"should-skip-stage", "codebase": "go-app"}`,
 				}
@@ -407,8 +613,8 @@ func TestArgoApplicationSetManager_CreateApplicationSetGenerators(t *testing.T) 
 				for _, rawel := range appset.Spec.Generators[0].List.Elements {
 					el := &generatorElement{}
 					require.NoError(t, json.Unmarshal(rawel.Raw, el))
-					require.Contains(t, contains, el.Codebase)
-					require.JSONEq(t, contains[el.Codebase], string(rawel.Raw))
+					require.Contains(t, expected, el.Codebase)
+					require.JSONEq(t, expected[el.Codebase], string(rawel.Raw))
 				}
 			},
 		},
@@ -489,7 +695,7 @@ func TestArgoApplicationSetManager_CreateApplicationSetGenerators(t *testing.T) 
 				require.Len(t, appset.Spec.Generators, 1)
 				require.Len(t, appset.Spec.Generators[0].List.Elements, 1)
 				require.JSONEq(t,
-					`{"cluster":"in-cluster", "codebase":"app1", "gitUrlPath":"company/app1", "imageRepository":"app1-main-image", "imageTag":"NaN", "namespace":"default", "stage":"stage1", "versionType":"default"}`,
+					`{"cluster":"in-cluster", "codebase":"app1", "gitUrlPath":"company/app1", "imageRepository":"app1-main-image", "imageTag":"NaN", "namespace":"default", "stage":"stage1", "versionType":"default", "customValues":false}`,
 					string(appset.Spec.Generators[0].List.Elements[0].Raw),
 				)
 			},
@@ -557,7 +763,7 @@ func TestArgoApplicationSetManager_CreateApplicationSetGenerators(t *testing.T) 
 										List: &argoApi.ListGenerator{
 											Elements: []v1.JSON{
 												{
-													Raw: []byte(`{"cluster":"in-cluster", "codebase":"app1", "gitUrlPath":"company/app1", "imageRepository":"app1-main-image", "imageTag":"NaN", "namespace":"default", "stage":"stage1", "versionType":"default"}`),
+													Raw: []byte(`{"cluster":"in-cluster", "codebase":"app1", "gitUrlPath":"company/app1", "imageRepository":"app1-main-image", "imageTag":"NaN", "namespace":"default", "stage":"stage1", "versionType":"default", "customValues":false}`),
 												},
 											},
 										},
@@ -585,7 +791,7 @@ func TestArgoApplicationSetManager_CreateApplicationSetGenerators(t *testing.T) 
 				require.Len(t, appset.Spec.Generators, 1)
 				require.Len(t, appset.Spec.Generators[0].List.Elements, 1)
 				require.JSONEq(t,
-					`{"cluster":"in-cluster", "codebase":"app1", "gitUrlPath":"company/app1", "imageRepository":"app1-main-image", "imageTag":"NaN", "namespace":"default", "stage":"stage1", "versionType":"default"}`,
+					`{"cluster":"in-cluster", "codebase":"app1", "gitUrlPath":"company/app1", "imageRepository":"app1-main-image", "imageTag":"NaN", "namespace":"default", "stage":"stage1", "versionType":"default", "customValues":false}`,
 					string(appset.Spec.Generators[0].List.Elements[0].Raw),
 				)
 			},

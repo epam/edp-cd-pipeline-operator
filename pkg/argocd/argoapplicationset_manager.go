@@ -28,6 +28,14 @@ type generatorElement struct {
 	Namespace       string `json:"namespace"`
 	GitUrlPath      string `json:"gitUrlPath"`
 	VersionType     string `json:"versionType"`
+	CustomValues    bool   `json:"customValues"`
+}
+
+const codebaseTypeSystem = "system"
+
+var gitOpsCodebaseLabels = map[string]string{
+	"app.edp.epam.com/codebaseType": "system",
+	"app.edp.epam.com/systemType":   "gitops",
 }
 
 type ArgoApplicationSetManager struct {
@@ -73,7 +81,12 @@ func (c *ArgoApplicationSetManager) CreateApplicationSet(ctx context.Context, pi
 		return err
 	}
 
-	appset = generateApplicationSet(pipeline, gitServer)
+	gitopsCodebase, err := c.getGitOpsRepo(ctx, pipeline.Namespace)
+	if err != nil {
+		return err
+	}
+
+	appset = generateApplicationSet(pipeline, gitServer, gitopsCodebase)
 
 	if err = controllerutil.SetOwnerReference(pipeline, appset, c.client.Scheme()); err != nil {
 		return fmt.Errorf("failed to set ApplicationSet owner reference: %w", err)
@@ -219,6 +232,7 @@ func (c *ArgoApplicationSetManager) makeStageGenerators(
 			Namespace:       stage.Spec.Namespace,
 			GitUrlPath:      strings.TrimPrefix(codebases[k].Spec.GitUrlPath, "/"),
 			VersionType:     string(codebases[k].Spec.Versioning.Type),
+			CustomValues:    false,
 		}
 
 		var raw []byte
@@ -289,7 +303,68 @@ func (c *ArgoApplicationSetManager) getGitServer(ctx context.Context, ns string,
 	return gitServer, nil
 }
 
-func generateApplicationSet(pipeline *cdPipeApi.CDPipeline, gitServer *codebaseApi.GitServer) *argoApi.ApplicationSet {
+func (c *ArgoApplicationSetManager) getGitOpsRepo(ctx context.Context, ns string) (*codebaseApi.Codebase, error) {
+	codebaseList := &codebaseApi.CodebaseList{}
+	if err := c.client.List(ctx, codebaseList, client.InNamespace(ns), client.MatchingLabels(gitOpsCodebaseLabels)); err != nil {
+		return nil, fmt.Errorf("failed to list codebases: %w", err)
+	}
+
+	if len(codebaseList.Items) == 0 {
+		return nil, fmt.Errorf("no GitOps codebases found")
+	}
+
+	if len(codebaseList.Items) > 1 {
+		return nil, fmt.Errorf("found more than one GitOps codebase")
+	}
+
+	gitOpsCodebase := &codebaseList.Items[0]
+	if gitOpsCodebase.Spec.Type != codebaseTypeSystem {
+		return nil, fmt.Errorf("gitOps codebase does not have %q type", codebaseTypeSystem)
+	}
+
+	return gitOpsCodebase, nil
+}
+
+func generateTemplatePatch(pipeline, gitopsUrlPath, gitUser, gitHost string, sshPort int32) string {
+	sshURL := fmt.Sprintf("ssh://%s@%s:%d", gitUser, gitHost, sshPort)
+	gitopsRepoUrl := fmt.Sprintf("https://%s%s", gitHost, gitopsUrlPath)
+	template := `
+    {{- if .customValues }}
+    spec:
+      sources:
+        - ref: values
+          repoURL: %s
+          targetRevision: main
+        - helm:
+            parameters:
+              - name: image.tag
+                value: '{{ .imageTag }}'
+              - name: image.repository
+                value: {{ .imageRepository }}
+            releaseName: '{{ .codebase }}'
+            valueFiles:
+              - $values/%s/{{ .stage }}/{{ .codebase }}-values.yaml
+          path: deploy-templates
+          repoURL: %s/{{ .gitUrlPath }}
+          targetRevision: '{{ if eq .versionType "edp" }}build/{{ .imageTag }}{{ else }}{{ .imageTag }}{{ end }}'
+    {{- end }}
+	`
+
+	return fmt.Sprintf(template, gitopsRepoUrl, pipeline, sshURL)
+}
+
+func generateApplicationSet(
+	pipeline *cdPipeApi.CDPipeline,
+	gitServer *codebaseApi.GitServer,
+	gitopsCodebase *codebaseApi.Codebase,
+) *argoApi.ApplicationSet {
+	templatePatch := generateTemplatePatch(
+		pipeline.Name,
+		gitopsCodebase.Spec.GitUrlPath,
+		gitServer.Spec.GitUser,
+		gitServer.Spec.GitHost,
+		gitServer.Spec.SshPort)
+
 	return &argoApi.ApplicationSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      pipeline.Name,
@@ -299,6 +374,7 @@ func generateApplicationSet(pipeline *cdPipeApi.CDPipeline, gitServer *codebaseA
 			Generators:        []argoApi.ApplicationSetGenerator{},
 			GoTemplate:        true,
 			GoTemplateOptions: []string{"missingkey=error"},
+			TemplatePatch:     &templatePatch,
 			Template: argoApi.ApplicationSetTemplate{
 				ApplicationSetTemplateMeta: argoApi.ApplicationSetTemplateMeta{
 					Name:       fmt.Sprintf("%s-{{ .stage }}-{{ .codebase }}", pipeline.Name),
