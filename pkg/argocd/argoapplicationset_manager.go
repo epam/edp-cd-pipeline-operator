@@ -347,8 +347,7 @@ func generateTemplatePatch(pipeline, gitopsUrlPath, gitUser, gitHost string, ssh
           path: deploy-templates
           repoURL: %s/{{ .gitUrlPath }}
           targetRevision: '{{ if eq .versionType "edp" }}build/{{ .imageTag }}{{ else }}{{ .imageTag }}{{ end }}'
-    {{- end }}
-	`
+    {{- end }}`
 
 	return fmt.Sprintf(template, gitopsRepoUrl, pipeline, sshURL)
 }

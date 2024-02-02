@@ -1,9 +1,11 @@
 package argocd
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"testing"
+	"text/template"
 
 	argoApi "github.com/argoproj/argo-cd/v2/pkg/apis/application/v1alpha1"
 	"github.com/go-logr/logr"
@@ -14,6 +16,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"sigs.k8s.io/yaml"
 
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
@@ -1168,4 +1171,33 @@ func TestArgoApplicationSetManager_RemoveApplicationSetGenerators(t *testing.T) 
 			tt.wantAssert(t, cl)
 		})
 	}
+}
+
+func Test_generateTemplatePatch(t *testing.T) {
+	appset := generateTemplatePatch("pipe1", "/company/app1", "git", "github.com", 22)
+
+	Create := func(name, t string) *template.Template {
+		return template.Must(template.New(name).Option("missingkey=error").Parse(t))
+	}
+
+	tmpl := Create("appset", appset)
+
+	buf := &bytes.Buffer{}
+	err := tmpl.Execute(
+		buf,
+		map[string]any{
+			"customValues":    true,
+			"versionType":     "edp",
+			"imageTag":        "NaN",
+			"imageRepository": "repo1",
+			"codebase":        "app1",
+			"stage":           "stage1",
+			"gitUrlPath":      "/company/app1",
+		},
+	)
+	require.NoError(t, err)
+
+	y, err := yaml.YAMLToJSON(buf.Bytes())
+	require.NotNil(t, y)
+	require.NoError(t, err)
 }
