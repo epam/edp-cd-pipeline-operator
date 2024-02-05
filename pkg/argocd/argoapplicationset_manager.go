@@ -327,7 +327,7 @@ func (c *ArgoApplicationSetManager) getGitOpsRepo(ctx context.Context, ns string
 
 func generateTemplatePatch(pipeline, gitopsUrlPath, gitUser, gitHost string, sshPort int32) string {
 	sshURL := fmt.Sprintf("ssh://%s@%s:%d", gitUser, gitHost, sshPort)
-	gitopsRepoUrl := fmt.Sprintf(sshURL, gitopsUrlPath)
+	gitopsRepoUrl := sshURL + gitopsUrlPath
 	template := `
     {{- if .customValues }}
     spec:
