@@ -1174,7 +1174,7 @@ func TestArgoApplicationSetManager_RemoveApplicationSetGenerators(t *testing.T) 
 }
 
 func Test_generateTemplatePatch(t *testing.T) {
-	appset := generateTemplatePatch("pipe1", "/company/app1", "git", "github.com", 22)
+	appset := generateTemplatePatch("pipe1", "/company/edp-gitops", "git", "github.com", 22)
 
 	Create := func(name, t string) *template.Template {
 		return template.Must(template.New(name).Option("missingkey=error").Parse(t))
@@ -1192,7 +1192,7 @@ func Test_generateTemplatePatch(t *testing.T) {
 			"imageRepository": "repo1",
 			"codebase":        "app1",
 			"stage":           "stage1",
-			"gitUrlPath":      "/company/app1",
+			"gitUrlPath":      "/company/edp-gitops",
 		},
 	)
 	require.NoError(t, err)
