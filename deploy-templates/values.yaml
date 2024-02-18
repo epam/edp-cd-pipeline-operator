@@ -97,6 +97,6 @@ manageNamespace: true
 # -- flag that indicates whether the operator should manage secrets for stages;
 # values: own/eso/none.
 # own - just copy secrets;
-# eso - secrete will be managed by External Secrets Operator(operator should be installed in the cluster);
+# eso - secrete will be managed by External Secrets Operator(operator should be installed in the cluster: https://epam.github.io/edp-install/operator-guide/install-external-secrets-operator/);
 # none - not enable secrets management logic;
 secretManager: none

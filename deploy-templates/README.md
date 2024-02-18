@@ -34,7 +34,7 @@ A Helm chart for EDP CD Pipeline Operator
 | resources.limits.memory | string | `"192Mi"` |  |
 | resources.requests.cpu | string | `"50m"` |  |
 | resources.requests.memory | string | `"64Mi"` |  |
-| secretManager | string | `"none"` | flag that indicates whether the operator should manage secrets for stages; values: own/eso/none. own - just copy secrets; eso - secrete will be managed by External Secrets Operator(operator should be installed in the cluster); none - not enable secrets management logic; |
+| secretManager | string | `"none"` | flag that indicates whether the operator should manage secrets for stages; values: own/eso/none. own - just copy secrets; eso - secrete will be managed by External Secrets Operator(operator should be installed in the cluster: https://epam.github.io/edp-install/operator-guide/install-external-secrets-operator/); none - not enable secrets management logic; |
 | tenancyEngine | string | `"none"` | defines the type of the tenant engine that can be "none", "kiosk" or "capsule"; for Stages with external cluster tenancyEngine will be ignored |
 | tolerations | list | `[]` |  |
 
