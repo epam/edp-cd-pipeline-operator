@@ -28,7 +28,7 @@ A Helm chart for EDP CD Pipeline Operator
 | image.repository | string | `"epamedp/cd-pipeline-operator"` | EDP cd-pipeline-operator Docker image name. The released image can be found on [Dockerhub](https://hub.docker.com/r/epamedp/cd-pipeline-operator) |
 | image.tag | string | `nil` | EDP cd-pipeline-operator Docker image tag. The released image can be found on [Dockerhub](https://hub.docker.com/r/epamedp/cd-pipeline-operator/tags) |
 | imagePullPolicy | string | `"IfNotPresent"` |  |
-| manageNamespace | bool | `true` | should the operator manage(create/delete) namespaces for stages |
+| manageNamespace | bool | `true` | should the operator manage(create/delete) namespaces for stages Refer to the guide for managing namespace (https://epam.github.io/edp-install/operator-guide/namespace-management/) |
 | name | string | `"cd-pipeline-operator"` | component name |
 | nodeSelector | object | `{}` |  |
 | resources.limits.memory | string | `"192Mi"` |  |
