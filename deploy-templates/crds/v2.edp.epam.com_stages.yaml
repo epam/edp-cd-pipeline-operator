@@ -135,10 +135,10 @@ spec:
                     type: string
                 type: object
               triggerTemplate:
-                default: cd-stage-deploy
+                default: deploy
                 description: Specifies a name of Tekton TriggerTemplate which will
                   be used as a blueprint for deployment pipeline. Default value is
-                  "cd-stage-deploy" which means that default TriggerTemplate will
+                  "deploy" which means that default TriggerTemplate will
                   be used. The default TriggerTemplate is delivered using edp-tekton
                   helm chart.
                 type: string

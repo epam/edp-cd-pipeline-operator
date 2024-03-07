@@ -345,9 +345,9 @@ StageSpec defines the desired state of Stage. NOTE: for deleting the stage use s
         <td><b>triggerTemplate</b></td>
         <td>string</td>
         <td>
-          Specifies a name of Tekton TriggerTemplate which will be used as a blueprint for deployment pipeline. Default value is "cd-stage-deploy" which means that default TriggerTemplate will be used. The default TriggerTemplate is delivered using edp-tekton helm chart.<br/>
+          Specifies a name of Tekton TriggerTemplate which will be used as a blueprint for deployment pipeline. Default value is "deploy" which means that default TriggerTemplate will be used. The default TriggerTemplate is delivered using edp-tekton helm chart.<br/>
           <br/>
-            <i>Default</i>: cd-stage-deploy<br/>
+            <i>Default</i>: deploy<br/>
         </td>
         <td>false</td>
       </tr></tbody>

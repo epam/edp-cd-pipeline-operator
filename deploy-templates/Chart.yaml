@@ -69,7 +69,7 @@ annotations:
           library: {}
           type: default
         triggerType: Auto
-        triggerTemplate: cd-stage-deploy
+        triggerTemplate: deploy
   artifacthub.io/links: |
     - name: EDP Documentation
       url: https://epam.github.io/edp-install/

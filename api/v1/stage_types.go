@@ -48,10 +48,10 @@ type StageSpec struct {
 	Namespace string `json:"namespace,omitempty"`
 
 	// Specifies a name of Tekton TriggerTemplate which will be used as a blueprint for deployment pipeline.
-	// Default value is "cd-stage-deploy" which means that default TriggerTemplate will be used.
+	// Default value is "deploy" which means that default TriggerTemplate will be used.
 	// The default TriggerTemplate is delivered using edp-tekton helm chart.
 	// +optional
-	// +kubebuilder:default:="cd-stage-deploy"
+	// +kubebuilder:default:="deploy"
 	TriggerTemplate string `json:"triggerTemplate,omitempty"`
 
 	// Specifies a name of cluster where the application will be deployed.
