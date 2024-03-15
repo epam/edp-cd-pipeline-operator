@@ -138,9 +138,8 @@ spec:
                 default: deploy
                 description: Specifies a name of Tekton TriggerTemplate which will
                   be used as a blueprint for deployment pipeline. Default value is
-                  "deploy" which means that default TriggerTemplate will
-                  be used. The default TriggerTemplate is delivered using edp-tekton
-                  helm chart.
+                  "deploy" which means that default TriggerTemplate will be used.
+                  The default TriggerTemplate is delivered using edp-tekton helm chart.
                 type: string
               triggerType:
                 description: Stage deployment trigger type. E.g. Manual, Auto

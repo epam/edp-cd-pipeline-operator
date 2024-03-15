@@ -31,7 +31,7 @@ func (c *ClientProvider) GetClusterClient(ctx context.Context, secretNamespace, 
 		return nil, err
 	}
 
-	restConfig, err := secretToRestConfig(secret)
+	restConfig, err := ClusterSecretToRestConfig(secret)
 	if err != nil {
 		return nil, err
 	}
@@ -66,7 +66,8 @@ func (c *ClientProvider) getClusterSecret(ctx context.Context, clusterName, secr
 
 const k8sClientConfigQPS = 50
 
-func secretToRestConfig(s *corev1.Secret) (*rest.Config, error) {
+// ClusterSecretToRestConfig creates a rest.Config from the cluster secret.
+func ClusterSecretToRestConfig(s *corev1.Secret) (*rest.Config, error) {
 	if _, ok := s.Data["config"]; !ok {
 		return nil, fmt.Errorf("no config data in the secret %s", s.Name)
 	}

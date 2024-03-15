@@ -21,6 +21,7 @@ import (
 	cdPipeApiV1 "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
 	cdPipeApiV1Alpha1 "github.com/epam/edp-cd-pipeline-operator/v2/api/v1alpha1"
 	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/cdpipeline"
+	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/clustersecret"
 	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/stage"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/argocd"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/objectmodifier"
@@ -140,6 +141,12 @@ func main() {
 		objectmodifier.NewStageBatchModifierAll(cl, mgr.GetScheme()),
 	).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "cd-stage")
+		os.Exit(1)
+	}
+
+	if err = clustersecret.NewReconcileClusterSecret(cl).
+		SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "cluster-secret")
 		os.Exit(1)
 	}
 
