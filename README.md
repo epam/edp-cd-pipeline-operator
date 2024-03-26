@@ -34,8 +34,8 @@ In order to install the CD Pipeline Operator, follow the steps below:
      ```bash
      helm search repo epamedp/cd-pipeline-operator -l
      NAME                              CHART VERSION   APP VERSION     DESCRIPTION
+     epamedp/cd-pipeline-operator      2.19.0          2.19.0          A Helm chart for EDP CD Pipeline Operator
      epamedp/cd-pipeline-operator      2.18.0          2.18.0          A Helm chart for EDP CD Pipeline Operator
-     epamedp/cd-pipeline-operator      2.17.0          2.17.0          A Helm chart for EDP CD Pipeline Operator
      ```
 
    _**NOTE:** It is highly recommended to use the latest released version._
