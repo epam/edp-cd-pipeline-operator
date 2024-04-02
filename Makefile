@@ -90,7 +90,7 @@ e2e: build
 
 .PHONY: fmt
 fmt:  ## Run go fmt
-	go fmt ./...
+	go fmt $(go list ./... | grep -v /vendor/)
 
 .PHONY: vet
 vet:  ## Run go vet
