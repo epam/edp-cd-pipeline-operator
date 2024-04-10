@@ -82,6 +82,7 @@ func TestArgoApplicationSetManager_CreateApplicationSet(t *testing.T) {
 							Spec: codebaseApi.CodebaseSpec{
 								GitUrlPath: "/company/gitops",
 								Type:       codebaseTypeSystem,
+								GitServer:  "gitops-git-server",
 							},
 						},
 						&codebaseApi.GitServer{
@@ -91,6 +92,17 @@ func TestArgoApplicationSetManager_CreateApplicationSet(t *testing.T) {
 							},
 							Spec: codebaseApi.GitServerSpec{
 								GitHost: "github.com",
+								GitUser: "git",
+								SshPort: 22,
+							},
+						},
+						&codebaseApi.GitServer{
+							ObjectMeta: metav1.ObjectMeta{
+								Name:      "gitops-git-server",
+								Namespace: ns,
+							},
+							Spec: codebaseApi.GitServerSpec{
+								GitHost: "gerrit.com",
 								GitUser: "git",
 								SshPort: 22,
 							},

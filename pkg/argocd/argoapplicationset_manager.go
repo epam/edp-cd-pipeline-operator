@@ -81,12 +81,12 @@ func (c *ArgoApplicationSetManager) CreateApplicationSet(ctx context.Context, pi
 		return err
 	}
 
-	gitopsCodebase, err := c.getGitOpsRepo(ctx, pipeline.Namespace)
+	gitopsUrl, err := c.getGitOpsRepoUrl(ctx, pipeline.Namespace)
 	if err != nil {
 		return err
 	}
 
-	appset = generateApplicationSet(pipeline, gitServer, gitopsCodebase)
+	appset = generateApplicationSet(pipeline, gitServer, gitopsUrl)
 
 	if err = controllerutil.SetOwnerReference(pipeline, appset, c.client.Scheme()); err != nil {
 		return fmt.Errorf("failed to set ApplicationSet owner reference: %w", err)
@@ -303,31 +303,44 @@ func (c *ArgoApplicationSetManager) getGitServer(ctx context.Context, ns string,
 	return gitServer, nil
 }
 
-func (c *ArgoApplicationSetManager) getGitOpsRepo(ctx context.Context, ns string) (*codebaseApi.Codebase, error) {
+func (c *ArgoApplicationSetManager) getGitOpsRepoUrl(ctx context.Context, ns string) (string, error) {
 	codebaseList := &codebaseApi.CodebaseList{}
 	if err := c.client.List(ctx, codebaseList, client.InNamespace(ns), client.MatchingLabels(gitOpsCodebaseLabels)); err != nil {
-		return nil, fmt.Errorf("failed to list codebases: %w", err)
+		return "", fmt.Errorf("failed to list codebases: %w", err)
 	}
 
 	if len(codebaseList.Items) == 0 {
-		return nil, fmt.Errorf("no GitOps codebases found")
+		return "", fmt.Errorf("no GitOps codebases found")
 	}
 
 	if len(codebaseList.Items) > 1 {
-		return nil, fmt.Errorf("found more than one GitOps codebase")
+		return "", fmt.Errorf("found more than one GitOps codebase")
 	}
 
 	gitOpsCodebase := &codebaseList.Items[0]
 	if gitOpsCodebase.Spec.Type != codebaseTypeSystem {
-		return nil, fmt.Errorf("gitOps codebase does not have %q type", codebaseTypeSystem)
+		return "", fmt.Errorf("gitOps codebase does not have %q type", codebaseTypeSystem)
 	}
 
-	return gitOpsCodebase, nil
+	gitServer := &codebaseApi.GitServer{}
+	if err := c.client.Get(ctx, client.ObjectKey{
+		Namespace: ns,
+		Name:      gitOpsCodebase.Spec.GitServer,
+	}, gitServer); err != nil {
+		return "", fmt.Errorf("failed to get gitops GitServer: %w", err)
+	}
+
+	return fmt.Sprintf(
+		"ssh://%s@%s:%d%s",
+		gitServer.Spec.GitUser,
+		gitServer.Spec.GitHost,
+		gitServer.Spec.SshPort,
+		gitOpsCodebase.Spec.GitUrlPath,
+	), nil
 }
 
-func generateTemplatePatch(pipeline, gitopsUrlPath, gitUser, gitHost string, sshPort int32) string {
+func generateTemplatePatch(pipeline, gitopsUrl, gitUser, gitHost string, sshPort int32) string {
 	sshURL := fmt.Sprintf("ssh://%s@%s:%d", gitUser, gitHost, sshPort)
-	gitopsRepoUrl := sshURL + gitopsUrlPath
 	template := `
     {{- if .customValues }}
     spec:
@@ -349,17 +362,17 @@ func generateTemplatePatch(pipeline, gitopsUrlPath, gitUser, gitHost string, ssh
           targetRevision: '{{ if eq .versionType "edp" }}build/{{ .imageTag }}{{ else }}{{ .imageTag }}{{ end }}'
     {{- end }}`
 
-	return fmt.Sprintf(template, gitopsRepoUrl, pipeline, sshURL)
+	return fmt.Sprintf(template, gitopsUrl, pipeline, sshURL)
 }
 
 func generateApplicationSet(
 	pipeline *cdPipeApi.CDPipeline,
 	gitServer *codebaseApi.GitServer,
-	gitopsCodebase *codebaseApi.Codebase,
+	gitopsUrl string,
 ) *argoApi.ApplicationSet {
 	templatePatch := generateTemplatePatch(
 		pipeline.Name,
-		gitopsCodebase.Spec.GitUrlPath,
+		gitopsUrl,
 		gitServer.Spec.GitUser,
 		gitServer.Spec.GitHost,
 		gitServer.Spec.SshPort)

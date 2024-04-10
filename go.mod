@@ -1,9 +1,9 @@
 module github.com/epam/edp-cd-pipeline-operator/v2
 
-go 1.20
+go 1.21
 
 require (
-	github.com/argoproj/argo-cd/v2 v2.10.0-rc3
+	github.com/argoproj/argo-cd/v2 v2.10.6
 	github.com/epam/edp-codebase-operator/v2 v2.21.0
 	github.com/epam/edp-common v0.0.0-20230710145648-344bbce4120e
 	github.com/epam/edp-component-operator v0.13.0
@@ -16,7 +16,7 @@ require (
 	k8s.io/apimachinery v0.26.11
 	k8s.io/client-go v0.26.11
 	k8s.io/utils v0.0.0-20230313181309-38a27ef9d749
-	sigs.k8s.io/controller-runtime v0.14.6
+	sigs.k8s.io/controller-runtime v0.14.7
 	sigs.k8s.io/yaml v1.3.0
 )
 
@@ -78,7 +78,7 @@ require (
 	github.com/Masterminds/semver/v3 v3.2.1 // indirect
 	github.com/Microsoft/go-winio v0.6.1 // indirect
 	github.com/ProtonMail/go-crypto v0.0.0-20230828082145-3c4c8a2d2371 // indirect
-	github.com/argoproj/gitops-engine v0.7.1-0.20231218194513-aba38192fb16 // indirect
+	github.com/argoproj/gitops-engine v0.7.1-0.20240122213038-792124280fcc // indirect
 	github.com/argoproj/pkg v0.13.7-0.20230626144333-d56162821bd1 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/blang/semver/v4 v4.0.0 // indirect
