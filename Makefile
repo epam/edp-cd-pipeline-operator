@@ -18,6 +18,8 @@ KIND_CLUSTER_NAME?="cd-pipeline-operator"
 KUBE_VERSION?=1.27
 KIND_CONFIG?=./hack/kind-$(KUBE_VERSION).yaml
 
+CONTAINER_REGISTRY_URL?="repo"
+CONTAINER_REGISTRY_SPACE?="edp"
 E2E_IMAGE_REPOSITORY?="cd-pipeline-operator-image"
 E2E_IMAGE_TAG?="latest"
 
@@ -84,9 +86,9 @@ test: fmt vet
 
 ## Run e2e tests. Requires kind with running cluster and kuttl tool.
 e2e: build
-	docker build --no-cache -t ${E2E_IMAGE_REPOSITORY}:${E2E_IMAGE_TAG} .
-	kind load --name $(KIND_CLUSTER_NAME) docker-image ${E2E_IMAGE_REPOSITORY}:${E2E_IMAGE_TAG}
-	E2E_IMAGE_REPOSITORY=${E2E_IMAGE_REPOSITORY} E2E_IMAGE_TAG=${E2E_IMAGE_TAG} kubectl-kuttl test
+	docker build --no-cache -t ${CONTAINER_REGISTRY_URL}/${CONTAINER_REGISTRY_SPACE}/${E2E_IMAGE_REPOSITORY}:${E2E_IMAGE_TAG} .
+	kind load --name $(KIND_CLUSTER_NAME) docker-image ${CONTAINER_REGISTRY_URL}/${CONTAINER_REGISTRY_SPACE}/${E2E_IMAGE_REPOSITORY}:${E2E_IMAGE_TAG}
+	E2E_IMAGE_REPOSITORY=${E2E_IMAGE_REPOSITORY} CONTAINER_REGISTRY_URL=${CONTAINER_REGISTRY_URL} CONTAINER_REGISTRY_SPACE=${CONTAINER_REGISTRY_SPACE} E2E_IMAGE_TAG=${E2E_IMAGE_TAG} kubectl-kuttl test
 
 .PHONY: fmt
 fmt:  ## Run go fmt
