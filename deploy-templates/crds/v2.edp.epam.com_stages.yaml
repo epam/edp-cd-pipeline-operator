@@ -3,8 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.9.2
-  creationTimestamp: null
+    controller-gen.kubebuilder.io/version: v0.15.0
   name: stages.v2.edp.epam.com
 spec:
   group: v2.edp.epam.com
@@ -47,20 +46,26 @@ spec:
         description: Stage is the Schema for the stages API.
         properties:
           apiVersion:
-            description: 'APIVersion defines the versioned schema of this representation
-              of an object. Servers should convert recognized schemas to the latest
-              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
             type: string
           kind:
-            description: 'Kind is a string value representing the REST resource this
-              object represents. Servers may infer this from the endpoint the client
-              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
             type: string
           metadata:
             type: object
           spec:
-            description: 'StageSpec defines the desired state of Stage. NOTE: for
-              deleting the stage use stages order - delete only the latest stage.'
+            description: |-
+              StageSpec defines the desired state of Stage.
+              NOTE: for deleting the stage use stages order - delete only the latest stage.
             properties:
               cdPipeline:
                 description: Name of CD pipeline which this Stage will be linked to.
@@ -68,9 +73,9 @@ spec:
                 type: string
               clusterName:
                 default: in-cluster
-                description: Specifies a name of cluster where the application will
-                  be deployed. Default value is "in-cluster" which means that application
-                  will be deployed in the same cluster where CD Pipeline is running.
+                description: |-
+                  Specifies a name of cluster where the application will be deployed.
+                  Default value is "in-cluster" which means that application will be deployed in the same cluster where CD Pipeline is running.
                 type: string
               description:
                 description: A description of a stage.
@@ -84,8 +89,9 @@ spec:
                 description: Namespace where the application will be deployed.
                 type: string
               order:
-                description: The order to lay out Stages. The order should start from
-                  0, and the next stages should use +1 for the order.
+                description: |-
+                  The order to lay out Stages.
+                  The order should start from 0, and the next stages should use +1 for the order.
                 type: integer
               qualityGates:
                 description: A list of quality gates to be processed
@@ -136,9 +142,9 @@ spec:
                 type: object
               triggerTemplate:
                 default: deploy
-                description: Specifies a name of Tekton TriggerTemplate which will
-                  be used as a blueprint for deployment pipeline. Default value is
-                  "deploy" which means that default TriggerTemplate will be used.
+                description: |-
+                  Specifies a name of Tekton TriggerTemplate which will be used as a blueprint for deployment pipeline.
+                  Default value is "deploy" which means that default TriggerTemplate will be used.
                   The default TriggerTemplate is delivered using edp-tekton helm chart.
                 type: string
               triggerType:
@@ -163,16 +169,19 @@ spec:
                   ready to work. Defaults to false.
                 type: boolean
               detailed_message:
-                description: Detailed information regarding action result which were
-                  performed
+                description: |-
+                  Detailed information regarding action result
+                  which were performed
                 type: string
               last_time_updated:
                 description: Information when  the last time the action were performed.
                 format: date-time
                 type: string
               result:
-                description: 'A result of an action which were performed. - "success":
-                  action where performed successfully; - "error": error has occurred;'
+                description: |-
+                  A result of an action which were performed.
+                  - "success": action where performed successfully;
+                  - "error": error has occurred;
                 enum:
                 - success
                 - error
@@ -210,14 +219,19 @@ spec:
         description: Stage is the Schema for the stages API.
         properties:
           apiVersion:
-            description: 'APIVersion defines the versioned schema of this representation
-              of an object. Servers should convert recognized schemas to the latest
-              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
             type: string
           kind:
-            description: 'Kind is a string value representing the REST resource this
-              object represents. Servers may infer this from the endpoint the client
-              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
             type: string
           metadata:
             type: object
@@ -308,16 +322,19 @@ spec:
                   ready to work. Defaults to false.
                 type: boolean
               detailed_message:
-                description: Detailed information regarding action result which were
-                  performed
+                description: |-
+                  Detailed information regarding action result
+                  which were performed
                 type: string
               last_time_updated:
                 description: Information when  the last time the action were performed.
                 format: date-time
                 type: string
               result:
-                description: 'A result of an action which were performed. - "success":
-                  action where performed successfully; - "error": error has occurred;'
+                description: |-
+                  A result of an action which were performed.
+                  - "success": action where performed successfully;
+                  - "error": error has occurred;
                 enum:
                 - success
                 - error
