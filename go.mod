@@ -1,6 +1,6 @@
 module github.com/epam/edp-cd-pipeline-operator/v2
 
-go 1.21
+go 1.22
 
 require (
 	github.com/argoproj/argo-cd/v2 v2.10.8
