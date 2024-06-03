@@ -16,7 +16,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
-	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/kiosk"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/platform"
 )
 
@@ -99,37 +98,6 @@ func TestDelegateNamespaceDeletion_ServeRequest(t *testing.T) {
 			},
 		},
 		{
-			name: "deletion of kiosk space is successful",
-			prepare: func(t *testing.T) {
-				t.Setenv(platform.TenancyEngineEnv, platform.TenancyEngineKiosk)
-				t.Setenv(platform.TypeEnv, platform.Kubernetes)
-			},
-			stage: &cdPipeApi.Stage{
-				ObjectMeta: metaV1.ObjectMeta{
-					Name:      "stage-1",
-					Namespace: "default",
-				},
-				Spec: cdPipeApi.StageSpec{
-					Namespace:   "default-stage-1",
-					ClusterName: cdPipeApi.InCluster,
-				},
-			},
-			objects: []client.Object{
-				kiosk.NewKioskSpace(map[string]interface{}{
-					"name": "default-stage-1",
-				}),
-			},
-			wantErr: require.NoError,
-			wantAssert: func(t *testing.T, c client.Client, s *cdPipeApi.Stage) {
-				err := c.Get(
-					context.Background(),
-					client.ObjectKey{Name: s.Spec.Namespace}, &corev1.Namespace{},
-				)
-				require.Error(t, err)
-				require.True(t, apiErrors.IsNotFound(err))
-			},
-		},
-		{
 			name:    "no platform env is set, default is kubernetes",
 			prepare: func(t *testing.T) {},
 			stage: &cdPipeApi.Stage{
@@ -161,7 +129,7 @@ func TestDelegateNamespaceDeletion_ServeRequest(t *testing.T) {
 		{
 			name: "external cluster is set",
 			prepare: func(t *testing.T) {
-				t.Setenv(platform.TenancyEngineEnv, platform.TenancyEngineKiosk)
+				t.Setenv(platform.TenancyEngineEnv, platform.TenancyEngineCapsule)
 				t.Setenv(platform.TypeEnv, platform.Kubernetes)
 			},
 			stage: &cdPipeApi.Stage{

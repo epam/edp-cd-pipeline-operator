@@ -6,19 +6,16 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
-	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/kiosk"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/platform"
 )
 
-// DelegateNamespaceCreation is a stage chain element that decides whether to create a namespace, kiosk space or project.
+// DelegateNamespaceCreation is a stage chain element that decides whether to create a namespace or project.
 type DelegateNamespaceCreation struct {
 	client multiClusterClient
 }
 
-// ServeRequest creates for kubernetes platform PutNamespace or PutKioskSpace if the kiosk is enabled.
-// For platform openshift it creates PutOpenshiftProject.
-// By default, it creates PutOpenshiftProject.
-// If the namespace is not managed by the operator, it creates CheckNamespaceExist.
+// ServeRequest is responsible for delegating the creation of a namespace or project
+// based on the platform and the configuration of the stage.
 func (c DelegateNamespaceCreation) ServeRequest(ctx context.Context, stage *cdPipeApi.Stage) error {
 	logger := ctrl.LoggerFrom(ctx)
 
@@ -35,15 +32,6 @@ func (c DelegateNamespaceCreation) ServeRequest(ctx context.Context, stage *cdPi
 			logger.Info("Stage is not in cluster. Skip multi-tenancy engines")
 
 			return PutNamespace(c).ServeRequest(ctx, stage)
-		}
-
-		if platform.KioskEnabled() {
-			logger.Info("Kiosk is enabled")
-
-			return PutKioskSpace{
-				space:  kiosk.InitSpace(c.client),
-				client: c.client,
-			}.ServeRequest(ctx, stage)
 		}
 
 		if platform.CapsuleEnabled() {

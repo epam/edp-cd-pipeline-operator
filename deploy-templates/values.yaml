@@ -5,7 +5,7 @@ global:
 # -- component name
 name: cd-pipeline-operator
 
-# -- defines the type of the tenant engine that can be "none", "kiosk" or "capsule";
+# -- defines the type of the tenant engine that can be "none" or "capsule";
 # for Stages with external cluster tenancyEngine will be ignored
 tenancyEngine: "none"
 
