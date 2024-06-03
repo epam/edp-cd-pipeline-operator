@@ -15,7 +15,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
-	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/kiosk"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/platform"
 )
 
@@ -79,34 +78,6 @@ func TestDelegateNamespaceCreation_ServeRequest(t *testing.T) {
 					c.Get(
 						context.Background(),
 						client.ObjectKey{Name: s.Spec.Namespace}, &corev1.Namespace{},
-					),
-				)
-			},
-		},
-		{
-			name: "creation of kiosk space is successful",
-			prepare: func(t *testing.T) {
-				t.Setenv(platform.TypeEnv, platform.Kubernetes)
-				t.Setenv(platform.TenancyEngineEnv, platform.TenancyEngineKiosk)
-			},
-			stage: &cdPipeApi.Stage{
-				ObjectMeta: metaV1.ObjectMeta{
-					Name:      "stage-1",
-					Namespace: "default",
-				},
-				Spec: cdPipeApi.StageSpec{
-					Namespace:   "default-stage-1",
-					ClusterName: cdPipeApi.InCluster,
-				},
-			},
-			wantErr: require.NoError,
-			wantAssert: func(t *testing.T, c client.Client, s *cdPipeApi.Stage) {
-				space := kiosk.NewKioskSpace(map[string]interface{}{})
-
-				require.NoError(t,
-					c.Get(
-						context.Background(),
-						client.ObjectKey{Name: s.Spec.Namespace}, space,
 					),
 				)
 			},
@@ -188,7 +159,7 @@ func TestDelegateNamespaceCreation_ServeRequest(t *testing.T) {
 			prepare: func(t *testing.T) {
 				t.Setenv(platform.TypeEnv, platform.Kubernetes)
 				t.Setenv(platform.ManageNamespaceEnv, "true")
-				t.Setenv(platform.TenancyEngineEnv, platform.TenancyEngineKiosk)
+				t.Setenv(platform.TenancyEngineEnv, platform.TenancyEngineCapsule)
 			},
 			stage: &cdPipeApi.Stage{
 				ObjectMeta: metaV1.ObjectMeta{

@@ -6,7 +6,6 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
-	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/kiosk"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/platform"
 )
 
@@ -15,11 +14,8 @@ type DelegateNamespaceDeletion struct {
 	multiClusterClient multiClusterClient
 }
 
-// ServeRequest creates for kubernetes platform DeleteNamespace or DeleteSpace if kiosk is enabled.
-// For platform openshift it creates DeleteOpenshiftProject.
-// The decision is made based on the environment variable PLATFORM_TYPE.
-// By default, it creates DeleteOpenshiftProject.
-// If the namespace is not managed by the operator, it creates Skip chain element.
+// ServeRequest is responsible for delegating the deletion of a namespace or project
+// based on the platform and the configuration of the stage.
 func (c DelegateNamespaceDeletion) ServeRequest(ctx context.Context, stage *cdPipeApi.Stage) error {
 	logger := ctrl.LoggerFrom(ctx)
 
@@ -36,14 +32,6 @@ func (c DelegateNamespaceDeletion) ServeRequest(ctx context.Context, stage *cdPi
 			logger.Info("Stage is not in cluster. Skip multi-tenancy engines")
 
 			return DeleteNamespace(c).ServeRequest(ctx, stage)
-		}
-
-		if platform.KioskEnabled() {
-			logger.Info("Kiosk is enabled")
-
-			return DeleteSpace{
-				space: kiosk.InitSpace(c.multiClusterClient),
-			}.ServeRequest(ctx, stage)
 		}
 
 		if platform.CapsuleEnabled() {

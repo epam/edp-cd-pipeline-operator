@@ -72,42 +72,6 @@ func TestIsKubernetes(t *testing.T) {
 	}
 }
 
-func TestKioskEnabled(t *testing.T) {
-	tests := []struct {
-		name   string
-		setEnv func(t *testing.T)
-		want   bool
-	}{
-		{
-			name: "kiosk is enabled",
-			setEnv: func(t *testing.T) {
-				t.Setenv(TenancyEngineEnv, TenancyEngineKiosk)
-			},
-			want: true,
-		},
-		{
-			name: "kiosk is not enabled",
-			setEnv: func(t *testing.T) {
-				t.Setenv(TenancyEngineEnv, TenancyEngineCapsule)
-			},
-			want: false,
-		},
-		{
-			name: "kiosk is not set",
-			setEnv: func(t *testing.T) {
-			},
-			want: false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			tt.setEnv(t)
-
-			assert.Equal(t, tt.want, KioskEnabled())
-		})
-	}
-}
-
 func TestManageNamespace(t *testing.T) {
 	tests := []struct {
 		name    string

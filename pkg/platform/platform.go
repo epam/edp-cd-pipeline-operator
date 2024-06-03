@@ -11,7 +11,6 @@ const (
 	ManageNamespaceEnv   = "MANAGE_NAMESPACE"
 	Openshift            = "openshift"
 	Kubernetes           = "kubernetes"
-	TenancyEngineKiosk   = "kiosk"
 	TenancyEngineCapsule = "capsule"
 )
 
@@ -32,11 +31,6 @@ func IsKubernetes() bool {
 // IsOpenshift returns true if platform type is openshift.
 func IsOpenshift() bool {
 	return GetPlatformTypeEnv() == Openshift
-}
-
-// KioskEnabled returns true if kiosk is enabled.
-func KioskEnabled() bool {
-	return os.Getenv(TenancyEngineEnv) == TenancyEngineKiosk
 }
 
 // CapsuleEnabled returns true if capsule is enabled.
