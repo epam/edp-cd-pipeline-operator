@@ -157,7 +157,7 @@ $(KUSTOMIZE): $(LOCALBIN)
 HELMDOCS = $(LOCALBIN)/helm-docs
 .PHONY: helmdocs
 helmdocs: ## Download helm-docs locally if necessary.
-	$(call go-get-tool,$(HELMDOCS),github.com/norwoodj/helm-docs/cmd/helm-docs,v1.12.0)
+	$(call go-get-tool,$(HELMDOCS),github.com/norwoodj/helm-docs/cmd/helm-docs,v1.13.1)
 
 GITCHGLOG = $(LOCALBIN)/git-chglog
 .PHONY: git-chglog
