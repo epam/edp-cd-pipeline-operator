@@ -3,7 +3,7 @@
 
 
 <a name="v2.20.0"></a>
-## v2.20.0 - 2024-06-04
+## v2.20.0 - 2024-06-12
 ### Features
 
 - Remove deprecated loft-sh kiosk ([#55](https://github.com/epam/edp-cd-pipeline-operator/issues/55))
