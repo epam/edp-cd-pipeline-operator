@@ -2,6 +2,28 @@
 ## [Unreleased]
 
 
+<a name="v2.20.0"></a>
+## [v2.20.0] - 2024-06-12
+### Features
+
+- Remove deprecated loft-sh kiosk ([#55](https://github.com/epam/edp-cd-pipeline-operator/issues/55))
+- Narrow the scope of permissions for operator ([#52](https://github.com/epam/edp-cd-pipeline-operator/issues/52))
+- Add support for multiple GitServers ([#37](https://github.com/epam/edp-cd-pipeline-operator/issues/37))
+- Create ArgoCD cluster secret ([#30](https://github.com/epam/edp-cd-pipeline-operator/issues/30))
+
+### Routine
+
+- Update helm-docs to the latest stable ([#44](https://github.com/epam/edp-cd-pipeline-operator/issues/44))
+- Remove unused RBAC for secretManager own parameter ([#52](https://github.com/epam/edp-cd-pipeline-operator/issues/52))
+- Bump to Go 1.22 ([#49](https://github.com/epam/edp-cd-pipeline-operator/issues/49))
+- Use Go cache for helm-docs installation ([#44](https://github.com/epam/edp-cd-pipeline-operator/issues/44))
+- Update kuttle to version 0.16 ([#44](https://github.com/epam/edp-cd-pipeline-operator/issues/44))
+- Add codeowners file to the repo ([#40](https://github.com/epam/edp-cd-pipeline-operator/issues/40))
+- Migrate from gerrit to github pipelines ([#35](https://github.com/epam/edp-cd-pipeline-operator/issues/35))
+- Bump google.golang.org/protobuf from 1.31.0 to 1.33.0 ([#30](https://github.com/epam/edp-cd-pipeline-operator/issues/30))
+- Update current development version ([#29](https://github.com/epam/edp-cd-pipeline-operator/issues/29))
+
+
 <a name="v2.19.0"></a>
 ## [v2.19.0] - 2024-03-12
 ### Features
@@ -123,7 +145,8 @@ Helm parameter kioskEnabled was removed. Use instead --set global.tenancyEngine=
 <a name="v2.15.0"></a>
 ## [v2.15.0] - 2023-08-17
 
-[Unreleased]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.19.0...HEAD
+[Unreleased]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.20.0...HEAD
+[v2.20.0]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.19.0...v2.20.0
 [v2.19.0]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.18.0...v2.19.0
 [v2.18.0]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.17.0...v2.18.0
 [v2.17.0]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.16.1...v2.17.0
