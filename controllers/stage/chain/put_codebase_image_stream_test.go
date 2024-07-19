@@ -90,6 +90,7 @@ func TestPutCodebaseImageStream_ShouldCreateCis(t *testing.T) {
 		cisResp)
 	assert.NoError(t, err)
 	assert.Equal(t, cisResp.Spec.ImageName, "stub-url/cb-name")
+	assert.NotNil(t, metaV1.GetControllerOf(cisResp))
 }
 
 func TestPutCodebaseImageStream_ShouldNotFindCDPipeline(t *testing.T) {
@@ -310,6 +311,7 @@ func TestPutCodebaseImageStream_ShouldNotFailWithExistingCbis(t *testing.T) {
 		},
 		cisResp)
 	assert.NoError(t, err)
+	assert.NotNil(t, metaV1.GetControllerOf(cisResp))
 }
 
 func TestPutCodebaseImageStream_ShouldCreateCisFromConfigMap(t *testing.T) {

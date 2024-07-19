@@ -7,4 +7,3 @@ commands:
     # we have to uninstall helm since clusterwide resources, like ClusterRole are preserved
   - command: helm uninstall cd-pipeline-operator-e2e
     namespaced: true
-  - command: kubectl delete namespace edp

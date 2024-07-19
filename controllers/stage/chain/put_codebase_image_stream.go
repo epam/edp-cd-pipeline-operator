@@ -10,6 +10,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
 	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/stage/chain/util"
@@ -53,7 +54,14 @@ func (h PutCodebaseImageStream) ServeRequest(ctx context.Context, stage *cdPipeA
 		cisName := fmt.Sprintf("%v-%v-%v-verified", pipe.Name, stage.Spec.Name, stream.Spec.Codebase)
 		image := fmt.Sprintf("%v/%v", registryUrl, stream.Spec.Codebase)
 
-		if err := h.createCodebaseImageStreamIfNotExists(ctx, cisName, image, stream.Spec.Codebase, stage.Namespace); err != nil {
+		if err := h.createCodebaseImageStreamIfNotExists(
+			ctx,
+			cisName,
+			image,
+			stream.Spec.Codebase,
+			stage.Namespace,
+			stage,
+		); err != nil {
 			return fmt.Errorf("failed to create %v codebase image stream: %w", cisName, err)
 		}
 	}
@@ -97,13 +105,13 @@ func (h PutCodebaseImageStream) getDockerRegistryUrl(ctx context.Context, namesp
 	return fmt.Sprintf("%s/%s", config.Data[edpConfigContainerRegistryHost], config.Data[edpConfigContainerRegistrySpace]), nil
 }
 
-func (h PutCodebaseImageStream) createCodebaseImageStreamIfNotExists(ctx context.Context, name, imageName, codebaseName, namespace string) error {
-	log := ctrl.LoggerFrom(ctx)
+func (h PutCodebaseImageStream) createCodebaseImageStreamIfNotExists(
+	ctx context.Context,
+	name, imageName, codebaseName, namespace string,
+	stage *cdPipeApi.Stage,
+) error {
+	log := ctrl.LoggerFrom(ctx).WithValues("CodebaseImageStream", name)
 	cis := &codebaseApi.CodebaseImageStream{
-		TypeMeta: metaV1.TypeMeta{
-			APIVersion: "v2.edp.epam.com/v1",
-			Kind:       "CodebaseImageStream",
-		},
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
@@ -114,16 +122,41 @@ func (h PutCodebaseImageStream) createCodebaseImageStreamIfNotExists(ctx context
 		},
 	}
 
+	if err := controllerutil.SetControllerReference(stage, cis, h.client.Scheme()); err != nil {
+		return fmt.Errorf("failed to set controller reference for CodebaseImageStream: %w", err)
+	}
+
 	if err := h.client.Create(ctx, cis); err != nil {
 		if k8sErrors.IsAlreadyExists(err) {
-			log.Info("codebase image stream already exists. skip creating...", "name", cis.Name)
+			// For backward compatibility, we need to update the controller reference for the existing CodebaseImageStream.
+			// We can remove this in the next releases.
+			existingCIS := &codebaseApi.CodebaseImageStream{}
+			if err = h.client.Get(ctx, types.NamespacedName{
+				Namespace: namespace,
+				Name:      name,
+			}, existingCIS); err != nil {
+				return fmt.Errorf("failed to get CodebaseImageStream: %w", err)
+			}
+
+			if metaV1.GetControllerOf(existingCIS) == nil {
+				if err = controllerutil.SetControllerReference(stage, existingCIS, h.client.Scheme()); err != nil {
+					return fmt.Errorf("failed to set controller reference for CodebaseImageStream: %w", err)
+				}
+			}
+
+			if err = h.client.Update(ctx, existingCIS); err != nil {
+				return fmt.Errorf("failed to update CodebaseImageStream controller reference: %w", err)
+			}
+
+			log.Info("CodebaseImageStream already exists. Skip creating")
+
 			return nil
 		}
 
 		return fmt.Errorf("failed to create codebase stream: %w", err)
 	}
 
-	log.Info("codebase image stream has been created", "name", name)
+	log.Info("CodebaseImageStream has been created")
 
 	return nil
 }
