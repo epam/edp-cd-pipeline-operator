@@ -1,9 +1,6 @@
 apiVersion: kuttl.dev/v1beta1
 kind: TestStep
 commands:
-  # TestSuit namespace creation doesn't work, so we need to create this namespace manually
-  - command: kubectl create namespace edp
-    namespaced: false
   # install capsule
   - command: helm repo add projectcapsule https://projectcapsule.github.io/charts
     namespaced: false

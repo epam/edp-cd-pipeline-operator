@@ -6,3 +6,4 @@ skipClusterDelete: false
 # hardcode namespace since we need to have predictable rolebindings
 namespace: edp
 timeout: 100
+parallel: 1
