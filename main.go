@@ -19,7 +19,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	cdPipeApiV1 "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
-	cdPipeApiV1Alpha1 "github.com/epam/edp-cd-pipeline-operator/v2/api/v1alpha1"
 	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/cdpipeline"
 	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/clustersecret"
 	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/stage"
@@ -67,7 +66,6 @@ func main() {
 	flag.Parse()
 
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
-	utilruntime.Must(cdPipeApiV1Alpha1.AddToScheme(scheme))
 	utilruntime.Must(cdPipeApiV1.AddToScheme(scheme))
 	utilruntime.Must(codebaseApi.AddToScheme(scheme))
 	utilruntime.Must(edpCompApi.AddToScheme(scheme))
