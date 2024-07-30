@@ -71,6 +71,11 @@ spec:
                 description: Name of CD pipeline which this Stage will be linked to.
                 minLength: 2
                 type: string
+              cleanTemplate:
+                description: CleanTemplate specifies a name of Tekton TriggerTemplate
+                  which will be used for cleaning resources.
+                example: clean
+                type: string
               clusterName:
                 default: in-cluster
                 description: |-

@@ -322,6 +322,13 @@ The order should start from 0, and the next stages should use +1 for the order.<
         </td>
         <td>true</td>
       </tr><tr>
+        <td><b>cleanTemplate</b></td>
+        <td>string</td>
+        <td>
+          CleanTemplate specifies a name of Tekton TriggerTemplate which will be used for cleaning resources.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>clusterName</b></td>
         <td>string</td>
         <td>

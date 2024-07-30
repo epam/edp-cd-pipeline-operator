@@ -54,6 +54,11 @@ type StageSpec struct {
 	// +kubebuilder:default:="deploy"
 	TriggerTemplate string `json:"triggerTemplate,omitempty"`
 
+	// CleanTemplate specifies the name of Tekton TriggerTemplate which will be used for cleaning resources.
+	// +optional
+	// +kubebuilder:example:="clean"
+	CleanTemplate string `json:"cleanTemplate,omitempty"`
+
 	// Specifies a name of cluster where the application will be deployed.
 	// Default value is "in-cluster" which means that application will be deployed in the same cluster where CD Pipeline is running.
 	// +optional
