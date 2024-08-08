@@ -1,11 +1,11 @@
 apiVersion: v2
-description: A Helm chart for EDP CD Pipeline Operator
-home: https://epam.github.io/edp-install/
+description: A Helm chart for KubeRocketCI CD Pipeline Operator
+home: https://docs.kuberocketci.io/
 name: cd-pipeline-operator
 type: application
 version: 2.21.0-SNAPSHOT
 appVersion: 2.21.0-SNAPSHOT
-icon: https://epam.github.io/edp-install/assets/logo.png
+icon: https://docs.kuberocketci.io/img/logo.svg
 keywords:
   - edp
   - operator
@@ -14,7 +14,7 @@ keywords:
 maintainers:
   - name: epmd-edp
     email: SupportEPMD-EDP@epam.com
-    url: https://solutionshub.epam.com/solution/epam-delivery-platform
+    url: https://solutionshub.epam.com/solution/kuberocketci
   - name: sergk
     url: https://github.com/SergK
 sources:
@@ -71,7 +71,7 @@ annotations:
         triggerType: Auto
         triggerTemplate: deploy
   artifacthub.io/links: |
-    - name: EDP Documentation
-      url: https://epam.github.io/edp-install/
+    - name: KubeRocketCI Documentation
+      url: https://docs.kuberocketci.io
     - name: EPAM SolutionHub
-      url: https://solutionshub.epam.com/solution/epam-delivery-platform
+      url: https://solutionshub.epam.com/solution/kuberocketci

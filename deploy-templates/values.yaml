@@ -77,10 +77,10 @@ nodeSelector: {}
 tolerations: []
 affinity:
 image:
-  # -- EDP cd-pipeline-operator Docker image name. The released image can be found on [Dockerhub](https://hub.docker.com/r/epamedp/cd-pipeline-operator)
+  # -- KubeRocketCI cd-pipeline-operator Docker image name. The released image can be found on [Dockerhub](https://hub.docker.com/r/epamedp/cd-pipeline-operator)
   repository: epamedp/cd-pipeline-operator
   # if not defined then .Chart.AppVersion is used
-  # -- EDP cd-pipeline-operator Docker image tag. The released image can be found on [Dockerhub](https://hub.docker.com/r/epamedp/cd-pipeline-operator/tags)
+  # -- KubeRocketCI cd-pipeline-operator Docker image tag. The released image can be found on [Dockerhub](https://hub.docker.com/r/epamedp/cd-pipeline-operator/tags)
   tag:
 imagePullPolicy: "IfNotPresent"
 
@@ -92,7 +92,7 @@ resources:
     memory: 64Mi
 
 # -- should the operator manage(create/delete) namespaces for stages
-# Refer to the guide for managing namespace (https://epam.github.io/edp-install/operator-guide/namespace-management/)
+# Refer to the guide for managing namespace (https://docs.kuberocketci.io/docs/operator-guide/auth/namespace-management)
 manageNamespace: true
 
 # -- Flag indicating whether the operator should manage secrets for stages.
@@ -100,9 +100,9 @@ manageNamespace: true
 # Set the parameter to "none" under the following conditions:
 #   - If 'global.dockerRegistry.type=ecr' and IRSA is enabled, or
 #   - If 'global.dockerRegistry.type=openshift'.
-# For private registries, choose the most appropriate method to provide credentials to deployed environments. Refer to the guide for managing container registries (https://epam.github.io/edp-install/user-guide/manage-container-registries/).
+# For private registries, choose the most appropriate method to provide credentials to deployed environments. Refer to the guide for managing container registries (https://docs.kuberocketci.io/docs/user-guide/manage-container-registries).
 # Possible values: own/eso/none.
 #   - own: Copies the secret once from the parent namespace, without subsequent reconciliation. If updated in the parent namespace, manual updating in all created namespaces is required.
-#   - eso: The secret will be managed by the External Secrets Operator (requires installation and configuration in the cluster: https://epam.github.io/edp-install/operator-guide/install-external-secrets-operator/).
+#   - eso: The secret will be managed by the External Secrets Operator (requires installation and configuration in the cluster: https://docs.kuberocketci.io/docs/operator-guide/secrets-management/install-external-secrets-operator).
 #   - none: Disables secrets management logic.
 secretManager: none
