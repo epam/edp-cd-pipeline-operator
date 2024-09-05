@@ -96,7 +96,9 @@ CDPipelineSpec defines the desired state of CDPipeline.
         <td><b>deploymentType</b></td>
         <td>string</td>
         <td>
-          Which type of kind will be deployed e.g. Container, Custom<br/>
+          Type of workload to be deployed, e.g., container, custom.<br/>
+          <br/>
+            <i>Default</i>: container<br/>
         </td>
         <td>true</td>
       </tr><tr>
@@ -325,7 +327,7 @@ The order should start from 0, and the next stages should use +1 for the order.<
         <td><b>cleanTemplate</b></td>
         <td>string</td>
         <td>
-          CleanTemplate specifies a name of Tekton TriggerTemplate which will be used for cleaning resources.<br/>
+          CleanTemplate specifies the name of Tekton TriggerTemplate used for cleanup environment pipeline.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -358,7 +360,7 @@ Default value is "in-cluster" which means that application will be deployed in t
         <td><b>triggerTemplate</b></td>
         <td>string</td>
         <td>
-          Specifies a name of Tekton TriggerTemplate which will be used as a blueprint for deployment pipeline.
+          Specifies a name of Tekton TriggerTemplate used as a blueprint for deployment pipeline.
 Default value is "deploy" which means that default TriggerTemplate will be used.
 The default TriggerTemplate is delivered using edp-tekton helm chart.<br/>
           <br/>
