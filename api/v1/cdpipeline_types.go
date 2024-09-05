@@ -13,7 +13,8 @@ type CDPipelineSpec struct {
 	// Name of CD pipeline
 	Name string `json:"name"`
 
-	// Which type of kind will be deployed e.g. Container, Custom
+	// Type of workload to be deployed, e.g., container, custom.
+	// +kubebuilder:default="container"
 	DeploymentType string `json:"deploymentType"`
 
 	// +kubebuilder:validation:MinItems=1

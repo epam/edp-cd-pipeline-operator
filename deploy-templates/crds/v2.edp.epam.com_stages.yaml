@@ -72,8 +72,8 @@ spec:
                 minLength: 2
                 type: string
               cleanTemplate:
-                description: CleanTemplate specifies a name of Tekton TriggerTemplate
-                  which will be used for cleaning resources.
+                description: CleanTemplate specifies the name of Tekton TriggerTemplate
+                  used for cleanup environment pipeline.
                 example: clean
                 type: string
               clusterName:
@@ -148,7 +148,7 @@ spec:
               triggerTemplate:
                 default: deploy
                 description: |-
-                  Specifies a name of Tekton TriggerTemplate which will be used as a blueprint for deployment pipeline.
+                  Specifies a name of Tekton TriggerTemplate used as a blueprint for deployment pipeline.
                   Default value is "deploy" which means that default TriggerTemplate will be used.
                   The default TriggerTemplate is delivered using edp-tekton helm chart.
                 type: string

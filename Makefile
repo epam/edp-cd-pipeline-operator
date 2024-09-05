@@ -15,7 +15,7 @@ KUBECTL_VERSION=$(shell go list -m all | grep k8s.io/client-go| cut -d' ' -f2)
 # Use kind cluster for testing
 START_KIND_CLUSTER?=true
 KIND_CLUSTER_NAME?="cd-pipeline-operator"
-KUBE_VERSION?=1.27
+KUBE_VERSION?=1.30
 KIND_CONFIG?=./hack/kind-$(KUBE_VERSION).yaml
 
 CONTAINER_REGISTRY_URL?="repo"
