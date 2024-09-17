@@ -1,6 +1,18 @@
 <a name="unreleased"></a>
 ## [Unreleased]
 
+### Features
+
+- Add cleanTemplate field to the Stage CR ([#66](https://github.com/epam/edp-cd-pipeline-operator/issues/66))
+- Remove deprecated v1alpha1 versions from the operator ([#64](https://github.com/epam/edp-cd-pipeline-operator/issues/64))
+- Remove CodebaseImageStream if Stage is removed ([#60](https://github.com/epam/edp-cd-pipeline-operator/issues/60))
+
+### Routine
+
+- Update Kubernetes version ([#66](https://github.com/epam/edp-cd-pipeline-operator/issues/66))
+- Update KubeRocketCI names and documentation links ([#69](https://github.com/epam/edp-cd-pipeline-operator/issues/69))
+- Update current development version ([#58](https://github.com/epam/edp-cd-pipeline-operator/issues/58))
+
 
 <a name="v2.20.0"></a>
 ## [v2.20.0] - 2024-06-12
