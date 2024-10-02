@@ -69,7 +69,7 @@ func TestTryToDeleteCDStage_DeletionTimestampIsZero(t *testing.T) {
 			Finalizers: []string{},
 		},
 		Spec: cdPipeApi.StageSpec{
-			TriggerType: consts.AutoDeployTriggerType,
+			TriggerType: cdPipeApi.TriggerTypeAutoDeploy,
 		},
 	}
 
@@ -111,7 +111,7 @@ func TestTryToDeleteCDStage_Success(t *testing.T) {
 		Spec: cdPipeApi.StageSpec{
 			Name:        name,
 			CdPipeline:  cdPipeline,
-			TriggerType: consts.AutoDeployTriggerType,
+			TriggerType: cdPipeApi.TriggerTypeAutoDeploy,
 			Order:       0,
 		},
 	}
@@ -261,7 +261,7 @@ func TestReconcileStage_Reconcile_Success(t *testing.T) {
 		Spec: cdPipeApi.StageSpec{
 			Name:        name,
 			CdPipeline:  cdPipeline,
-			TriggerType: consts.AutoDeployTriggerType,
+			TriggerType: cdPipeApi.TriggerTypeAutoDeploy,
 			Order:       0,
 		},
 	}
@@ -352,7 +352,7 @@ func TestReconcileStage_ReconcileReconcile_SetOwnerRef(t *testing.T) {
 		Spec: cdPipeApi.StageSpec{
 			Name:         name,
 			CdPipeline:   cdPipeline,
-			TriggerType:  consts.AutoDeployTriggerType,
+			TriggerType:  cdPipeApi.TriggerTypeAutoDeploy,
 			Order:        0,
 			QualityGates: []cdPipeApi.QualityGate{qualityGate},
 		},
