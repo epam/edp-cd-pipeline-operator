@@ -317,13 +317,6 @@ The order should start from 0, and the next stages should use +1 for the order.<
         </td>
         <td>true</td>
       </tr><tr>
-        <td><b>triggerType</b></td>
-        <td>string</td>
-        <td>
-          Stage deployment trigger type. E.g. Manual, Auto<br/>
-        </td>
-        <td>true</td>
-      </tr><tr>
         <td><b>cleanTemplate</b></td>
         <td>string</td>
         <td>
@@ -365,6 +358,16 @@ Default value is "deploy" which means that default TriggerTemplate will be used.
 The default TriggerTemplate is delivered using edp-tekton helm chart.<br/>
           <br/>
             <i>Default</i>: deploy<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>triggerType</b></td>
+        <td>enum</td>
+        <td>
+          Stage deployment trigger type.<br/>
+          <br/>
+            <i>Enum</i>: Auto, Manual, Auto-stable<br/>
+            <i>Default</i>: Manual<br/>
         </td>
         <td>false</td>
       </tr></tbody>

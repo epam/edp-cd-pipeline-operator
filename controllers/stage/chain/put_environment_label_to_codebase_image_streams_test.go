@@ -17,7 +17,6 @@ import (
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
 	edpErr "github.com/epam/edp-cd-pipeline-operator/v2/pkg/error"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/cluster"
-	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/consts"
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 )
 
@@ -40,7 +39,7 @@ func createStage(t *testing.T, order int, cdPipeline string) cdPipeApi.Stage {
 			Name:        name,
 			Order:       order,
 			CdPipeline:  cdPipeline,
-			TriggerType: consts.AutoDeployTriggerType,
+			TriggerType: cdPipeApi.TriggerTypeAutoDeploy,
 		},
 	}
 }
@@ -202,7 +201,7 @@ func TestPutEnvironmentLabelToCodebaseImageStreams_ServeRequest_CantGetImage(t *
 	assert.True(t, k8sErrors.IsNotFound(err))
 }
 
-func TestPutEnvironmentLabelToCodebaseImageStreams_ServeRequest_CantGetPreviousStageImage(t *testing.T) {
+func TestPutEnvironmentLabelToCodebaseImageStreams_ServeRequest_CantGetVerifiedStream(t *testing.T) {
 	stage := createStage(t, 1, cdPipeline)
 	prevStage := createStage(t, 0, cdPipeline)
 	prevStage.Name = previousStageName
@@ -238,5 +237,5 @@ func TestPutEnvironmentLabelToCodebaseImageStreams_ServeRequest_CantGetPreviousS
 	}
 
 	err := putEnvLabel.ServeRequest(ctrl.LoggerInto(context.Background(), logr.Discard()), &stage)
-	assert.Equal(t, edpErr.CISNotFoundError(fmt.Sprintf("couldn't get %v codebase image stream", dockerImageName)), err)
+	assert.Equal(t, edpErr.CISNotFoundError("failed to get stub-cdPipeline-name-stub_name-stub-codebase-verified CodebaseImageStream"), err)
 }

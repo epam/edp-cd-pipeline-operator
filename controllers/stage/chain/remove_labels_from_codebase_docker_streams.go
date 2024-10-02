@@ -11,7 +11,6 @@ import (
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
 	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/stage/chain/util"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/cluster"
-	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/consts"
 )
 
 type RemoveLabelsFromCodebaseDockerStreamsAfterCdPipelineUpdate struct {
@@ -22,7 +21,7 @@ const dockerStreamsBeforeUpdateAnnotationKey = "deploy.edp.epam.com/docker-strea
 
 func (h RemoveLabelsFromCodebaseDockerStreamsAfterCdPipelineUpdate) ServeRequest(ctx context.Context, stage *cdPipeApi.Stage) error {
 	log := ctrl.LoggerFrom(ctx)
-	if consts.AutoDeployTriggerType != stage.Spec.TriggerType {
+	if stage.IsManualTriggerType() {
 		log.Info("Trigger type is not auto deploy, skipping")
 		return nil
 	}

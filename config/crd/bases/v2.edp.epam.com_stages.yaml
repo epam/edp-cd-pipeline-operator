@@ -153,7 +153,12 @@ spec:
                   The default TriggerTemplate is delivered using edp-tekton helm chart.
                 type: string
               triggerType:
-                description: Stage deployment trigger type. E.g. Manual, Auto
+                default: Manual
+                description: Stage deployment trigger type.
+                enum:
+                - Auto
+                - Manual
+                - Auto-stable
                 type: string
             required:
             - cdPipeline
@@ -161,7 +166,6 @@ spec:
             - name
             - order
             - qualityGates
-            - triggerType
             type: object
           status:
             description: StageStatus defines the observed state of Stage.

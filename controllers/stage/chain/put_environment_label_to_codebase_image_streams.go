@@ -13,7 +13,6 @@ import (
 	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/stage/chain/util"
 	edpError "github.com/epam/edp-cd-pipeline-operator/v2/pkg/error"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/cluster"
-	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/consts"
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 )
 
@@ -24,7 +23,7 @@ type PutEnvironmentLabelToCodebaseImageStreams struct {
 // nolint
 func (h PutEnvironmentLabelToCodebaseImageStreams) ServeRequest(ctx context.Context, stage *cdPipeApi.Stage) error {
 	logger := ctrl.LoggerFrom(ctx)
-	if consts.AutoDeployTriggerType != stage.Spec.TriggerType {
+	if stage.IsManualTriggerType() {
 		logger.Info("Trigger type is not auto deploy, skipping")
 		return nil
 	}
@@ -54,19 +53,7 @@ func (h PutEnvironmentLabelToCodebaseImageStreams) ServeRequest(ctx context.Cont
 			continue
 		}
 
-		previousStageName, err := util.FindPreviousStageName(ctx, h.client, stage)
-		if err != nil {
-			return fmt.Errorf("failed to previous stage name: %w", err)
-		}
-
-		cisName := createCisName(pipe.Name, previousStageName, stream.Spec.Codebase)
-
-		verifiedStream, err := cluster.GetCodebaseImageStream(h.client, cisName, stage.Namespace)
-		if err != nil {
-			return edpError.CISNotFoundError(fmt.Sprintf("couldn't get %s codebase image stream", name))
-		}
-
-		if err := h.updateLabel(ctx, verifiedStream, pipe.Name, stage.Spec.Name); err != nil {
+		if err = h.updateLabelForVerifiedStream(ctx, pipe.Name, stream.Spec.Codebase, stage); err != nil {
 			return err
 		}
 	}
@@ -74,6 +61,27 @@ func (h PutEnvironmentLabelToCodebaseImageStreams) ServeRequest(ctx context.Cont
 	logger.Info("environment labels have been added to codebase image stream resources.")
 
 	return nil
+}
+
+func (h PutEnvironmentLabelToCodebaseImageStreams) updateLabelForVerifiedStream(
+	ctx context.Context,
+	pipeName,
+	codebase string,
+	stage *cdPipeApi.Stage,
+) error {
+	previousStageName, err := util.FindPreviousStageName(ctx, h.client, stage)
+	if err != nil {
+		return fmt.Errorf("failed to previous stage name: %w", err)
+	}
+
+	cisName := createCisName(pipeName, previousStageName, codebase)
+
+	verifiedStream, err := cluster.GetCodebaseImageStream(h.client, cisName, stage.Namespace)
+	if err != nil {
+		return edpError.CISNotFoundError(fmt.Sprintf("failed to get %s CodebaseImageStream", cisName))
+	}
+
+	return h.updateLabel(ctx, verifiedStream, pipeName, stage.Spec.Name)
 }
 
 func (h PutEnvironmentLabelToCodebaseImageStreams) updateLabel(ctx context.Context, cis *codebaseApi.CodebaseImageStream, pipeName, stageName string) error {

@@ -7,9 +7,17 @@ import (
 const (
 	StageCdPipelineLabelName = "app.edp.epam.com/cdPipelineName"
 	InCluster                = "in-cluster"
-)
 
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
+	// TriggerTypeAutoDeploy indicates auto deploy with all latest tags for all applications.
+	TriggerTypeAutoDeploy = "Auto"
+
+	// TriggerTypeManual indicates manual deploy.
+	TriggerTypeManual = "Manual"
+
+	// TriggerTypeAutoStable indicates auto deploy with current tag passed to deployment + all stable tags for other applications.
+	// For applications without stable tag, the latest tag is used.
+	TriggerTypeAutoStable = "Auto-stable"
+)
 
 // StageSpec defines the desired state of Stage.
 // NOTE: for deleting the stage use stages order - delete only the latest stage.
@@ -29,7 +37,10 @@ type StageSpec struct {
 	// A description of a stage.
 	Description string `json:"description"`
 
-	// Stage deployment trigger type. E.g. Manual, Auto
+	// Stage deployment trigger type.
+	// +optional
+	// +kubebuilder:validation:Enum=Auto;Manual;Auto-stable
+	// +kubebuilder:default:="Manual"
 	TriggerType string `json:"triggerType"`
 
 	// The order to lay out Stages.
@@ -168,6 +179,18 @@ func (s *Stage) IsFirst() bool {
 
 func (s *Stage) InCluster() bool {
 	return s.Spec.ClusterName == InCluster
+}
+
+func (s *Stage) IsManualTriggerType() bool {
+	return s.Spec.TriggerType == TriggerTypeManual
+}
+
+func (s *Stage) IsAutoDeployTriggerType() bool {
+	return s.Spec.TriggerType == TriggerTypeAutoDeploy
+}
+
+func (s *Stage) IsAutoStableTriggerType() bool {
+	return s.Spec.TriggerType == TriggerTypeAutoStable
 }
 
 // +kubebuilder:object:root=true
