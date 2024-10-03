@@ -3,6 +3,7 @@
 
 ### Features
 
+- Add new deploy trigger type Auto-stable ([#75](https://github.com/epam/edp-cd-pipeline-operator/issues/75))
 - Add cleanTemplate field to the Stage CR ([#66](https://github.com/epam/edp-cd-pipeline-operator/issues/66))
 - Remove deprecated v1alpha1 versions from the operator ([#64](https://github.com/epam/edp-cd-pipeline-operator/issues/64))
 - Remove CodebaseImageStream if Stage is removed ([#60](https://github.com/epam/edp-cd-pipeline-operator/issues/60))
@@ -12,6 +13,10 @@
 - Update Kubernetes version ([#66](https://github.com/epam/edp-cd-pipeline-operator/issues/66))
 - Update KubeRocketCI names and documentation links ([#69](https://github.com/epam/edp-cd-pipeline-operator/issues/69))
 - Update current development version ([#58](https://github.com/epam/edp-cd-pipeline-operator/issues/58))
+
+### Documentation
+
+- Update CHANGELOG md ([#73](https://github.com/epam/edp-cd-pipeline-operator/issues/73))
 
 
 <a name="v2.20.0"></a>
