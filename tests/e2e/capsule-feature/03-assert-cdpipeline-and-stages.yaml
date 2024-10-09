@@ -302,3 +302,15 @@ spec:
         targetRevision: >-
           {{ if eq .versionType "edp" }}build/{{ .imageTag }}{{ else }}{{
           .imageTag }}{{ end }}
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mypipeline-dev
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mypipeline-qa
