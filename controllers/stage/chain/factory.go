@@ -56,6 +56,7 @@ func CreateChain(ctx context.Context, c client.Client, stage *cdPipeApi.Stage) (
 		AddApplicationSetGenerators{
 			applicationSetManager: argocd.NewArgoApplicationSetManager(c),
 		},
+		NewPutConfigMap(c),
 	)
 
 	return ch, nil
