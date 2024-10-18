@@ -1,8 +1,12 @@
 <a name="unreleased"></a>
 ## [Unreleased]
 
+
+<a name="v2.21.0"></a>
+## [v2.21.0] - 2024-10-18
 ### Features
 
+- Add ConfigMap creation for Stage ([#78](https://github.com/epam/edp-cd-pipeline-operator/issues/78))
 - Add new deploy trigger type Auto-stable ([#75](https://github.com/epam/edp-cd-pipeline-operator/issues/75))
 - Add cleanTemplate field to the Stage CR ([#66](https://github.com/epam/edp-cd-pipeline-operator/issues/66))
 - Remove deprecated v1alpha1 versions from the operator ([#64](https://github.com/epam/edp-cd-pipeline-operator/issues/64))
@@ -16,6 +20,7 @@
 
 ### Documentation
 
+- Update changelog file for release notes ([#73](https://github.com/epam/edp-cd-pipeline-operator/issues/73))
 - Update CHANGELOG md ([#73](https://github.com/epam/edp-cd-pipeline-operator/issues/73))
 
 
@@ -162,7 +167,8 @@ Helm parameter kioskEnabled was removed. Use instead --set global.tenancyEngine=
 <a name="v2.15.0"></a>
 ## [v2.15.0] - 2023-08-17
 
-[Unreleased]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.20.0...HEAD
+[Unreleased]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.21.0...HEAD
+[v2.21.0]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.20.0...v2.21.0
 [v2.20.0]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.19.0...v2.20.0
 [v2.19.0]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.18.0...v2.19.0
 [v2.18.0]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.17.0...v2.18.0
