@@ -25,6 +25,7 @@ A Helm chart for KubeRocketCI CD Pipeline Operator
 | annotations | object | `{}` |  |
 | capsuleTenant | object | `{"create":true,"spec":null}` | Required tenancyEngine: capsule. Specify Capsule Tenant specification for Environments. |
 | global.platform | string | `"kubernetes"` | platform type that can be "kubernetes" or "openshift" |
+| image.registry | string | `"docker.io"` | Set the image registry, default to Docker Hub; can be customized to use an alternative provider |
 | image.repository | string | `"epamedp/cd-pipeline-operator"` | KubeRocketCI cd-pipeline-operator Docker image name. The released image can be found on [Dockerhub](https://hub.docker.com/r/epamedp/cd-pipeline-operator) |
 | image.tag | string | `nil` | KubeRocketCI cd-pipeline-operator Docker image tag. The released image can be found on [Dockerhub](https://hub.docker.com/r/epamedp/cd-pipeline-operator/tags) |
 | imagePullPolicy | string | `"IfNotPresent"` |  |
