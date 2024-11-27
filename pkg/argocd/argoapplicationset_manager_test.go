@@ -319,50 +319,7 @@ func TestArgoApplicationSetManager_CreateApplicationSet(t *testing.T) {
 			wantAssert: func(t *testing.T, cl client.Client) {},
 		},
 		{
-			name: "failed - codebases have different git servers",
-			pipeline: &cdPipeApi.CDPipeline{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "pipe1",
-					Namespace: ns,
-				},
-				Spec: cdPipeApi.CDPipelineSpec{
-					Name:         "pipe1",
-					Applications: []string{"app1", "app2"},
-				},
-			},
-			client: func(t *testing.T) client.Client {
-				return fake.NewClientBuilder().
-					WithScheme(scheme).
-					WithObjects(
-						&codebaseApi.Codebase{
-							ObjectMeta: metav1.ObjectMeta{
-								Name:      "app1",
-								Namespace: ns,
-							},
-							Spec: codebaseApi.CodebaseSpec{
-								GitServer: "git-server",
-							},
-						},
-						&codebaseApi.Codebase{
-							ObjectMeta: metav1.ObjectMeta{
-								Name:      "app2",
-								Namespace: ns,
-							},
-							Spec: codebaseApi.CodebaseSpec{
-								GitServer: "git-server2",
-							},
-						},
-					).
-					Build()
-			},
-			wantErr: func(t require.TestingT, err error, i ...interface{}) {
-				require.Error(t, err)
-				require.Contains(t, err.Error(), "codebases have different git servers")
-			},
-			wantAssert: func(t *testing.T, cl client.Client) {},
-		},
-		{
-			name: "failed - git server doesn't exist",
+			name: "failed - gitops git server doesn't exist",
 			pipeline: &cdPipeApi.CDPipeline{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "pipe1",
@@ -386,36 +343,24 @@ func TestArgoApplicationSetManager_CreateApplicationSet(t *testing.T) {
 								GitServer: "git-server",
 							},
 						},
+						&codebaseApi.Codebase{
+							ObjectMeta: metav1.ObjectMeta{
+								Name:      "gitops",
+								Namespace: ns,
+								Labels:    gitOpsCodebaseLabels,
+							},
+							Spec: codebaseApi.CodebaseSpec{
+								GitUrlPath: "/company/gitops",
+								Type:       codebaseTypeSystem,
+								GitServer:  "gitops-gitserver",
+							},
+						},
 					).
 					Build()
 			},
 			wantErr: func(t require.TestingT, err error, i ...interface{}) {
 				require.Error(t, err)
-				require.Contains(t, err.Error(), "failed to get GitServer")
-			},
-			wantAssert: func(t *testing.T, cl client.Client) {},
-		},
-		{
-			name: "failed - codebases don't exist",
-			pipeline: &cdPipeApi.CDPipeline{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "pipe1",
-					Namespace: ns,
-				},
-				Spec: cdPipeApi.CDPipelineSpec{
-					Name:         "pipe1",
-					Applications: []string{"app1", "app2"},
-				},
-			},
-			client: func(t *testing.T) client.Client {
-				return fake.NewClientBuilder().
-					WithScheme(scheme).
-					WithObjects().
-					Build()
-			},
-			wantErr: func(t require.TestingT, err error, i ...interface{}) {
-				require.Error(t, err)
-				require.Contains(t, err.Error(), "failed to get Codebase")
+				require.Contains(t, err.Error(), "failed to get gitops GitServer")
 			},
 			wantAssert: func(t *testing.T, cl client.Client) {},
 		},
@@ -557,6 +502,16 @@ func TestArgoApplicationSetManager_CreateApplicationSetGenerators(t *testing.T) 
 								},
 							},
 						},
+						&codebaseApi.GitServer{
+							ObjectMeta: metav1.ObjectMeta{
+								Name:      "git-server",
+								Namespace: ns,
+							},
+							Spec: codebaseApi.GitServerSpec{
+								GitHost: "github.com",
+								SshPort: 22,
+							},
+						},
 						&codebaseApi.CodebaseImageStream{
 							ObjectMeta: metav1.ObjectMeta{
 								Name:      "app1-main",
@@ -620,7 +575,7 @@ func TestArgoApplicationSetManager_CreateApplicationSetGenerators(t *testing.T) 
 				require.Len(t, appset.Spec.Generators[0].List.Elements, 3)
 
 				expected := map[string]string{
-					"app1":   `{"cluster":"in-cluster", "codebase":"app1", "gitUrlPath":"company/app1", "imageRepository":"app1-main-image", "imageTag":"NaN", "namespace":"default", "stage":"stage1", "versionType":"default", "customValues":false}`,
+					"app1":   `{"cluster":"in-cluster", "codebase":"app1", "gitUrlPath":"company/app1", "imageRepository":"app1-main-image", "imageTag":"NaN", "namespace":"default", "stage":"stage1", "versionType":"default", "customValues":false, "repoURL": "ssh://@github.com:22/company/app1"}`,
 					"app2":   `{"stage":"stage1", "codebase": "app2"}`,
 					"go-app": `{"stage":"should-skip-stage", "codebase": "go-app"}`,
 				}
@@ -675,6 +630,16 @@ func TestArgoApplicationSetManager_CreateApplicationSetGenerators(t *testing.T) 
 								},
 							},
 						},
+						&codebaseApi.GitServer{
+							ObjectMeta: metav1.ObjectMeta{
+								Name:      "git-server",
+								Namespace: ns,
+							},
+							Spec: codebaseApi.GitServerSpec{
+								GitHost: "github.com",
+								SshPort: 22,
+							},
+						},
 						&codebaseApi.CodebaseImageStream{
 							ObjectMeta: metav1.ObjectMeta{
 								Name:      "app1-main",
@@ -710,7 +675,7 @@ func TestArgoApplicationSetManager_CreateApplicationSetGenerators(t *testing.T) 
 				require.Len(t, appset.Spec.Generators, 1)
 				require.Len(t, appset.Spec.Generators[0].List.Elements, 1)
 				require.JSONEq(t,
-					`{"cluster":"in-cluster", "codebase":"app1", "gitUrlPath":"company/app1", "imageRepository":"app1-main-image", "imageTag":"NaN", "namespace":"default", "stage":"stage1", "versionType":"default", "customValues":false}`,
+					`{"cluster":"in-cluster", "codebase":"app1", "gitUrlPath":"company/app1", "imageRepository":"app1-main-image", "imageTag":"NaN", "namespace":"default", "stage":"stage1", "versionType":"default", "customValues":false, "repoURL": "ssh://@github.com:22/company/app1"}`,
 					string(appset.Spec.Generators[0].List.Elements[0].Raw),
 				)
 			},
@@ -755,6 +720,16 @@ func TestArgoApplicationSetManager_CreateApplicationSetGenerators(t *testing.T) 
 								Versioning: codebaseApi.Versioning{
 									Type: codebaseApi.VersioningTypDefault,
 								},
+							},
+						},
+						&codebaseApi.GitServer{
+							ObjectMeta: metav1.ObjectMeta{
+								Name:      "git-server",
+								Namespace: ns,
+							},
+							Spec: codebaseApi.GitServerSpec{
+								GitHost: "github.com",
+								SshPort: 22,
 							},
 						},
 						&codebaseApi.CodebaseImageStream{
@@ -893,6 +868,16 @@ func TestArgoApplicationSetManager_CreateApplicationSetGenerators(t *testing.T) 
 								Versioning: codebaseApi.Versioning{
 									Type: codebaseApi.VersioningTypDefault,
 								},
+							},
+						},
+						&codebaseApi.GitServer{
+							ObjectMeta: metav1.ObjectMeta{
+								Name:      "git-server",
+								Namespace: ns,
+							},
+							Spec: codebaseApi.GitServerSpec{
+								GitHost: "github.com",
+								SshPort: 22,
 							},
 						},
 						&argoApi.ApplicationSet{
@@ -1186,7 +1171,7 @@ func TestArgoApplicationSetManager_RemoveApplicationSetGenerators(t *testing.T) 
 }
 
 func Test_generateTemplatePatch(t *testing.T) {
-	appset := generateTemplatePatch("pipe1", "/company/edp-gitops", "git", "github.com", 22)
+	appset := generateTemplatePatch("pipe1", "/company/edp-gitops")
 
 	Create := func(name, t string) *template.Template {
 		return template.Must(template.New(name).Option("missingkey=error").Parse(t))
@@ -1204,7 +1189,7 @@ func Test_generateTemplatePatch(t *testing.T) {
 			"imageRepository": "repo1",
 			"codebase":        "app1",
 			"stage":           "stage1",
-			"gitUrlPath":      "/company/edp-gitops",
+			"repoURL":         "ssh://github.com/company/app1",
 		},
 	)
 	require.NoError(t, err)

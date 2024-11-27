@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"strings"
 
 	argoApi "github.com/argoproj/argo-cd/v2/pkg/apis/application/v1alpha1"
 	"golang.org/x/exp/maps"
@@ -26,6 +25,7 @@ type generatorElement struct {
 	ImageRepository string `json:"imageRepository"`
 	Cluster         string `json:"cluster"`
 	Namespace       string `json:"namespace"`
+	RepoURL         string `json:"repoURL"`
 	GitUrlPath      string `json:"gitUrlPath"`
 	VersionType     string `json:"versionType"`
 	CustomValues    bool   `json:"customValues"`
@@ -71,22 +71,12 @@ func (c *ArgoApplicationSetManager) CreateApplicationSet(ctx context.Context, pi
 		return nil
 	}
 
-	codebases, err := c.getPipelinesCodebasesMap(ctx, pipeline.Namespace, pipeline.Spec.Applications)
-	if err != nil {
-		return err
-	}
-
-	gitServer, err := c.getGitServer(ctx, pipeline.Namespace, codebases)
-	if err != nil {
-		return err
-	}
-
 	gitopsUrl, err := c.getGitOpsRepoUrl(ctx, pipeline.Namespace)
 	if err != nil {
 		return err
 	}
 
-	appset = generateApplicationSet(pipeline, gitServer, gitopsUrl)
+	appset = generateApplicationSet(pipeline, gitopsUrl)
 
 	if err = controllerutil.SetOwnerReference(pipeline, appset, c.client.Scheme()); err != nil {
 		return fmt.Errorf("failed to set ApplicationSet owner reference: %w", err)
@@ -127,7 +117,12 @@ func (c *ArgoApplicationSetManager) CreateApplicationSetGenerators(ctx context.C
 		return err
 	}
 
-	stageGenerators, err := c.makeStageGenerators(ctx, stage, maps.Values(codebases))
+	gitServers, err := c.getGitServers(ctx, stage.Namespace, codebases)
+	if err != nil {
+		return err
+	}
+
+	stageGenerators, err := c.makeStageGenerators(ctx, stage, codebases, gitServers)
 	if err != nil {
 		return err
 	}
@@ -213,14 +208,22 @@ func (c *ArgoApplicationSetManager) RemoveApplicationSetGenerators(ctx context.C
 func (c *ArgoApplicationSetManager) makeStageGenerators(
 	ctx context.Context,
 	stage *cdPipeApi.Stage,
-	codebases []codebaseApi.Codebase,
+	codebases map[string]codebaseApi.Codebase,
+	gitServers map[string]codebaseApi.GitServer,
 ) (map[string]apiextensionsv1.JSON, error) {
 	stageGenerators := make(map[string]apiextensionsv1.JSON, len(codebases))
 
 	for k := range codebases {
-		image, err := c.getImageRepo(ctx, codebases[k].Namespace, codebases[k].Name, codebases[k].Spec.DefaultBranch)
+		spec := codebases[k].Spec
+
+		image, err := c.getImageRepo(ctx, codebases[k].Namespace, codebases[k].Name, spec.DefaultBranch)
 		if err != nil {
 			return nil, err
+		}
+
+		gitServer, ok := gitServers[spec.GitServer]
+		if !ok {
+			return nil, fmt.Errorf("git server %s not found", spec.GitServer)
 		}
 
 		gen := generatorElement{
@@ -230,9 +233,16 @@ func (c *ArgoApplicationSetManager) makeStageGenerators(
 			ImageRepository: image,
 			Cluster:         stage.Spec.ClusterName,
 			Namespace:       stage.Spec.Namespace,
-			GitUrlPath:      strings.TrimPrefix(codebases[k].Spec.GitUrlPath, "/"),
-			VersionType:     string(codebases[k].Spec.Versioning.Type),
-			CustomValues:    false,
+			RepoURL: fmt.Sprintf(
+				"ssh://%s@%s:%d%s",
+				gitServer.Spec.GitUser,
+				gitServer.Spec.GitHost,
+				gitServer.Spec.SshPort,
+				spec.GitUrlPath,
+			),
+			GitUrlPath:   spec.GetProjectID(),
+			VersionType:  string(spec.Versioning.Type),
+			CustomValues: false,
 		}
 
 		var raw []byte
@@ -278,29 +288,32 @@ func (c *ArgoApplicationSetManager) getPipelinesCodebasesMap(ctx context.Context
 	return m, nil
 }
 
-func (c *ArgoApplicationSetManager) getGitServer(ctx context.Context, ns string, codebases map[string]codebaseApi.Codebase) (*codebaseApi.GitServer, error) {
-	if len(codebases) == 0 {
-		return nil, fmt.Errorf("no codebases specified")
+func (c *ArgoApplicationSetManager) getGitServers(
+	ctx context.Context,
+	ns string,
+	codebases map[string]codebaseApi.Codebase,
+) (map[string]codebaseApi.GitServer, error) {
+	gitServerNames := make(map[string]struct{}, len(codebases))
+
+	for k := range codebases {
+		gitServerNames[codebases[k].Spec.GitServer] = struct{}{}
 	}
 
-	var gitServerName string
-	for k := range codebases {
-		if gitServerName != "" && gitServerName != codebases[k].Spec.GitServer {
-			return nil, fmt.Errorf("codebases have different git servers")
+	gitServers := make(map[string]codebaseApi.GitServer, len(gitServerNames))
+
+	for gitServerName := range gitServerNames {
+		gitServer := &codebaseApi.GitServer{}
+		if err := c.client.Get(ctx, client.ObjectKey{
+			Namespace: ns,
+			Name:      gitServerName,
+		}, gitServer); err != nil {
+			return nil, fmt.Errorf("failed to get GitServer: %w", err)
 		}
 
-		gitServerName = codebases[k].Spec.GitServer
+		gitServers[gitServer.Name] = *gitServer
 	}
 
-	gitServer := &codebaseApi.GitServer{}
-	if err := c.client.Get(ctx, client.ObjectKey{
-		Namespace: ns,
-		Name:      gitServerName,
-	}, gitServer); err != nil {
-		return nil, fmt.Errorf("failed to get GitServer: %w", err)
-	}
-
-	return gitServer, nil
+	return gitServers, nil
 }
 
 func (c *ArgoApplicationSetManager) getGitOpsRepoUrl(ctx context.Context, ns string) (string, error) {
@@ -339,14 +352,13 @@ func (c *ArgoApplicationSetManager) getGitOpsRepoUrl(ctx context.Context, ns str
 	), nil
 }
 
-func generateTemplatePatch(pipeline, gitopsUrl, gitUser, gitHost string, sshPort int32) string {
-	sshURL := fmt.Sprintf("ssh://%s@%s:%d", gitUser, gitHost, sshPort)
+func generateTemplatePatch(pipeline, gitopsUrl string) string {
 	template := `
     {{- if .customValues }}
     spec:
       sources:
         - ref: values
-          repoURL: %s
+          RepoURL: %s
           targetRevision: main
         - helm:
             parameters:
@@ -358,24 +370,18 @@ func generateTemplatePatch(pipeline, gitopsUrl, gitUser, gitHost string, sshPort
             valueFiles:
               - $values/%s/{{ .stage }}/{{ .codebase }}-values.yaml
           path: deploy-templates
-          repoURL: %s/{{ .gitUrlPath }}
+          RepoURL: {{ .repoURL }}
           targetRevision: '{{ if eq .versionType "edp" }}build/{{ .imageTag }}{{ else }}{{ .imageTag }}{{ end }}'
     {{- end }}`
 
-	return fmt.Sprintf(template, gitopsUrl, pipeline, sshURL)
+	return fmt.Sprintf(template, gitopsUrl, pipeline)
 }
 
 func generateApplicationSet(
 	pipeline *cdPipeApi.CDPipeline,
-	gitServer *codebaseApi.GitServer,
 	gitopsUrl string,
 ) *argoApi.ApplicationSet {
-	templatePatch := generateTemplatePatch(
-		pipeline.Name,
-		gitopsUrl,
-		gitServer.Spec.GitUser,
-		gitServer.Spec.GitHost,
-		gitServer.Spec.SshPort)
+	templatePatch := generateTemplatePatch(pipeline.Name, gitopsUrl)
 
 	return &argoApi.ApplicationSet{
 		ObjectMeta: metav1.ObjectMeta{
@@ -418,7 +424,7 @@ func generateApplicationSet(
 							ReleaseName: "{{ .codebase }}",
 						},
 						Path:           "deploy-templates",
-						RepoURL:        fmt.Sprintf("ssh://%s@%s:%d/{{ .gitUrlPath }}", gitServer.Spec.GitUser, gitServer.Spec.GitHost, gitServer.Spec.SshPort),
+						RepoURL:        "{{ .repoURL }}",
 						TargetRevision: `{{ if eq .versionType "edp" }}build/{{ .imageTag }}{{ else }}{{ .imageTag }}{{ end }}`,
 					},
 				},

@@ -255,6 +255,7 @@ spec:
             imageRepository: registry.host.local/registry-space/test
             imageTag: NaN
             namespace: edp-mypipeline-dev
+            repoURL: ssh://git@gerrit-dev:30000/test
             stage: dev
             versionType: default
             customValues: false
@@ -264,6 +265,7 @@ spec:
             imageRepository: registry.host.local/registry-space/test
             imageTag: NaN
             namespace: custom-namespace
+            repoURL: ssh://git@gerrit-dev:30000/test
             stage: qa
             versionType: default
             customValues: false
@@ -298,7 +300,7 @@ spec:
               value: '{{ .imageRepository }}'
           releaseName: '{{ .codebase }}'
         path: deploy-templates
-        repoURL: ssh://git@gerrit-dev:30000/{{ .gitUrlPath }}
+        repoURL: '{{ .repoURL }}'
         targetRevision: >-
           {{ if eq .versionType "edp" }}build/{{ .imageTag }}{{ else }}{{
           .imageTag }}{{ end }}
