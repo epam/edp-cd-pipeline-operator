@@ -9,7 +9,7 @@ commands:
   # We need to add system:serviceaccounts:edp to the list of userGroups, where `edp` is the namespace where EDP is installed
   # see https://epam.github.io/edp-install/operator-guide/capsule/
   - command: |
-      helm install capsule projectcapsule/capsule --version 0.5.3
+      helm install capsule projectcapsule/capsule --version 0.7.2
         --set manager.options.capsuleUserGroups[0]=capsule.clastix.io
         --set manager.options.capsuleUserGroups[1]=system:serviceaccounts:edp
         --create-namespace
