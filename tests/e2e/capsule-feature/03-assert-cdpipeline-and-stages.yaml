@@ -76,7 +76,6 @@ metadata:
     app.edp.epam.com/tenant: edp
     capsule.clastix.io/tenant: edp-workload-edp
     kubernetes.io/metadata.name: edp-mypipeline-dev
-    name: edp-mypipeline-dev
   name: edp-mypipeline-dev
 spec:
   finalizers:
@@ -195,7 +194,6 @@ metadata:
     app.edp.epam.com/tenant: edp
     capsule.clastix.io/tenant: edp-workload-edp
     kubernetes.io/metadata.name: custom-namespace
-    name: custom-namespace
   name: custom-namespace
 spec:
   finalizers:
