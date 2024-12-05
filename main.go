@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"os"
 
@@ -25,6 +26,7 @@ import (
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/argocd"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/objectmodifier"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/cluster"
+	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/webhook"
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 	buildInfo "github.com/epam/edp-common/pkg/config"
 	edpCompApi "github.com/epam/edp-component-operator/api/v1"
@@ -146,6 +148,13 @@ func main() {
 		SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "cluster-secret")
 		os.Exit(1)
+	}
+
+	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
+		if err = webhook.RegisterValidationWebHook(context.Background(), mgr, ns); err != nil {
+			setupLog.Error(err, "failed to create webhook")
+			os.Exit(1)
+		}
 	}
 
 	if err = mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
