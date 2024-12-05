@@ -16,6 +16,7 @@ require (
 	k8s.io/apimachinery v0.26.11
 	k8s.io/client-go v0.26.11
 	k8s.io/utils v0.0.0-20230313181309-38a27ef9d749
+	knative.dev/pkg v0.0.0-20231011193800-bd99f2f98be7
 	sigs.k8s.io/controller-runtime v0.14.7
 	sigs.k8s.io/yaml v1.3.0
 )
@@ -82,6 +83,7 @@ require (
 	github.com/argoproj/pkg v0.13.7-0.20230626144333-d56162821bd1 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/blang/semver/v4 v4.0.0 // indirect
+	github.com/blendle/zapdriver v1.3.1 // indirect
 	github.com/bmatcuk/doublestar/v4 v4.6.0 // indirect
 	github.com/bombsimon/logrusr/v2 v2.0.1 // indirect
 	github.com/bradleyfalzon/ghinstallation/v2 v2.6.0 // indirect

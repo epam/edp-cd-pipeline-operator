@@ -14,7 +14,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
-	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/stage/chain/util"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/consts"
 )
 
@@ -101,94 +100,6 @@ func Test_setStageLabel(t *testing.T) {
 			t.Parallel()
 
 			got, err := setStageLabel(logr.NewContext(context.Background(), logr.Discard()), tt.stage)
-			assert.Equal(t, tt.want, got)
-			assert.Equal(t, tt.wantStage, tt.stage)
-			tt.wantErr(t, err)
-		})
-	}
-}
-
-func Test_updateStageNamespaceSpec(t *testing.T) {
-	t.Parallel()
-
-	tests := []struct {
-		name      string
-		stage     *cdPipeApi.Stage
-		wantStage *cdPipeApi.Stage
-		want      bool
-		wantErr   require.ErrorAssertionFunc
-	}{
-		{
-			name: "should return true if stage namespace was updated",
-			stage: &cdPipeApi.Stage{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test-stage",
-					Namespace: "default",
-				},
-				Spec: cdPipeApi.StageSpec{
-					CdPipeline: "test-pipeline",
-				},
-			},
-			wantStage: &cdPipeApi.Stage{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test-stage",
-					Namespace: "default",
-				},
-				Spec: cdPipeApi.StageSpec{
-					CdPipeline: "test-pipeline",
-					Namespace: util.GenerateNamespaceName(&cdPipeApi.Stage{
-						ObjectMeta: metav1.ObjectMeta{
-							Name:      "test-stage",
-							Namespace: "default",
-						},
-					}),
-				},
-			},
-			want:    true,
-			wantErr: require.NoError,
-		},
-		{
-			name: "should return false if stage namespace already exists",
-			stage: &cdPipeApi.Stage{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test-stage",
-					Namespace: "default",
-				},
-				Spec: cdPipeApi.StageSpec{
-					CdPipeline: "test-pipeline",
-					Namespace:  "test-stage-ns",
-				},
-			},
-			wantStage: &cdPipeApi.Stage{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test-stage",
-					Namespace: "default",
-				},
-				Spec: cdPipeApi.StageSpec{
-					CdPipeline: "test-pipeline",
-					Namespace:  "test-stage-ns",
-				},
-			},
-			want:    false,
-			wantErr: require.NoError,
-		},
-		{
-			name:      "stage is nil",
-			stage:     nil,
-			wantStage: nil,
-			want:      false,
-			wantErr: func(t require.TestingT, err error, i ...interface{}) {
-				require.Error(t, err)
-				require.Contains(t, err.Error(), "stage is nil")
-			},
-		},
-	}
-	for _, tt := range tests {
-		tt := tt
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-
-			got, err := updateStageNamespaceSpec(logr.NewContext(context.Background(), logr.Discard()), tt.stage)
 			assert.Equal(t, tt.want, got)
 			assert.Equal(t, tt.wantStage, tt.stage)
 			tt.wantErr(t, err)

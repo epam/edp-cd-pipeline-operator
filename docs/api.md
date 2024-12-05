@@ -302,6 +302,15 @@ NOTE: for deleting the stage use stages order - delete only the latest stage.
         </td>
         <td>true</td>
       </tr><tr>
+        <td><b>namespace</b></td>
+        <td>string</td>
+        <td>
+          Namespace where the application will be deployed.<br/>
+          <br/>
+            <i>Validations</i>:<li>self == oldSelf: Value is immutable</li>
+        </td>
+        <td>true</td>
+      </tr><tr>
         <td><b>order</b></td>
         <td>integer</td>
         <td>
@@ -331,13 +340,6 @@ The order should start from 0, and the next stages should use +1 for the order.<
 Default value is "in-cluster" which means that application will be deployed in the same cluster where CD Pipeline is running.<br/>
           <br/>
             <i>Default</i>: in-cluster<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>namespace</b></td>
-        <td>string</td>
-        <td>
-          Namespace where the application will be deployed.<br/>
         </td>
         <td>false</td>
       </tr><tr>

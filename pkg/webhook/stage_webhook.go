@@ -1,0 +1,94 @@
+package webhook
+
+import (
+	"context"
+	"errors"
+	"fmt"
+
+	"k8s.io/apimachinery/pkg/runtime"
+	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/webhook"
+
+	pipelineApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
+)
+
+const listLimit = 1000
+
+//+kubebuilder:webhook:path=/validate-v2-edp-epam-com-v1-stage,mutating=false,failurePolicy=fail,sideEffects=None,groups=v2.edp.epam.com,resources=stages,verbs=create;update,versions=v1,name=stage.epam.com,admissionReviewVersions=v1
+
+// StageValidationWebhook is a webhook for validating Stage CRD.
+type StageValidationWebhook struct {
+	client client.Client
+}
+
+// NewStageValidationWebhook creates a new webhook for validating Stage CR.
+func NewStageValidationWebhook(k8sClient client.Client) *StageValidationWebhook {
+	return &StageValidationWebhook{client: k8sClient}
+}
+
+// SetupWebhookWithManager sets up the webhook with the manager for Stage CR.
+func (r *StageValidationWebhook) SetupWebhookWithManager(mgr ctrl.Manager) error {
+	err := ctrl.NewWebhookManagedBy(mgr).
+		For(&pipelineApi.Stage{}).
+		WithValidator(r).
+		Complete()
+	if err != nil {
+		return fmt.Errorf("failed to build Stage validation webhook: %w", err)
+	}
+
+	return nil
+}
+
+var _ webhook.CustomValidator = &StageValidationWebhook{}
+
+// ValidateCreate is a webhook for validating the creation of the Stage CR.
+func (r *StageValidationWebhook) ValidateCreate(ctx context.Context, obj runtime.Object) error {
+	createdStage, ok := obj.(*pipelineApi.Stage)
+	if !ok {
+		return errors.New("the wrong object given, expected Stage")
+	}
+
+	return r.uniqueNamespaces(ctx, createdStage)
+}
+
+// ValidateUpdate is a webhook for validating the updating of the Stage CR.
+func (*StageValidationWebhook) ValidateUpdate(_ context.Context, _, _ runtime.Object) error {
+	return nil
+}
+
+// ValidateDelete is a webhook for validating the deleting of the Stage CR.
+// It is skipped for now. Add kubebuilder:webhook:verbs=delete to enable it.
+func (*StageValidationWebhook) ValidateDelete(_ context.Context, _ runtime.Object) error {
+	return nil
+}
+
+func (r *StageValidationWebhook) uniqueNamespaces(ctx context.Context, stage *pipelineApi.Stage) error {
+	stages := &pipelineApi.StageList{}
+
+	if err := r.client.List(
+		ctx,
+		stages,
+		client.InNamespace(stage.Namespace),
+		client.Limit(listLimit),
+	); err != nil {
+		return fmt.Errorf("failed to list stages: %w", err)
+	}
+
+	for i := range stages.Items {
+		if stages.Items[i].Name == stage.Name || stages.Items[i].Spec.ClusterName != stage.Spec.ClusterName {
+			continue
+		}
+
+		if stages.Items[i].Spec.Namespace == stage.Spec.Namespace {
+			return fmt.Errorf(
+				"namespace %s is already used in CDPipeline %s Stage %s",
+				stage.Spec.Namespace,
+				stages.Items[i].Spec.CdPipeline,
+				stages.Items[i].Name,
+			)
+		}
+	}
+
+	return nil
+}

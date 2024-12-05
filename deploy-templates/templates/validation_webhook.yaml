@@ -1,0 +1,35 @@
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  labels:
+    {{- include "cd-pipeline-operator.labels" . | nindent 4 }}
+  name: edp-cd-pipeline-operator-validating-webhook-configuration-{{ .Release.Namespace }}
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: edp-cd-pipeline-operator-webhook-service
+      namespace: {{ .Release.Namespace }}
+      path: /validate-v2-edp-epam-com-v1-stage
+  failurePolicy: Fail
+  name: stage.epam.com
+  namespaceSelector:
+    matchExpressions:
+      - key: kubernetes.io/metadata.name
+        operator: In
+        values:
+          - {{ .Release.Namespace }}
+  rules:
+  - apiGroups:
+    - v2.edp.epam.com
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - stages
+    scope: Namespaced
+  sideEffects: None

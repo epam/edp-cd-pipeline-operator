@@ -93,6 +93,9 @@ spec:
               namespace:
                 description: Namespace where the application will be deployed.
                 type: string
+                x-kubernetes-validations:
+                - message: Value is immutable
+                  rule: self == oldSelf
               order:
                 description: |-
                   The order to lay out Stages.
@@ -164,6 +167,7 @@ spec:
             - cdPipeline
             - description
             - name
+            - namespace
             - order
             - qualityGates
             type: object

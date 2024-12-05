@@ -56,7 +56,9 @@ type StageSpec struct {
 	Source Source `json:"source"`
 
 	// Namespace where the application will be deployed.
-	Namespace string `json:"namespace,omitempty"`
+	// +required
+	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="Value is immutable"
+	Namespace string `json:"namespace"`
 
 	// Specifies a name of Tekton TriggerTemplate used as a blueprint for deployment pipeline.
 	// Default value is "deploy" which means that default TriggerTemplate will be used.

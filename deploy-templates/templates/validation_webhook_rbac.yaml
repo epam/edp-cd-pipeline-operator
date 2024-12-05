@@ -1,0 +1,32 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    {{- include "cd-pipeline-operator.labels" . | nindent 4 }}
+  name: edp-{{ .Values.name }}-{{ .Release.Namespace }}-validation-webhook
+rules:
+- apiGroups:
+    - admissionregistration.k8s.io
+  resources:
+    - validatingwebhookconfigurations
+  verbs:
+    - get
+    - update
+    - patch
+
+---
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  labels:
+    {{- include "cd-pipeline-operator.labels" . | nindent 4 }}
+  name: edp-{{ .Values.name }}-{{ .Release.Namespace }}-validation-webhook
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: edp-{{ .Values.name }}-{{ .Release.Namespace }}-validation-webhook
+subjects:
+  - kind: ServiceAccount
+    name: edp-{{ .Values.name }}
+    namespace: {{ .Release.Namespace }}

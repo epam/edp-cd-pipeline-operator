@@ -12,7 +12,6 @@ import (
 
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
 	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/helper"
-	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/stage/chain/util"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/consts"
 )
 
@@ -44,7 +43,6 @@ func NewStageBatchModifier(k8sClient client.Client, modifiers []StageModifier) *
 func NewStageBatchModifierAll(k8sClient client.Client, scheme *runtime.Scheme) *StageBatchModifier {
 	modifiers := []StageModifier{
 		StageModifierFunc(setStageLabel),
-		StageModifierFunc(updateStageNamespaceSpec),
 		newStageOwnerRefModifier(k8sClient, scheme),
 	}
 
@@ -104,29 +102,6 @@ func setStageLabel(ctx context.Context, stage *cdPipeApi.Stage) (bool, error) {
 	log.Info("Stage labels were updated", "labels", labels)
 
 	return true, nil
-}
-
-// updateStageNamespaceSpec updates stage namespace spec.
-func updateStageNamespaceSpec(ctx context.Context, stage *cdPipeApi.Stage) (bool, error) {
-	log := ctrl.LoggerFrom(ctx)
-
-	log.Info("Trying to update namespace spec for stage")
-
-	if stage == nil {
-		return false, errors.New("failed to update stage namespace spec: stage is nil")
-	}
-
-	if stage.Spec.Namespace == "" {
-		stage.Spec.Namespace = util.GenerateNamespaceName(stage)
-
-		log.Info("Stage namespace spec was updated", "namespace", stage.Spec.Namespace)
-
-		return true, nil
-	}
-
-	log.Info("Stage namespace spec is already set")
-
-	return false, nil
 }
 
 // stageOwnerRefModifier sets CDPipeline owner reference to stage object.

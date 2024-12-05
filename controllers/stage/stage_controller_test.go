@@ -355,6 +355,7 @@ func TestReconcileStage_ReconcileReconcile_SetOwnerRef(t *testing.T) {
 			TriggerType:  cdPipeApi.TriggerTypeAutoDeploy,
 			Order:        0,
 			QualityGates: []cdPipeApi.QualityGate{qualityGate},
+			Namespace:    "stub-namespace",
 		},
 	}
 
