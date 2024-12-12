@@ -2,6 +2,26 @@
 ## [Unreleased]
 
 
+<a name="v2.22.0"></a>
+## [v2.22.0] - 2024-12-12
+### Features
+
+- Add namespace validation in Stage CR ([#91](https://github.com/epam/edp-cd-pipeline-operator/issues/91))
+
+### Bug Fixes
+
+- Resolve repo path issue in ApplicationSet with GitServers ([#86](https://github.com/epam/edp-cd-pipeline-operator/issues/86))
+
+### Testing
+
+- Update capsule to 0.7.2 in e2e tests ([#88](https://github.com/epam/edp-cd-pipeline-operator/issues/88))
+
+### Routine
+
+- Update Pull Request Template ([#82](https://github.com/epam/edp-cd-pipeline-operator/issues/82))
+- Update current development version ([#80](https://github.com/epam/edp-cd-pipeline-operator/issues/80))
+
+
 <a name="v2.21.0"></a>
 ## [v2.21.0] - 2024-10-18
 ### Features
@@ -167,7 +187,8 @@ Helm parameter kioskEnabled was removed. Use instead --set global.tenancyEngine=
 <a name="v2.15.0"></a>
 ## [v2.15.0] - 2023-08-17
 
-[Unreleased]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.21.0...HEAD
+[Unreleased]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.22.0...HEAD
+[v2.22.0]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.21.0...v2.22.0
 [v2.21.0]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.20.0...v2.21.0
 [v2.20.0]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.19.0...v2.20.0
 [v2.19.0]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.18.0...v2.19.0
