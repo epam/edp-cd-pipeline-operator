@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/stage/chain/util"
+	corev1 "k8s.io/api/core/v1"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -16,6 +18,7 @@ import (
 const listLimit = 1000
 
 //+kubebuilder:webhook:path=/validate-v2-edp-epam-com-v1-stage,mutating=false,failurePolicy=fail,sideEffects=None,groups=v2.edp.epam.com,resources=stages,verbs=create;update,versions=v1,name=stage.epam.com,admissionReviewVersions=v1
+//+kubebuilder:rbac:groups="",resources=namespaces,verbs=get;list;watch
 
 // StageValidationWebhook is a webhook for validating Stage CRD.
 type StageValidationWebhook struct {
@@ -49,7 +52,11 @@ func (r *StageValidationWebhook) ValidateCreate(ctx context.Context, obj runtime
 		return errors.New("the wrong object given, expected Stage")
 	}
 
-	return r.uniqueNamespaces(ctx, createdStage)
+	if err := r.uniqueTargetNamespaces(ctx, createdStage); err != nil {
+		return err
+	}
+
+	return r.uniqueTargetNamespaceAcrossCluster(ctx, createdStage)
 }
 
 // ValidateUpdate is a webhook for validating the updating of the Stage CR.
@@ -63,7 +70,7 @@ func (*StageValidationWebhook) ValidateDelete(_ context.Context, _ runtime.Objec
 	return nil
 }
 
-func (r *StageValidationWebhook) uniqueNamespaces(ctx context.Context, stage *pipelineApi.Stage) error {
+func (r *StageValidationWebhook) uniqueTargetNamespaces(ctx context.Context, stage *pipelineApi.Stage) error {
 	stages := &pipelineApi.StageList{}
 
 	if err := r.client.List(
@@ -87,6 +94,27 @@ func (r *StageValidationWebhook) uniqueNamespaces(ctx context.Context, stage *pi
 				stages.Items[i].Spec.CdPipeline,
 				stages.Items[i].Name,
 			)
+		}
+	}
+
+	return nil
+}
+
+func (r *StageValidationWebhook) uniqueTargetNamespaceAcrossCluster(ctx context.Context, stage *pipelineApi.Stage) error {
+	namespaces := &corev1.NamespaceList{}
+	if err := r.client.List(
+		ctx,
+		namespaces,
+		client.MatchingLabels{
+			util.TenantLabelName: stage.Spec.Namespace,
+		},
+	); err != nil {
+		return fmt.Errorf("failed to list namespaces: %w", err)
+	}
+
+	for i := range namespaces.Items {
+		if namespaces.Items[i].Name == stage.Spec.Namespace {
+			return fmt.Errorf("namespace %s is already used in the cluster", stage.Spec.Namespace)
 		}
 	}
 
