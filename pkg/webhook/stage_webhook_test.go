@@ -2,6 +2,8 @@ package webhook
 
 import (
 	"context"
+	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/stage/chain/util"
+	corev1 "k8s.io/api/core/v1"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -20,6 +22,7 @@ func TestStageValidationWebhook_ValidateCreate(t *testing.T) {
 
 	scheme := runtime.NewScheme()
 	require.NoError(t, pipelineApi.AddToScheme(scheme))
+	require.NoError(t, corev1.AddToScheme(scheme))
 
 	tests := []struct {
 		name    string
@@ -110,6 +113,37 @@ func TestStageValidationWebhook_ValidateCreate(t *testing.T) {
 			wantErr: func(t require.TestingT, err error, i ...interface{}) {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), "namespace stage1-ns is already used in CDPipeline pipeline Stage stage2")
+			},
+		},
+		{
+			name: "namespace already used in the cluster",
+			obj: &pipelineApi.Stage{
+				ObjectMeta: metaV1.ObjectMeta{
+					Name:      "stage1",
+					Namespace: "default",
+				},
+				Spec: pipelineApi.StageSpec{
+					Name:        "stage1",
+					CdPipeline:  "pipeline",
+					ClusterName: pipelineApi.InCluster,
+					Namespace:   "ns1",
+				},
+			},
+			client: func(t *testing.T) client.Client {
+				ns1 := &corev1.Namespace{
+					ObjectMeta: metaV1.ObjectMeta{
+						Name: "ns1",
+						Labels: map[string]string{
+							util.TenantLabelName: "ns1",
+						},
+					},
+				}
+
+				return fake.NewClientBuilder().WithScheme(scheme).WithObjects(ns1).Build()
+			},
+			wantErr: func(t require.TestingT, err error, i ...interface{}) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "namespace ns1 is already used in the cluster")
 			},
 		},
 		{
