@@ -2,6 +2,18 @@
 ## [Unreleased]
 
 
+<a name="v2.23.0"></a>
+## [v2.23.0] - 2025-01-10
+### Features
+
+- Add Stage CR namespace validation for multitenancy ([#96](https://github.com/epam/edp-cd-pipeline-operator/issues/96))
+
+### Routine
+
+- Update Capsule CRD version ([#98](https://github.com/epam/edp-cd-pipeline-operator/issues/98))
+- Update current development version ([#94](https://github.com/epam/edp-cd-pipeline-operator/issues/94))
+
+
 <a name="v2.22.0"></a>
 ## [v2.22.0] - 2024-12-12
 ### Features
@@ -187,7 +199,8 @@ Helm parameter kioskEnabled was removed. Use instead --set global.tenancyEngine=
 <a name="v2.15.0"></a>
 ## [v2.15.0] - 2023-08-17
 
-[Unreleased]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.22.0...HEAD
+[Unreleased]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.23.0...HEAD
+[v2.23.0]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.22.0...v2.23.0
 [v2.22.0]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.21.0...v2.22.0
 [v2.21.0]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.20.0...v2.21.0
 [v2.20.0]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.19.0...v2.20.0
