@@ -42,6 +42,10 @@ spec:
               value: "{{ .Values.manageNamespace }}"
             - name: SECRET_MANAGER
               value: "{{ .Values.secretManager }}"
+            - name: OIDC_ADMIN_GROUP_NAME
+              value: "{{ .Values.global.adminGroupName }}"
+            - name: OIDC_DEVELOPER_GROUP_NAME
+              value: "{{ .Values.global.developerGroupName }}"
           ports:
             - containerPort: 9443
               name: webhook-server

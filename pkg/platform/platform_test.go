@@ -107,3 +107,61 @@ func TestManageNamespace(t *testing.T) {
 		})
 	}
 }
+
+func TestGetOIDCAdminGroupName(t *testing.T) {
+	tests := []struct {
+		name    string
+		prepare func(t *testing.T)
+		want    string
+	}{
+		{
+			name: "oidc admin group name is set",
+			prepare: func(t *testing.T) {
+				t.Setenv(OIDCAdminGroupName, "oidc-admin-group")
+			},
+			want: "oidc-admin-group",
+		},
+		{
+			name:    "oidc admin group name is not set",
+			prepare: func(t *testing.T) {},
+			want:    "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tt.prepare(t)
+
+			assert.Equal(t, tt.want, GetOIDCAdminGroupName())
+		})
+	}
+}
+
+func TestGetOIDCDeveloperGroupName(t *testing.T) {
+	tests := []struct {
+		name  string
+		setup func(t *testing.T)
+		want  string
+	}{
+		{
+			name: "oidc developer group name is set",
+			setup: func(t *testing.T) {
+				t.Setenv(OIDCDeveloperGroupName, "oidc-developer-group")
+			},
+			want: "oidc-developer-group",
+		},
+		{
+			name:  "oidc developer group name is not set",
+			setup: func(t *testing.T) {},
+			want:  "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tt.setup(t)
+
+			assert.Equal(t, tt.want, GetOIDCDeveloperGroupName())
+		})
+	}
+}
