@@ -16,6 +16,7 @@ spec:
   inputDockerStreams:
     - test-main
   name: mypipeline
+  description: mypipeline description
 
 ---
 apiVersion: v2.edp.epam.com/v1

@@ -4,14 +4,17 @@ import (
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
-
 // CDPipelineSpec defines the desired state of CDPipeline.
 type CDPipelineSpec struct {
 	// +kubebuilder:validation:MinLength=2
 
 	// Name of CD pipeline
 	Name string `json:"name"`
+
+	// Description of CD pipeline.
+	// +optional
+	// +kubebuilder:example="This is a CD pipeline for deploying applications"
+	Description string `json:"description,omitempty"`
 
 	// Type of workload to be deployed, e.g., container, custom.
 	// +kubebuilder:default="container"

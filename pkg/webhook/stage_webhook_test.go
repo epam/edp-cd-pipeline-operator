@@ -2,18 +2,18 @@ package webhook
 
 import (
 	"context"
-	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/stage/chain/util"
-	corev1 "k8s.io/api/core/v1"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	corev1 "k8s.io/api/core/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	pipelineApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
+	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/stage/chain/util"
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 )
 

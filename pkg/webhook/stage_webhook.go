@@ -4,15 +4,15 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/stage/chain/util"
-	corev1 "k8s.io/api/core/v1"
 
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	pipelineApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
+	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/stage/chain/util"
 )
 
 const listLimit = 1000
