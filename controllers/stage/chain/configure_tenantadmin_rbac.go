@@ -8,6 +8,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
+	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/platform"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/rbac"
 )
 
@@ -32,12 +33,12 @@ func (h ConfigureTenantAdminRbac) ServeRequest(ctx context.Context, stage *cdPip
 			{
 				APIGroup: rbacApi.GroupName,
 				Kind:     rbacApi.GroupKind,
-				Name:     fmt.Sprintf("%s-oidc-admins", stage.Namespace),
+				Name:     GetOIDCAdminGroupName(stage.Namespace),
 			},
 			{
 				APIGroup: rbacApi.GroupName,
 				Kind:     rbacApi.GroupKind,
-				Name:     fmt.Sprintf("%s-oidc-developers", stage.Namespace),
+				Name:     GetOIDCDeveloperGroupName(stage.Namespace),
 			},
 		},
 		rbacApi.RoleRef{
@@ -52,4 +53,22 @@ func (h ConfigureTenantAdminRbac) ServeRequest(ctx context.Context, stage *cdPip
 	logger.Info("RBAC for tenant admin has been configured successfully")
 
 	return nil
+}
+
+// GetOIDCAdminGroupName returns the name of the OIDC admin group or a default one if not set.
+func GetOIDCAdminGroupName(stageNamespace string) string {
+	if group := platform.GetOIDCAdminGroupName(); group != "" {
+		return group
+	}
+
+	return fmt.Sprintf("%s-oidc-admins", stageNamespace)
+}
+
+// GetOIDCDeveloperGroupName returns the name of the OIDC developer group or a default one if not set.
+func GetOIDCDeveloperGroupName(stageNamespace string) string {
+	if group := platform.GetOIDCDeveloperGroupName(); group != "" {
+		return group
+	}
+
+	return fmt.Sprintf("%s-oidc-developers", stageNamespace)
 }

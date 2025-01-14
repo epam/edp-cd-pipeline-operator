@@ -6,12 +6,14 @@ import (
 )
 
 const (
-	TypeEnv              = "PLATFORM_TYPE"
-	TenancyEngineEnv     = "TENANCY_ENGINE"
-	ManageNamespaceEnv   = "MANAGE_NAMESPACE"
-	Openshift            = "openshift"
-	Kubernetes           = "kubernetes"
-	TenancyEngineCapsule = "capsule"
+	TypeEnv                = "PLATFORM_TYPE"
+	TenancyEngineEnv       = "TENANCY_ENGINE"
+	ManageNamespaceEnv     = "MANAGE_NAMESPACE"
+	Openshift              = "openshift"
+	Kubernetes             = "kubernetes"
+	TenancyEngineCapsule   = "capsule"
+	OIDCAdminGroupName     = "OIDC_ADMIN_GROUP_NAME"
+	OIDCDeveloperGroupName = "OIDC_DEVELOPER_GROUP_NAME"
 )
 
 func GetPlatformTypeEnv() string {
@@ -52,4 +54,14 @@ func ManageNamespace() bool {
 	}
 
 	return b
+}
+
+// GetOIDCAdminGroupName returns the name of the OIDC admin group.
+func GetOIDCAdminGroupName() string {
+	return os.Getenv(OIDCAdminGroupName)
+}
+
+// GetOIDCDeveloperGroupName returns the name of the OIDC developer group.
+func GetOIDCDeveloperGroupName() string {
+	return os.Getenv(OIDCDeveloperGroupName)
 }

@@ -1,6 +1,10 @@
 global:
   # -- platform type that can be "kubernetes" or "openshift"
   platform: "kubernetes"
+  # -- specify the admin OIDC group name. If empty, default {{ .Release.Namespace }}-oidc-admins.
+  adminGroupName: ""
+  # -- specify the developer OIDC group name. If empty, default {{ .Release.Namespace }}-oidc-developers.
+  developerGroupName: ""
 
 # -- component name
 name: cd-pipeline-operator
