@@ -122,6 +122,13 @@ CDPipelineSpec defines the desired state of CDPipeline.
           A list of applications which will promote after successful release.<br/>
         </td>
         <td>false</td>
+      </tr><tr>
+        <td><b>description</b></td>
+        <td>string</td>
+        <td>
+          Description of CD pipeline.<br/>
+        </td>
+        <td>false</td>
       </tr></tbody>
 </table>
 

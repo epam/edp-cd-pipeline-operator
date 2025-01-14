@@ -66,6 +66,10 @@ spec:
                 default: container
                 description: Type of workload to be deployed, e.g., container, custom.
                 type: string
+              description:
+                description: Description of CD pipeline.
+                example: This is a CD pipeline for deploying applications
+                type: string
               inputDockerStreams:
                 description: A list of docker streams
                 items:
