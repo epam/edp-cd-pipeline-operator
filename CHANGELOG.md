@@ -2,6 +2,18 @@
 ## [Unreleased]
 
 
+<a name="v2.24.0"></a>
+## [v2.24.0] - 2025-01-24
+### Features
+
+- Enable flexible naming for default OIDC groups ([#106](https://github.com/epam/edp-cd-pipeline-operator/issues/106))
+- Add Description property to CDPipeline ([#104](https://github.com/epam/edp-cd-pipeline-operator/issues/104))
+
+### Routine
+
+- Update current development version ([#102](https://github.com/epam/edp-cd-pipeline-operator/issues/102))
+
+
 <a name="v2.23.0"></a>
 ## [v2.23.0] - 2025-01-10
 ### Features
@@ -199,7 +211,8 @@ Helm parameter kioskEnabled was removed. Use instead --set global.tenancyEngine=
 <a name="v2.15.0"></a>
 ## [v2.15.0] - 2023-08-17
 
-[Unreleased]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.23.0...HEAD
+[Unreleased]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.24.0...HEAD
+[v2.24.0]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.23.0...v2.24.0
 [v2.23.0]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.22.0...v2.23.0
 [v2.22.0]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.21.0...v2.22.0
 [v2.21.0]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.20.0...v2.21.0
