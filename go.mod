@@ -17,6 +17,7 @@ require (
 	k8s.io/client-go v0.26.11
 	k8s.io/utils v0.0.0-20230313181309-38a27ef9d749
 	knative.dev/pkg v0.0.0-20231011193800-bd99f2f98be7
+	sigs.k8s.io/aws-iam-authenticator v0.6.19
 	sigs.k8s.io/controller-runtime v0.14.7
 	sigs.k8s.io/yaml v1.3.0
 )
@@ -81,6 +82,7 @@ require (
 	github.com/ProtonMail/go-crypto v1.1.3 // indirect
 	github.com/argoproj/gitops-engine v0.7.1-0.20240715141017-b6ec82aedce5 // indirect
 	github.com/argoproj/pkg v0.13.7-0.20230626144333-d56162821bd1 // indirect
+	github.com/aws/aws-sdk-go v1.50.8 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/blang/semver/v4 v4.0.0 // indirect
 	github.com/blendle/zapdriver v1.3.1 // indirect
@@ -112,6 +114,7 @@ require (
 	github.com/go-openapi/swag v0.22.3 // indirect
 	github.com/go-redis/cache/v9 v9.0.0 // indirect
 	github.com/gobwas/glob v0.2.3 // indirect
+	github.com/gofrs/flock v0.8.1 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang-jwt/jwt/v4 v4.5.1 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
@@ -128,6 +131,7 @@ require (
 	github.com/imdario/mergo v0.3.16 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect
+	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/jonboulle/clockwork v0.2.2 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
@@ -163,6 +167,7 @@ require (
 	github.com/skeema/knownhosts v1.3.0 // indirect
 	github.com/spf13/cobra v1.7.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
+	github.com/stretchr/objx v0.5.2 // indirect
 	github.com/vmihailenco/go-tinylfu v0.2.2 // indirect
 	github.com/vmihailenco/msgpack/v5 v5.3.4 // indirect
 	github.com/vmihailenco/tagparser/v2 v2.0.0 // indirect

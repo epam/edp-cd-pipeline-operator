@@ -3,6 +3,7 @@ package clustersecret
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/require"
@@ -13,9 +14,14 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+
+	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/argocd"
+	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/aws"
+	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/aws/mocks"
 )
 
-var clusterConf = []byte(`{
+var (
+	clusterConf = []byte(`{
 	  "apiVersion": "v1",
 	  "kind": "Config",
 	  "current-context": "default-context",
@@ -48,17 +54,33 @@ var clusterConf = []byte(`{
 	  ]
 	}`)
 
+	irsa = []byte(`{
+      "awsAuthConfig": {
+        "clusterName": "my-eks-cluster-name",
+        "roleARN": "arn:aws:iam::<AWS_ACCOUNT_ID>:role/<IAM_ROLE_NAME>"
+      },
+      "tlsClientConfig": {
+        "insecure": false,
+        "caData": "Y2EgZGF0YQ=="
+      }        
+    }`)
+)
+
 func TestReconcileClusterSecret_Reconcile(t *testing.T) {
 	t.Parallel()
 
+	mockTokenGen := func(t *testing.T) aws.AIMAuthTokenGenerator {
+		return mocks.NewMockAIMAuthTokenGenerator(t)
+	}
 	scheme := runtime.NewScheme()
 	require.NoError(t, corev1.AddToScheme(scheme))
 
 	tests := []struct {
-		name    string
-		client  func(t *testing.T) client.Client
-		wantErr require.ErrorAssertionFunc
-		want    func(t *testing.T, cl client.Client)
+		name     string
+		client   func(t *testing.T) client.Client
+		tokenGen func(t *testing.T) aws.AIMAuthTokenGenerator
+		wantErr  require.ErrorAssertionFunc
+		want     func(t *testing.T, cl client.Client)
 	}{
 		{
 			name: "should create argocd cluster secret",
@@ -67,6 +89,9 @@ func TestReconcileClusterSecret_Reconcile(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test",
 						Namespace: "default",
+						Labels: map[string]string{
+							integrationSecretTypeLabel: kubeconfClusterIntegrationSecret,
+						},
 					},
 					Data: map[string][]byte{
 						"config": clusterConf,
@@ -75,7 +100,8 @@ func TestReconcileClusterSecret_Reconcile(t *testing.T) {
 
 				return fake.NewClientBuilder().WithScheme(scheme).WithObjects(s).Build()
 			},
-			wantErr: require.NoError,
+			tokenGen: mockTokenGen,
+			wantErr:  require.NoError,
 			want: func(t *testing.T, cl client.Client) {
 				secret := &corev1.Secret{}
 				require.NoError(t, cl.Get(context.Background(), client.ObjectKey{
@@ -86,7 +112,7 @@ func TestReconcileClusterSecret_Reconcile(t *testing.T) {
 				require.Contains(t, secret.Data, "name")
 				require.Contains(t, secret.Data, "server")
 				require.Contains(t, secret.Data, "config")
-				require.Contains(t, secret.GetLabels(), argoCDClusterLabel)
+				require.Contains(t, secret.GetLabels(), argocd.ClusterLabel)
 			},
 		},
 		{
@@ -96,6 +122,9 @@ func TestReconcileClusterSecret_Reconcile(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test",
 						Namespace: "default",
+						Labels: map[string]string{
+							integrationSecretTypeLabel: kubeconfClusterIntegrationSecret,
+						},
 					},
 					Data: map[string][]byte{
 						"config": clusterConf,
@@ -111,7 +140,8 @@ func TestReconcileClusterSecret_Reconcile(t *testing.T) {
 
 				return fake.NewClientBuilder().WithScheme(scheme).WithObjects(s, argoSecret).Build()
 			},
-			wantErr: require.NoError,
+			tokenGen: mockTokenGen,
+			wantErr:  require.NoError,
 			want: func(t *testing.T, cl client.Client) {
 				secret := &corev1.Secret{}
 				require.NoError(t, cl.Get(context.Background(), client.ObjectKey{
@@ -122,7 +152,7 @@ func TestReconcileClusterSecret_Reconcile(t *testing.T) {
 				require.Contains(t, secret.Data, "name")
 				require.Contains(t, secret.Data, "server")
 				require.Contains(t, secret.Data, "config")
-				require.Contains(t, secret.GetLabels(), argoCDClusterLabel)
+				require.Contains(t, secret.GetLabels(), argocd.ClusterLabel)
 			},
 		},
 		{
@@ -132,6 +162,9 @@ func TestReconcileClusterSecret_Reconcile(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test",
 						Namespace: "default",
+						Labels: map[string]string{
+							integrationSecretTypeLabel: kubeconfClusterIntegrationSecret,
+						},
 					},
 					Data: map[string][]byte{
 						"config": []byte(`not json`),
@@ -140,16 +173,92 @@ func TestReconcileClusterSecret_Reconcile(t *testing.T) {
 
 				return fake.NewClientBuilder().WithScheme(scheme).WithObjects(s).Build()
 			},
-			wantErr: require.Error,
-			want:    func(t *testing.T, cl client.Client) {},
+			tokenGen: mockTokenGen,
+			wantErr:  require.Error,
+			want:     func(t *testing.T, cl client.Client) {},
+		},
+		{
+			name: "irsa cluster secret",
+			client: func(t *testing.T) client.Client {
+				s := &corev1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test",
+						Namespace: "default",
+						Labels: map[string]string{
+							integrationSecretTypeLabel: irsaClusterIntegrationSecret,
+							argocd.ClusterLabel:        argocd.ClusterLabelVal,
+						},
+					},
+					Data: map[string][]byte{
+						"server": []byte("https://test-cluster"),
+						"config": irsa,
+					},
+				}
+
+				return fake.NewClientBuilder().WithScheme(scheme).WithObjects(s).Build()
+			},
+			tokenGen: func(t *testing.T) aws.AIMAuthTokenGenerator {
+				m := mocks.NewMockAIMAuthTokenGenerator(t)
+
+				m.On("GetWithRole", "my-eks-cluster-name", "arn:aws:iam::<AWS_ACCOUNT_ID>:role/<IAM_ROLE_NAME>").
+					Return(aws.Token{
+						Token:      "some-token",
+						Expiration: time.Now().Add(15 * time.Minute),
+					}, nil)
+
+				return m
+			},
+			wantErr: require.NoError,
+			want: func(t *testing.T, cl client.Client) {
+				secret := &corev1.Secret{}
+				require.NoError(t, cl.Get(context.Background(), client.ObjectKey{
+					Name:      "test-cluster",
+					Namespace: "default",
+				}, secret))
+
+				require.Contains(t, secret.Data, "config")
+				require.Contains(t, secret.GetLabels(), integrationSecretTypeLabel)
+				require.Equal(t, kubeconfClusterIntegrationSecret, secret.GetLabels()[integrationSecretTypeLabel])
+				require.Equal(t, "false", secret.GetLabels()[generateArgoCDSecretLabel])
+			},
+		},
+		{
+			name: "invalid irsa cluster data",
+			client: func(t *testing.T) client.Client {
+				s := &corev1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test",
+						Namespace: "default",
+						Labels: map[string]string{
+							integrationSecretTypeLabel: irsaClusterIntegrationSecret,
+							argocd.ClusterLabel:        argocd.ClusterLabelVal,
+						},
+					},
+					Data: map[string][]byte{
+						"server": []byte("https://test-cluster"),
+						"config": []byte("not json"),
+					},
+				}
+
+				return fake.NewClientBuilder().WithScheme(scheme).WithObjects(s).Build()
+			},
+			tokenGen: func(t *testing.T) aws.AIMAuthTokenGenerator {
+				return mocks.NewMockAIMAuthTokenGenerator(t)
+			},
+			wantErr: func(t require.TestingT, err error, i ...interface{}) {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "failed to generate kubeconfig")
+			},
+			want: func(t *testing.T, cl client.Client) {},
 		},
 		{
 			name: "cluster secret not found",
 			client: func(t *testing.T) client.Client {
 				return fake.NewClientBuilder().WithScheme(scheme).Build()
 			},
-			wantErr: require.NoError,
-			want:    func(t *testing.T, cl client.Client) {},
+			tokenGen: mockTokenGen,
+			wantErr:  require.NoError,
+			want:     func(t *testing.T, cl client.Client) {},
 		},
 	}
 
@@ -158,7 +267,7 @@ func TestReconcileClusterSecret_Reconcile(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			r := NewReconcileClusterSecret(tt.client(t))
+			r := NewReconcileClusterSecret(tt.client(t), tt.tokenGen(t))
 			_, err := r.Reconcile(
 				ctrl.LoggerInto(context.Background(), logr.Discard()),
 				reconcile.Request{
@@ -173,7 +282,7 @@ func TestReconcileClusterSecret_Reconcile(t *testing.T) {
 	}
 }
 
-func Test_hasClusterSecretLabelLabel(t *testing.T) {
+func Test_needToReconcile(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
@@ -182,11 +291,34 @@ func Test_hasClusterSecretLabelLabel(t *testing.T) {
 		want   bool
 	}{
 		{
-			name: "should return true",
+			name: "kube conf to argoCD secret",
 			object: &corev1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{
-						integrationSecretTypeLabel: integrationSecretTypeLabelVal,
+						integrationSecretTypeLabel: kubeconfClusterIntegrationSecret,
+					},
+				},
+			},
+			want: true,
+		},
+		{
+			name: "kube conf to argoCD secret with skip label",
+			object: &corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{
+						integrationSecretTypeLabel: kubeconfClusterIntegrationSecret,
+						generateArgoCDSecretLabel:  "false",
+					},
+				},
+			},
+			want: false,
+		},
+		{
+			name: "argoCD IRSA secret to kube conf",
+			object: &corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{
+						integrationSecretTypeLabel: irsaClusterIntegrationSecret,
 					},
 				},
 			},
@@ -204,7 +336,7 @@ func Test_hasClusterSecretLabelLabel(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			got := hasClusterSecretLabelLabel(tt.object)
+			got := needToReconcile(tt.object)
 			require.Equal(t, tt.want, got)
 		})
 	}

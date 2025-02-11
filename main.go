@@ -24,6 +24,7 @@ import (
 	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/clustersecret"
 	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/stage"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/argocd"
+	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/aws"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/objectmodifier"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/cluster"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/webhook"
@@ -144,7 +145,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = clustersecret.NewReconcileClusterSecret(cl).
+	if err = clustersecret.NewReconcileClusterSecret(cl, newAwsTokenGenerator()).
 		SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "cluster-secret")
 		os.Exit(1)
@@ -173,4 +174,14 @@ func main() {
 		setupLog.Error(err, "problem running manager")
 		os.Exit(1)
 	}
+}
+
+func newAwsTokenGenerator() aws.AIMAuthTokenGenerator {
+	g, err := aws.NewTokenGenerator()
+	if err != nil {
+		setupLog.Error(err, "unable to create aws token generator")
+		os.Exit(1)
+	}
+
+	return g
 }

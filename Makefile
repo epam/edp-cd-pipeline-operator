@@ -200,3 +200,11 @@ start-kind:	## Start kind cluster
 ifeq (true,$(START_KIND_CLUSTER))
 	kind create cluster --name $(KIND_CLUSTER_NAME) --config $(KIND_CONFIG)
 endif
+
+mocks: mockery
+	$(MOCKERY)
+
+MOCKERY = $(LOCALBIN)/mockery
+.PHONY: mockery
+mockery: ## Download mockery locally if necessary.
+	$(call go-get-tool,$(MOCKERY),github.com/vektra/mockery/v2,v2.46.3)
