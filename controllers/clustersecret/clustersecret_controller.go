@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	corev1 "k8s.io/api/core/v1"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
@@ -16,36 +17,48 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
+	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/argocd"
+	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/aws"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/multiclusterclient"
 )
 
 const (
 	// nolint:gosec // Cluster secret label.
-	integrationSecretTypeLabel    = "app.edp.epam.com/secret-type"
-	integrationSecretTypeLabelVal = "cluster"
+	integrationSecretTypeLabel = "app.edp.epam.com/secret-type"
+	// nolint:gosec // Cluster secret label.
+	generateArgoCDSecretLabel        = "app.edp.epam.com/generate-argocd"
+	kubeconfClusterIntegrationSecret = "cluster"
+	irsaClusterIntegrationSecret     = "cluster-irsa"
+
+	// Generated kubeconfig secret will be updated after 10 minutes.
+	// Generated token is valid for 15 minutes.
+	// So we need to update kubeconfig secret before token expiration and add some time for processing.
+	// https://aws.github.io/aws-eks-best-practices/security/docs/iam/#controlling-access-to-eks-clusters
+	irsaSecretProcessAfter = time.Minute * 10
 )
 
 type ReconcileClusterSecret struct {
-	client client.Client
+	client                client.Client
+	aimAuthTokenGenerator aws.AIMAuthTokenGenerator
 }
 
-func NewReconcileClusterSecret(k8sClient client.Client) *ReconcileClusterSecret {
-	return &ReconcileClusterSecret{client: k8sClient}
+func NewReconcileClusterSecret(k8sClient client.Client, irsaToneGenerator aws.AIMAuthTokenGenerator) *ReconcileClusterSecret {
+	return &ReconcileClusterSecret{client: k8sClient, aimAuthTokenGenerator: irsaToneGenerator}
 }
 
 func (r *ReconcileClusterSecret) SetupWithManager(mgr ctrl.Manager) error {
 	p := predicate.Funcs{
 		CreateFunc: func(event event.CreateEvent) bool {
-			return hasClusterSecretLabelLabel(event.Object)
+			return needToReconcile(event.Object)
 		},
 		DeleteFunc: func(deleteEvent event.DeleteEvent) bool {
 			return false
 		},
 		UpdateFunc: func(updateEvent event.UpdateEvent) bool {
-			return hasClusterSecretLabelLabel(updateEvent.ObjectNew)
+			return needToReconcile(updateEvent.ObjectNew)
 		},
 		GenericFunc: func(genericEvent event.GenericEvent) bool {
-			return hasClusterSecretLabelLabel(genericEvent.Object)
+			return needToReconcile(genericEvent.Object)
 		},
 	}
 
@@ -61,8 +74,12 @@ func (r *ReconcileClusterSecret) SetupWithManager(mgr ctrl.Manager) error {
 
 //+kubebuilder:rbac:groups="",namespace=placeholder,resources=secrets,verbs=get;list;watch;update;patch;create
 
-// Reconcile process secrets with app.edp.epam.com/secret-type: cluster label.
+// Reconcile process secrets with labels:
+// - app.edp.epam.com/secret-type=cluster - secret contains kubeconfig and should be converted to ArgoCD cluster secret.
+// - app.edp.epam.com/secret-type=cluster-irsa - secret contains AWS IRSA configuration and should be converted to kubeconfig.
 func (r *ReconcileClusterSecret) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
+	l := ctrl.LoggerFrom(ctx)
+
 	secret := &corev1.Secret{}
 	if err := r.client.Get(ctx, request.NamespacedName, secret); err != nil {
 		if k8sErrors.IsNotFound(err) {
@@ -72,13 +89,35 @@ func (r *ReconcileClusterSecret) Reconcile(ctx context.Context, request reconcil
 		return reconcile.Result{}, fmt.Errorf("failed to get Secret: %w", err)
 	}
 
-	if err := r.createArgoCDClusterSecret(ctx, secret); err != nil {
-		return reconcile.Result{}, err
+	switch secret.GetLabels()[integrationSecretTypeLabel] {
+	case kubeconfClusterIntegrationSecret:
+		l.Info("Start processing kubeconfig cluster secret")
+
+		if err := r.createArgoCDClusterSecret(ctx, secret); err != nil {
+			return reconcile.Result{}, err
+		}
+
+		l.Info("Kubeconfig cluster secret has been processed")
+
+		return reconcile.Result{}, nil
+	case irsaClusterIntegrationSecret:
+		l.Info("Start processing IRSA cluster secret")
+
+		if err := r.irsaToKubeConfigSecret(ctx, secret); err != nil {
+			return reconcile.Result{}, err
+		}
+
+		l.Info("IRSA cluster secret has been processed")
+
+		return reconcile.Result{
+			RequeueAfter: irsaSecretProcessAfter,
+		}, nil
 	}
 
 	return reconcile.Result{}, nil
 }
 
+// createArgoCDClusterSecret creates ArgoCD cluster secret from secret that contains kubeconfig.
 func (r *ReconcileClusterSecret) createArgoCDClusterSecret(ctx context.Context, secret *corev1.Secret) error {
 	log := ctrl.LoggerFrom(ctx)
 
@@ -99,7 +138,7 @@ func (r *ReconcileClusterSecret) createArgoCDClusterSecret(ctx context.Context, 
 	var res controllerutil.OperationResult
 
 	if res, err = controllerutil.CreateOrUpdate(ctx, r.client, argoClusterSecret, func() error {
-		argoClusterConf := &ClusterConfig{}
+		argoClusterConf := &argocd.ClusterConfig{}
 		argoClusterConf.BearerToken = restConf.BearerToken
 		argoClusterConf.CAData = restConf.TLSClientConfig.CAData
 		argoClusterConf.Insecure = restConf.TLSClientConfig.Insecure
@@ -110,12 +149,16 @@ func (r *ReconcileClusterSecret) createArgoCDClusterSecret(ctx context.Context, 
 			return fmt.Errorf("failed to marshal cluster config: %w", err)
 		}
 
-		addClusterLabel(argoClusterSecret)
+		argocd.AddClusterLabel(argoClusterSecret)
 
 		argoClusterSecret.Data = map[string][]byte{
 			"name":   []byte(secret.Name),
 			"server": []byte(restConf.Host),
 			"config": rawConf,
+		}
+
+		if metav1.GetControllerOfNoCopy(argoClusterSecret) != nil {
+			return nil
 		}
 
 		if err = controllerutil.SetControllerReference(secret, argoClusterSecret, r.client.Scheme()); err != nil {
@@ -132,17 +175,60 @@ func (r *ReconcileClusterSecret) createArgoCDClusterSecret(ctx context.Context, 
 	return nil
 }
 
-func hasClusterSecretLabelLabel(object client.Object) bool {
-	return object.GetLabels()[integrationSecretTypeLabel] == integrationSecretTypeLabelVal
-}
+// irsaToKubeConfigSecret creates secret with kube config from ArgoCD cluster secret.
+// Kube config is generated from AWS IRSA configuration.
+// https://argo-cd.readthedocs.io/en/stable/operator-manual/declarative-setup/#eks
+// The secret will be updated after 10 minutes as the token is valid only short period of time.
+func (r *ReconcileClusterSecret) irsaToKubeConfigSecret(ctx context.Context, secret *corev1.Secret) error {
+	log := ctrl.LoggerFrom(ctx)
 
-func addClusterLabel(argoClusterSecret *corev1.Secret) {
-	labels := argoClusterSecret.GetLabels()
-	if labels == nil {
-		labels = make(map[string]string, 1)
+	log.Info("Start converting IRSA to kubeconfig format")
+
+	clusterSecret := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      fmt.Sprintf("%s-cluster", secret.Name),
+			Namespace: secret.Namespace,
+		},
 	}
 
-	labels[argoCDClusterLabel] = argoCDClusterLabelVal
+	res, err := controllerutil.CreateOrUpdate(ctx, r.client, clusterSecret, func() error {
+		kubeConf, err := argocd.ArgoIRSAClusterSecretToKubeconfig(secret, r.aimAuthTokenGenerator)
+		if err != nil {
+			return fmt.Errorf("failed to generate kubeconfig: %w", err)
+		}
 
-	argoClusterSecret.SetLabels(labels)
+		clusterSecret.Data = map[string][]byte{
+			"config": kubeConf,
+		}
+		clusterSecret.Labels = map[string]string{
+			integrationSecretTypeLabel: kubeconfClusterIntegrationSecret,
+			generateArgoCDSecretLabel:  "false",
+		}
+
+		if metav1.GetControllerOfNoCopy(clusterSecret) != nil {
+			return nil
+		}
+
+		if err = controllerutil.SetControllerReference(secret, clusterSecret, r.client.Scheme()); err != nil {
+			return fmt.Errorf("failed to set controller reference: %w", err)
+		}
+
+		return nil
+	})
+	if err != nil {
+		return fmt.Errorf("failed to create/update or update cluster secret: %w", err)
+	}
+
+	log.Info(fmt.Sprintf("Cluster secret has been %s", res))
+
+	return nil
+}
+
+func needToReconcile(object client.Object) bool {
+	isKubeConfToArgoCDSecret := object.GetLabels()[integrationSecretTypeLabel] == kubeconfClusterIntegrationSecret &&
+		object.GetLabels()[generateArgoCDSecretLabel] != "false"
+
+	isArgoCDIRSAToKubeConf := object.GetLabels()[integrationSecretTypeLabel] == irsaClusterIntegrationSecret
+
+	return isKubeConfToArgoCDSecret || isArgoCDIRSAToKubeConf
 }
