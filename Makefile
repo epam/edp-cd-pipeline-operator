@@ -81,7 +81,8 @@ validate-docs: api-docs helm-docs  ## Validate helm and api docs
 	@git diff -s --exit-code docs/api.md || (echo " Run 'make api-docs' to address the issue." && git diff && exit 1)
 
 # Run tests
-test: fmt vet
+test: fmt vet envtest
+	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path)" \
 	go test ./... -coverprofile=coverage.out `go list ./...`
 
 ## Run e2e tests. Requires kind with running cluster and kuttl tool.
@@ -208,3 +209,9 @@ MOCKERY = $(LOCALBIN)/mockery
 .PHONY: mockery
 mockery: ## Download mockery locally if necessary.
 	$(call go-get-tool,$(MOCKERY),github.com/vektra/mockery/v2,v2.46.3)
+
+ENVTEST=$(LOCALBIN)/setup-envtest
+.PHONY: envtest
+envtest: $(ENVTEST) ## Download envtest-setup locally if necessary.
+$(ENVTEST): $(LOCALBIN)
+	$(call go-get-tool,$(ENVTEST),sigs.k8s.io/controller-runtime/tools/setup-envtest,release-0.16)

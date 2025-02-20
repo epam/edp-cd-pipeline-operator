@@ -10,6 +10,26 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
+      path: /validate-v2-edp-epam-com-v1-cdpipeline
+  failurePolicy: Fail
+  name: cdpipeline.epam.com
+  rules:
+  - apiGroups:
+    - v2.edp.epam.com
+    apiVersions:
+    - v1
+    operations:
+    - UPDATE
+    - DELETE
+    resources:
+    - cdpipelines
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
       path: /validate-v2-edp-epam-com-v1-stage
   failurePolicy: Fail
   name: stage.epam.com
@@ -21,6 +41,7 @@ webhooks:
     operations:
     - CREATE
     - UPDATE
+    - DELETE
     resources:
     - stages
   sideEffects: None

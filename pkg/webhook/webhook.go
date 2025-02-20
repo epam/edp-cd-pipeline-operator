@@ -15,9 +15,12 @@ func RegisterValidationWebHook(ctx context.Context, mgr ctrl.Manager, namespace 
 		return fmt.Errorf("failed to populate certificates: %w", err)
 	}
 
-	stageWebHook := NewStageValidationWebhook(mgr.GetClient())
-	if err := stageWebHook.SetupWebhookWithManager(mgr); err != nil {
-		return fmt.Errorf("failed to create webhook: %w", err)
+	if err := NewStageValidationWebhook(mgr.GetClient()).SetupWebhookWithManager(mgr); err != nil {
+		return fmt.Errorf("failed to create Stage webhook: %w", err)
+	}
+
+	if err := NewCDPipelineValidationWebhook(mgr.GetClient()).SetupWebhookWithManager(mgr); err != nil {
+		return fmt.Errorf("failed to create CDpipeline webhook: %w", err)
 	}
 
 	return nil

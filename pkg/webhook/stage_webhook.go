@@ -17,7 +17,7 @@ import (
 
 const listLimit = 1000
 
-//+kubebuilder:webhook:path=/validate-v2-edp-epam-com-v1-stage,mutating=false,failurePolicy=fail,sideEffects=None,groups=v2.edp.epam.com,resources=stages,verbs=create;update,versions=v1,name=stage.epam.com,admissionReviewVersions=v1
+//+kubebuilder:webhook:path=/validate-v2-edp-epam-com-v1-stage,mutating=false,failurePolicy=fail,sideEffects=None,groups=v2.edp.epam.com,resources=stages,verbs=create;update;delete,versions=v1,name=stage.epam.com,admissionReviewVersions=v1
 //+kubebuilder:rbac:groups="",resources=namespaces,verbs=get;list;watch
 
 // StageValidationWebhook is a webhook for validating Stage CRD.
@@ -60,14 +60,13 @@ func (r *StageValidationWebhook) ValidateCreate(ctx context.Context, obj runtime
 }
 
 // ValidateUpdate is a webhook for validating the updating of the Stage CR.
-func (*StageValidationWebhook) ValidateUpdate(_ context.Context, _, _ runtime.Object) error {
-	return nil
+func (*StageValidationWebhook) ValidateUpdate(_ context.Context, oldObj, newObj runtime.Object) error {
+	return checkResourceProtectionFromModificationOnUpdate(oldObj, newObj)
 }
 
 // ValidateDelete is a webhook for validating the deleting of the Stage CR.
-// It is skipped for now. Add kubebuilder:webhook:verbs=delete to enable it.
-func (*StageValidationWebhook) ValidateDelete(_ context.Context, _ runtime.Object) error {
-	return nil
+func (*StageValidationWebhook) ValidateDelete(_ context.Context, obj runtime.Object) error {
+	return checkResourceProtectionFromModificationOnDelete(obj)
 }
 
 func (r *StageValidationWebhook) uniqueTargetNamespaces(ctx context.Context, stage *pipelineApi.Stage) error {
