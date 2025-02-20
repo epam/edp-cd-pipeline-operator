@@ -7,6 +7,33 @@ metadata:
   name: edp-cd-pipeline-operator-validating-webhook-configuration-{{ .Release.Namespace }}
 webhooks:
 - admissionReviewVersions:
+    - v1
+  clientConfig:
+    service:
+      name: edp-cd-pipeline-operator-webhook-service
+      namespace: {{ .Release.Namespace }}
+      path: /validate-v2-edp-epam-com-v1-cdpipeline
+  failurePolicy: Fail
+  name: cdpipeline.epam.com
+  namespaceSelector:
+    matchExpressions:
+      - key: kubernetes.io/metadata.name
+        operator: In
+        values:
+          - {{ .Release.Namespace }}
+  rules:
+    - apiGroups:
+      - v2.edp.epam.com
+      apiVersions:
+        - v1
+      operations:
+        - UPDATE
+        - DELETE
+      resources:
+        - cdpipelines
+      scope: Namespaced
+  sideEffects: None
+- admissionReviewVersions:
   - v1
   clientConfig:
     service:
@@ -29,6 +56,7 @@ webhooks:
     operations:
     - CREATE
     - UPDATE
+    - DELETE
     resources:
     - stages
     scope: Namespaced
