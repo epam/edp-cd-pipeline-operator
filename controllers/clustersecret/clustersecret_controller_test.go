@@ -76,21 +76,23 @@ func TestReconcileClusterSecret_Reconcile(t *testing.T) {
 	require.NoError(t, corev1.AddToScheme(scheme))
 
 	tests := []struct {
-		name     string
-		client   func(t *testing.T) client.Client
-		tokenGen func(t *testing.T) aws.AIMAuthTokenGenerator
-		wantErr  require.ErrorAssertionFunc
-		want     func(t *testing.T, cl client.Client)
+		name              string
+		secretNameRequest string
+		client            func(t *testing.T) client.Client
+		tokenGen          func(t *testing.T) aws.AIMAuthTokenGenerator
+		wantErr           require.ErrorAssertionFunc
+		want              func(t *testing.T, cl client.Client)
 	}{
 		{
-			name: "should create argocd cluster secret",
+			name:              "should create argocd cluster secret",
+			secretNameRequest: "test",
 			client: func(t *testing.T) client.Client {
 				s := &corev1.Secret{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test",
 						Namespace: "default",
 						Labels: map[string]string{
-							integrationSecretTypeLabel: kubeconfClusterIntegrationSecret,
+							integrationSecretTypeLabel: integrationSecretTypeCluster,
 						},
 					},
 					Data: map[string][]byte{
@@ -116,14 +118,15 @@ func TestReconcileClusterSecret_Reconcile(t *testing.T) {
 			},
 		},
 		{
-			name: "should update argocd cluster secret",
+			name:              "should update argocd cluster secret",
+			secretNameRequest: "test",
 			client: func(t *testing.T) client.Client {
 				s := &corev1.Secret{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test",
 						Namespace: "default",
 						Labels: map[string]string{
-							integrationSecretTypeLabel: kubeconfClusterIntegrationSecret,
+							integrationSecretTypeLabel: integrationSecretTypeCluster,
 						},
 					},
 					Data: map[string][]byte{
@@ -156,14 +159,16 @@ func TestReconcileClusterSecret_Reconcile(t *testing.T) {
 			},
 		},
 		{
-			name: "invalid cluster secret config",
+			name:              "invalid cluster secret config",
+			secretNameRequest: "test",
 			client: func(t *testing.T) client.Client {
 				s := &corev1.Secret{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test",
 						Namespace: "default",
 						Labels: map[string]string{
-							integrationSecretTypeLabel: kubeconfClusterIntegrationSecret,
+							integrationSecretTypeLabel: integrationSecretTypeCluster,
+							clusterTypeLabel:           clusterTypeBearer,
 						},
 					},
 					Data: map[string][]byte{
@@ -178,14 +183,16 @@ func TestReconcileClusterSecret_Reconcile(t *testing.T) {
 			want:     func(t *testing.T, cl client.Client) {},
 		},
 		{
-			name: "irsa cluster secret",
+			name:              "irsa cluster secret",
+			secretNameRequest: "test-cluster",
 			client: func(t *testing.T) client.Client {
 				s := &corev1.Secret{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      "test",
+						Name:      "test-cluster",
 						Namespace: "default",
 						Labels: map[string]string{
-							integrationSecretTypeLabel: irsaClusterIntegrationSecret,
+							integrationSecretTypeLabel: integrationSecretTypeCluster,
+							clusterTypeLabel:           clusterTypeIRSA,
 							argocd.ClusterLabel:        argocd.ClusterLabelVal,
 						},
 					},
@@ -212,25 +219,25 @@ func TestReconcileClusterSecret_Reconcile(t *testing.T) {
 			want: func(t *testing.T, cl client.Client) {
 				secret := &corev1.Secret{}
 				require.NoError(t, cl.Get(context.Background(), client.ObjectKey{
-					Name:      "test-cluster",
+					Name:      "test",
 					Namespace: "default",
 				}, secret))
 
 				require.Contains(t, secret.Data, "config")
-				require.Contains(t, secret.GetLabels(), integrationSecretTypeLabel)
-				require.Equal(t, kubeconfClusterIntegrationSecret, secret.GetLabels()[integrationSecretTypeLabel])
-				require.Equal(t, "false", secret.GetLabels()[generateArgoCDSecretLabel])
+				require.Empty(t, secret.GetLabels())
 			},
 		},
 		{
-			name: "invalid irsa cluster data",
+			name:              "invalid irsa cluster data",
+			secretNameRequest: "test-cluster",
 			client: func(t *testing.T) client.Client {
 				s := &corev1.Secret{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      "test",
+						Name:      "test-cluster",
 						Namespace: "default",
 						Labels: map[string]string{
-							integrationSecretTypeLabel: irsaClusterIntegrationSecret,
+							integrationSecretTypeLabel: integrationSecretTypeCluster,
+							clusterTypeLabel:           clusterTypeIRSA,
 							argocd.ClusterLabel:        argocd.ClusterLabelVal,
 						},
 					},
@@ -272,7 +279,7 @@ func TestReconcileClusterSecret_Reconcile(t *testing.T) {
 				ctrl.LoggerInto(context.Background(), logr.Discard()),
 				reconcile.Request{
 					NamespacedName: client.ObjectKey{
-						Name:      "test",
+						Name:      tt.secretNameRequest,
 						Namespace: "default",
 					},
 				})
@@ -291,51 +298,49 @@ func Test_needToReconcile(t *testing.T) {
 		want   bool
 	}{
 		{
-			name: "kube conf to argoCD secret",
+			name: "should reconcile when label is present",
 			object: &corev1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{
-						integrationSecretTypeLabel: kubeconfClusterIntegrationSecret,
+						integrationSecretTypeLabel: integrationSecretTypeCluster,
 					},
 				},
 			},
 			want: true,
 		},
 		{
-			name: "kube conf to argoCD secret with skip label",
+			name: "should not reconcile when label is but not cluster",
 			object: &corev1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{
-						integrationSecretTypeLabel: kubeconfClusterIntegrationSecret,
-						generateArgoCDSecretLabel:  "false",
+						integrationSecretTypeLabel: "some-other-type",
 					},
 				},
 			},
 			want: false,
 		},
 		{
-			name: "argoCD IRSA secret to kube conf",
+			name: "should not reconcile when label is absent",
 			object: &corev1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: map[string]string{
-						integrationSecretTypeLabel: irsaClusterIntegrationSecret,
-					},
+					Labels: map[string]string{},
 				},
 			},
-			want: true,
+			want: false,
 		},
 		{
-			name:   "should return false",
-			object: &corev1.Secret{},
-			want:   false,
+			name: "should not reconcile when labels are nil",
+			object: &corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: nil,
+				},
+			},
+			want: false,
 		},
 	}
 
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-
 			got := needToReconcile(tt.object)
 			require.Equal(t, tt.want, got)
 		})
