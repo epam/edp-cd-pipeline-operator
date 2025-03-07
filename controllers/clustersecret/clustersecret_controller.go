@@ -7,9 +7,13 @@ import (
 	"strings"
 	"time"
 
+	"golang.org/x/exp/maps"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/equality"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -31,20 +35,31 @@ const (
 	clusterTypeBearer            = "bearer"
 	clusterTypeIRSA              = "irsa"
 
+	// nolint:gosec // Cluster secret annotation.
+	clusterSecretConnectionAnnotation = "app.edp.epam.com/cluster-connected"
+	// nolint:gosec // Cluster secret annotation.
+	clusterSecretErrorAnnotation = "app.edp.epam.com/cluster-error"
+
 	// Generated kubeconfig secret will be updated after 10 minutes.
 	// Generated token is valid for 15 minutes.
 	// So we need to update kubeconfig secret before token expiration and add some time for processing.
 	// https://aws.github.io/aws-eks-best-practices/security/docs/iam/#controlling-access-to-eks-clusters
 	irsaSecretProcessAfter = time.Minute * 10
+	zeroDuration           = time.Duration(0)
 )
 
 type ReconcileClusterSecret struct {
-	client                client.Client
-	aimAuthTokenGenerator aws.AIMAuthTokenGenerator
+	client                 client.Client
+	aimAuthTokenGenerator  aws.AIMAuthTokenGenerator
+	checkClusterConnection func(ctx context.Context, restConf *rest.Config) error
 }
 
-func NewReconcileClusterSecret(k8sClient client.Client, irsaToneGenerator aws.AIMAuthTokenGenerator) *ReconcileClusterSecret {
-	return &ReconcileClusterSecret{client: k8sClient, aimAuthTokenGenerator: irsaToneGenerator}
+func NewReconcileClusterSecret(
+	k8sClient client.Client,
+	aimAuthTokenGenerator aws.AIMAuthTokenGenerator,
+	checkClusterConnection func(ctx context.Context, restConf *rest.Config) error,
+) *ReconcileClusterSecret {
+	return &ReconcileClusterSecret{client: k8sClient, aimAuthTokenGenerator: aimAuthTokenGenerator, checkClusterConnection: checkClusterConnection}
 }
 
 func (r *ReconcileClusterSecret) SetupWithManager(mgr ctrl.Manager) error {
@@ -97,24 +112,22 @@ func (r *ReconcileClusterSecret) Reconcile(ctx context.Context, request reconcil
 		l.Info("Start processing IRSA cluster secret")
 
 		if err := r.irsaToKubeConfigSecret(ctx, secret); err != nil {
-			return reconcile.Result{}, err
+			return r.processError(ctx, secret, err)
 		}
 
 		l.Info("IRSA cluster secret has been processed")
 
-		return reconcile.Result{
-			RequeueAfter: irsaSecretProcessAfter,
-		}, nil
+		return r.processSuccess(ctx, secret, irsaSecretProcessAfter)
 	default:
 		l.Info("Start processing kubeconfig cluster secret")
 
 		if err := r.createArgoCDClusterSecret(ctx, secret); err != nil {
-			return reconcile.Result{}, err
+			return r.processError(ctx, secret, err)
 		}
 
 		l.Info("Kubeconfig cluster secret has been processed")
 
-		return reconcile.Result{}, nil
+		return r.processSuccess(ctx, secret, zeroDuration)
 	}
 }
 
@@ -129,9 +142,13 @@ func (r *ReconcileClusterSecret) createArgoCDClusterSecret(ctx context.Context, 
 		return fmt.Errorf("failed to convert cluster secret to rest config: %w", err)
 	}
 
+	if err = r.checkClusterConnection(ctx, restConf); err != nil {
+		return err
+	}
+
 	argoClusterSecret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("%s-argocd-cluster", secret.Name),
+			Name:      clusterSecretNameToArgocdSecretName(secret.Name),
 			Namespace: secret.Namespace,
 		},
 	}
@@ -176,6 +193,10 @@ func (r *ReconcileClusterSecret) createArgoCDClusterSecret(ctx context.Context, 
 	return nil
 }
 
+func clusterSecretNameToArgocdSecretName(clusterSecretName string) string {
+	return fmt.Sprintf("%s-argocd-cluster", clusterSecretName)
+}
+
 // irsaToKubeConfigSecret creates secret with kube config from ArgoCD cluster secret.
 // Kube config is generated from AWS IRSA configuration.
 // https://argo-cd.readthedocs.io/en/stable/operator-manual/declarative-setup/#eks
@@ -192,12 +213,21 @@ func (r *ReconcileClusterSecret) irsaToKubeConfigSecret(ctx context.Context, sec
 		},
 	}
 
-	res, err := controllerutil.CreateOrUpdate(ctx, r.client, kubeConfSecret, func() error {
-		kubeConf, err := argocd.ArgoIRSAClusterSecretToKubeconfig(secret, r.aimAuthTokenGenerator)
-		if err != nil {
-			return fmt.Errorf("failed to generate kubeconfig: %w", err)
-		}
+	kubeConf, err := argocd.ArgoIRSAClusterSecretToKubeconfig(secret, r.aimAuthTokenGenerator)
+	if err != nil {
+		return fmt.Errorf("failed to generate kubeconfig: %w", err)
+	}
 
+	restConf, err := multiclusterclient.RawKubeConfigToRestConfig(kubeConf)
+	if err != nil {
+		return fmt.Errorf("failed to convert kubeconfig to rest config: %w", err)
+	}
+
+	if err = r.checkClusterConnection(ctx, restConf); err != nil {
+		return err
+	}
+
+	res, err := controllerutil.CreateOrUpdate(ctx, r.client, kubeConfSecret, func() error {
 		kubeConfSecret.Data = map[string][]byte{
 			"config": kubeConf,
 		}
@@ -221,6 +251,70 @@ func (r *ReconcileClusterSecret) irsaToKubeConfigSecret(ctx context.Context, sec
 	return nil
 }
 
+func (r *ReconcileClusterSecret) processError(ctx context.Context, secret *corev1.Secret, err error) (reconcile.Result, error) {
+	log := ctrl.LoggerFrom(ctx)
+
+	log.Info("Start processing error")
+
+	annotations := maps.Clone(secret.GetAnnotations())
+	if annotations == nil {
+		annotations = make(map[string]string, 2)
+	}
+
+	annotations[clusterSecretErrorAnnotation] = err.Error()
+	annotations[clusterSecretConnectionAnnotation] = "false"
+
+	if !equality.Semantic.DeepEqual(annotations, secret.GetAnnotations()) {
+		log.Info("Updating Secret connection status")
+
+		secret.SetAnnotations(annotations)
+
+		if updateErr := r.client.Update(ctx, secret); updateErr != nil {
+			log.Error(updateErr, "Failed to update secret connection status")
+		}
+
+		return reconcile.Result{}, err
+	}
+
+	return reconcile.Result{}, err
+}
+
+func (r *ReconcileClusterSecret) processSuccess(
+	ctx context.Context,
+	secret *corev1.Secret,
+	requeueAfter time.Duration,
+) (reconcile.Result, error) {
+	log := ctrl.LoggerFrom(ctx)
+
+	log.Info("Start processing success")
+
+	annotations := maps.Clone(secret.GetAnnotations())
+	if annotations == nil {
+		annotations = make(map[string]string, 1)
+	}
+
+	delete(annotations, clusterSecretErrorAnnotation)
+	annotations[clusterSecretConnectionAnnotation] = "true"
+
+	if !equality.Semantic.DeepEqual(annotations, secret.GetAnnotations()) {
+		log.Info("Updating Secret connection status")
+
+		secret.SetAnnotations(annotations)
+
+		if err := r.client.Update(ctx, secret); err != nil {
+			return reconcile.Result{}, fmt.Errorf("failed to update secret connection status: %w", err)
+		}
+
+		return reconcile.Result{
+			RequeueAfter: requeueAfter,
+		}, nil
+	}
+
+	return reconcile.Result{
+		RequeueAfter: requeueAfter,
+	}, nil
+}
+
 func needToReconcile(object client.Object) bool {
 	labels := object.GetLabels()
 	if labels == nil {
@@ -228,4 +322,18 @@ func needToReconcile(object client.Object) bool {
 	}
 
 	return labels[integrationSecretTypeLabel] == integrationSecretTypeCluster
+}
+
+func CheckClusterConnection(ctx context.Context, restConf *rest.Config) error {
+	cl, err := client.New(restConf, client.Options{Scheme: scheme.Scheme})
+	if err != nil {
+		return fmt.Errorf("failed to create kubernetes client: %w", err)
+	}
+
+	namespaceList := &corev1.NamespaceList{}
+	if err = cl.List(ctx, namespaceList); err != nil {
+		return fmt.Errorf("failed to list namespaces: %w", err)
+	}
+
+	return nil
 }

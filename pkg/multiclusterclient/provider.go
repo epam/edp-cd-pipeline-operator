@@ -72,7 +72,11 @@ func ClusterSecretToRestConfig(s *corev1.Secret) (*rest.Config, error) {
 		return nil, fmt.Errorf("no config data in the secret %s", s.Name)
 	}
 
-	config, err := clientcmd.RESTConfigFromKubeConfig(s.Data["config"])
+	return RawKubeConfigToRestConfig(s.Data["config"])
+}
+
+func RawKubeConfigToRestConfig(kubeConf []byte) (*rest.Config, error) {
+	config, err := clientcmd.RESTConfigFromKubeConfig(kubeConf)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create rest config from cluster secret: %w", err)
 	}

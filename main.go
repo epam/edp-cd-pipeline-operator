@@ -145,7 +145,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = clustersecret.NewReconcileClusterSecret(cl, newAwsTokenGenerator()).
+	if err = clustersecret.NewReconcileClusterSecret(cl, newAwsTokenGenerator(), clustersecret.CheckClusterConnection).
 		SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "cluster-secret")
 		os.Exit(1)
