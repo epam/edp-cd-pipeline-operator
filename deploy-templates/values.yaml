@@ -110,3 +110,6 @@ manageNamespace: true
 #   - eso: The secret will be managed by the External Secrets Operator (requires installation and configuration in the cluster: https://docs.kuberocketci.io/docs/operator-guide/secrets-management/install-external-secrets-operator).
 #   - none: Disables secrets management logic.
 secretManager: none
+
+serviceAccount:
+  annotations: {}
