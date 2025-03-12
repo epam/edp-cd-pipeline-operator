@@ -343,12 +343,12 @@ func TestPutCodebaseImageStream_ShouldCreateCisFromConfigMap(t *testing.T) {
 
 	config := &corev1.ConfigMap{
 		ObjectMeta: metaV1.ObjectMeta{
-			Name:      edpConfigMap,
+			Name:      krciConfigMap,
 			Namespace: "stub-namespace",
 		},
 		Data: map[string]string{
-			edpConfigContainerRegistryHost:  "stub-host",
-			edpConfigContainerRegistrySpace: "stub-space",
+			KrciConfigContainerRegistryHost:  "stub-host",
+			KrciConfigContainerRegistrySpace: "stub-space",
 		},
 	}
 

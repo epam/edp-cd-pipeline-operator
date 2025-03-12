@@ -25,9 +25,9 @@ type PutCodebaseImageStream struct {
 
 const (
 	dockerRegistryName              = "docker-registry"
-	edpConfigMap                    = "edp-config"
-	edpConfigContainerRegistryHost  = "container_registry_host"
-	edpConfigContainerRegistrySpace = "container_registry_space"
+	krciConfigMap                    = "krci-config"
+	KrciConfigContainerRegistryHost  = "container_registry_host"
+	KrciConfigContainerRegistrySpace = "container_registry_space"
 )
 
 func (h PutCodebaseImageStream) ServeRequest(ctx context.Context, stage *cdPipeApi.Stage) error {
@@ -74,11 +74,11 @@ func (h PutCodebaseImageStream) ServeRequest(ctx context.Context, stage *cdPipeA
 func (h PutCodebaseImageStream) getDockerRegistryUrl(ctx context.Context, namespace string) (string, error) {
 	config := &corev1.ConfigMap{}
 	if err := h.client.Get(ctx, types.NamespacedName{
-		Name:      edpConfigMap,
+		Name:      krciConfigMap,
 		Namespace: namespace,
 	}, config); err != nil {
 		if !k8sErrors.IsNotFound(err) {
-			return "", fmt.Errorf("failed to get %s config map: %w", edpConfigMap, err)
+			return "", fmt.Errorf("failed to get %s config map: %w", krciConfigMap, err)
 		}
 
 		// to save backward compatibility we need to get docker registry url
@@ -94,15 +94,15 @@ func (h PutCodebaseImageStream) getDockerRegistryUrl(ctx context.Context, namesp
 		return ec.Spec.Url, nil
 	}
 
-	if _, ok := config.Data[edpConfigContainerRegistryHost]; !ok {
-		return "", fmt.Errorf("%s is not set in %s config map", edpConfigContainerRegistryHost, edpConfigMap)
+	if _, ok := config.Data[KrciConfigContainerRegistryHost]; !ok {
+		return "", fmt.Errorf("%s is not set in %s config map", KrciConfigContainerRegistryHost, krciConfigMap)
 	}
 
-	if _, ok := config.Data[edpConfigContainerRegistrySpace]; !ok {
-		return "", fmt.Errorf("%s is not set in %s config map", edpConfigContainerRegistrySpace, edpConfigMap)
+	if _, ok := config.Data[KrciConfigContainerRegistrySpace]; !ok {
+		return "", fmt.Errorf("%s is not set in %s config map", KrciConfigContainerRegistrySpace, krciConfigMap)
 	}
 
-	return fmt.Sprintf("%s/%s", config.Data[edpConfigContainerRegistryHost], config.Data[edpConfigContainerRegistrySpace]), nil
+	return fmt.Sprintf("%s/%s", config.Data[KrciConfigContainerRegistryHost], config.Data[KrciConfigContainerRegistrySpace]), nil
 }
 
 func (h PutCodebaseImageStream) createCodebaseImageStreamIfNotExists(
