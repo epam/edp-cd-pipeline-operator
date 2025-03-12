@@ -498,7 +498,7 @@ func TestArgoApplicationSetManager_CreateApplicationSetGenerators(t *testing.T) 
 								DefaultBranch: "main",
 								GitUrlPath:    "/company/app1",
 								Versioning: codebaseApi.Versioning{
-									Type: codebaseApi.VersioningTypeEDP,
+									Type: "semver",
 								},
 							},
 						},
@@ -1184,7 +1184,7 @@ func Test_generateTemplatePatch(t *testing.T) {
 		buf,
 		map[string]any{
 			"customValues":    true,
-			"versionType":     "edp",
+			"versionType":     "semver",
 			"imageTag":        "NaN",
 			"imageRepository": "repo1",
 			"codebase":        "app1",

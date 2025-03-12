@@ -301,7 +301,7 @@ spec:
         path: deploy-templates
         repoURL: '{{ .repoURL }}'
         targetRevision: >-
-          {{ if eq .versionType "edp" }}build/{{ .imageTag }}{{ else }}{{
+          {{ if eq .versionType "semver" }}build/{{ .imageTag }}{{ else }}{{
           .imageTag }}{{ end }}
 
 ---

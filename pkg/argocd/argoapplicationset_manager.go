@@ -371,7 +371,7 @@ func generateTemplatePatch(pipeline, gitopsUrl string) string {
               - $values/%s/{{ .stage }}/{{ .codebase }}-values.yaml
           path: deploy-templates
           RepoURL: {{ .repoURL }}
-          targetRevision: '{{ if eq .versionType "edp" }}build/{{ .imageTag }}{{ else }}{{ .imageTag }}{{ end }}'
+          targetRevision: '{{ if eq .versionType "semver" }}build/{{ .imageTag }}{{ else }}{{ .imageTag }}{{ end }}'
     {{- end }}`
 
 	return fmt.Sprintf(template, gitopsUrl, pipeline)
@@ -425,7 +425,7 @@ func generateApplicationSet(
 						},
 						Path:           "deploy-templates",
 						RepoURL:        "{{ .repoURL }}",
-						TargetRevision: `{{ if eq .versionType "edp" }}build/{{ .imageTag }}{{ else }}{{ .imageTag }}{{ end }}`,
+						TargetRevision: `{{ if eq .versionType "semver" }}build/{{ .imageTag }}{{ else }}{{ .imageTag }}{{ end }}`,
 					},
 				},
 			},
