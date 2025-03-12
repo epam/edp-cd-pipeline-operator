@@ -25,13 +25,13 @@ commands:
   - command: kubectl apply -f https://raw.githubusercontent.com/argoproj/argo-cd/v2.9.3/manifests/crds/applicationset-crd.yaml
     namespaced: false
 
-# We "grab" registry URL from the edp-config configmap, if no configmap is found, we use EDPComponent CRD,
+# We "grab" registry URL from the krci-config configmap, if no configmap is found, we use EDPComponent CRD,
 # so let's avoid this and create configmap manually
 ---
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: edp-config
+  name: krci-config
 data:
   container_registry_host: registry.host.local
   container_registry_space: registry-space
