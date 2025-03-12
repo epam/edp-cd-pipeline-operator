@@ -109,7 +109,7 @@ spec:
   type: system
   versioning:
     startFrom: 0.1.0-SNAPSHOT
-    type: edp
+    type: semver
 
 ---
 
