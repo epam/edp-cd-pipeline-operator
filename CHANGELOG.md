@@ -2,6 +2,23 @@
 ## [Unreleased]
 
 
+<a name="v2.25.0"></a>
+## [v2.25.0] - 2025-03-22
+### Features
+
+- Implement cluster secret connectivity status check ([#118](https://github.com/epam/edp-cd-pipeline-operator/issues/118))
+- Enhance cluster secret processing with new label handling ([#111](https://github.com/epam/edp-cd-pipeline-operator/issues/111))
+- Add validation webhook for protected resources ([#113](https://github.com/epam/edp-cd-pipeline-operator/issues/113))
+- Improve namespace deletion handling ([#114](https://github.com/epam/edp-cd-pipeline-operator/issues/114))
+- Implement AWS IRSA authentication for cluster access ([#111](https://github.com/epam/edp-cd-pipeline-operator/issues/111))
+
+### Routine
+
+- Align ApplicationSet to use semver versioning ([#122](https://github.com/epam/edp-cd-pipeline-operator/issues/122))
+- Add support for ServiceAccount annotations ([#120](https://github.com/epam/edp-cd-pipeline-operator/issues/120))
+- Update current development version ([#108](https://github.com/epam/edp-cd-pipeline-operator/issues/108))
+
+
 <a name="v2.24.0"></a>
 ## [v2.24.0] - 2025-01-24
 ### Features
@@ -211,7 +228,8 @@ Helm parameter kioskEnabled was removed. Use instead --set global.tenancyEngine=
 <a name="v2.15.0"></a>
 ## [v2.15.0] - 2023-08-17
 
-[Unreleased]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.24.0...HEAD
+[Unreleased]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.25.0...HEAD
+[v2.25.0]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.24.0...v2.25.0
 [v2.24.0]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.23.0...v2.24.0
 [v2.23.0]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.22.0...v2.23.0
 [v2.22.0]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.21.0...v2.22.0
