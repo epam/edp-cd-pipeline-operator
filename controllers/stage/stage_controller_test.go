@@ -24,6 +24,7 @@ import (
 
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/objectmodifier"
+	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/platform"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/cluster"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/consts"
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
@@ -36,7 +37,6 @@ const (
 	name            = "stub-name"
 	namespace       = "stub-namespace"
 	labelValue      = "stub-data"
-	dockerRegistry  = "docker-registry"
 )
 
 func getStage(t *testing.T, c client.Client, name string) *cdPipeApi.Stage {
@@ -332,11 +332,14 @@ func TestReconcileStage_ReconcileReconcile_SetOwnerRef(t *testing.T) {
 	require.NoError(t, k8sApi.AddToScheme(scheme))
 	require.NoError(t, argoApi.AddToScheme(scheme))
 
-	edpComponent := &componentApi.EDPComponent{
-		TypeMeta: metaV1.TypeMeta{},
+	cm := &corev1.ConfigMap{
 		ObjectMeta: metaV1.ObjectMeta{
-			Name:      dockerRegistry,
+			Name:      platform.KrciConfigMap,
 			Namespace: namespace,
+		},
+		Data: map[string]string{
+			platform.KrciConfigContainerRegistryHost:  "test-registry",
+			platform.KrciConfigContainerRegistrySpace: "test-space",
 		},
 	}
 
@@ -390,7 +393,7 @@ func TestReconcileStage_ReconcileReconcile_SetOwnerRef(t *testing.T) {
 		},
 	}
 
-	fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(cdPipeline, image, stage, edpComponent, appset).Build()
+	fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(cdPipeline, image, stage, cm, appset).Build()
 
 	reconcileStage := NewReconcileStage(
 		fakeClient,
