@@ -16,6 +16,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
+	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/platform"
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 	componentApi "github.com/epam/edp-component-operator/api/v1"
 )
@@ -47,13 +48,14 @@ func TestPutCodebaseImageStream_ShouldCreateCis(t *testing.T) {
 		},
 	}
 
-	ec := &componentApi.EDPComponent{
+	cm := &corev1.ConfigMap{
 		ObjectMeta: metaV1.ObjectMeta{
-			Name:      dockerRegistryName,
+			Name:      platform.KrciConfigMap,
 			Namespace: "stub-namespace",
 		},
-		Spec: componentApi.EDPComponentSpec{
-			Url: "stub-url",
+		Data: map[string]string{
+			platform.KrciConfigContainerRegistryHost:  "test-registry",
+			platform.KrciConfigContainerRegistrySpace: "test-space",
 		},
 	}
 
@@ -72,7 +74,7 @@ func TestPutCodebaseImageStream_ShouldCreateCis(t *testing.T) {
 	require.NoError(t, cdPipeApi.AddToScheme(scheme))
 	require.NoError(t, codebaseApi.AddToScheme(scheme))
 	require.NoError(t, componentApi.AddToScheme(scheme))
-	c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(cdp, s, ec, cis).Build()
+	c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(cdp, s, cm, cis).Build()
 
 	cisChain := PutCodebaseImageStream{
 		client: c,
@@ -89,7 +91,7 @@ func TestPutCodebaseImageStream_ShouldCreateCis(t *testing.T) {
 		},
 		cisResp)
 	assert.NoError(t, err)
-	assert.Equal(t, cisResp.Spec.ImageName, "stub-url/cb-name")
+	assert.Equal(t, "test-registry/test-space/cb-name", cisResp.Spec.ImageName)
 	assert.NotNil(t, metaV1.GetControllerOf(cisResp))
 }
 
@@ -203,13 +205,14 @@ func TestPutCodebaseImageStream_ShouldNotFindCbis(t *testing.T) {
 		},
 	}
 
-	ec := &componentApi.EDPComponent{
+	cm := &corev1.ConfigMap{
 		ObjectMeta: metaV1.ObjectMeta{
-			Name:      dockerRegistryName,
+			Name:      platform.KrciConfigMap,
 			Namespace: "stub-namespace",
 		},
-		Spec: componentApi.EDPComponentSpec{
-			Url: "stub-url",
+		Data: map[string]string{
+			platform.KrciConfigContainerRegistryHost:  "test-registry",
+			platform.KrciConfigContainerRegistrySpace: "test-space",
 		},
 	}
 
@@ -218,7 +221,7 @@ func TestPutCodebaseImageStream_ShouldNotFindCbis(t *testing.T) {
 	require.NoError(t, cdPipeApi.AddToScheme(scheme))
 	require.NoError(t, codebaseApi.AddToScheme(scheme))
 	require.NoError(t, componentApi.AddToScheme(scheme))
-	c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(cdp, s, ec).Build()
+	c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(cdp, s, cm).Build()
 
 	cisChain := PutCodebaseImageStream{
 		client: c,
@@ -259,13 +262,14 @@ func TestPutCodebaseImageStream_ShouldNotFailWithExistingCbis(t *testing.T) {
 		},
 	}
 
-	ec := &componentApi.EDPComponent{
+	cm := &corev1.ConfigMap{
 		ObjectMeta: metaV1.ObjectMeta{
-			Name:      dockerRegistryName,
+			Name:      platform.KrciConfigMap,
 			Namespace: "stub-namespace",
 		},
-		Spec: componentApi.EDPComponentSpec{
-			Url: "stub-url",
+		Data: map[string]string{
+			platform.KrciConfigContainerRegistryHost:  "test-registry",
+			platform.KrciConfigContainerRegistrySpace: "test-space",
 		},
 	}
 
@@ -294,7 +298,7 @@ func TestPutCodebaseImageStream_ShouldNotFailWithExistingCbis(t *testing.T) {
 	require.NoError(t, cdPipeApi.AddToScheme(scheme))
 	require.NoError(t, codebaseApi.AddToScheme(scheme))
 	require.NoError(t, componentApi.AddToScheme(scheme))
-	c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(cdp, s, ec, cis, exsitingCis).Build()
+	c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(cdp, s, cm, cis, exsitingCis).Build()
 
 	cisChain := PutCodebaseImageStream{
 		client: c,
@@ -343,12 +347,12 @@ func TestPutCodebaseImageStream_ShouldCreateCisFromConfigMap(t *testing.T) {
 
 	config := &corev1.ConfigMap{
 		ObjectMeta: metaV1.ObjectMeta{
-			Name:      edpConfigMap,
+			Name:      platform.KrciConfigMap,
 			Namespace: "stub-namespace",
 		},
 		Data: map[string]string{
-			edpConfigContainerRegistryHost:  "stub-host",
-			edpConfigContainerRegistrySpace: "stub-space",
+			platform.KrciConfigContainerRegistryHost:  "stub-host",
+			platform.KrciConfigContainerRegistrySpace: "stub-space",
 		},
 	}
 
