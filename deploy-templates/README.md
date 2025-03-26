@@ -30,6 +30,7 @@ A Helm chart for KubeRocketCI CD Pipeline Operator
 | image.repository | string | `"epamedp/cd-pipeline-operator"` | KubeRocketCI cd-pipeline-operator Docker image name. The released image can be found on [Dockerhub](https://hub.docker.com/r/epamedp/cd-pipeline-operator) |
 | image.tag | string | `nil` | KubeRocketCI cd-pipeline-operator Docker image tag. The released image can be found on [Dockerhub](https://hub.docker.com/r/epamedp/cd-pipeline-operator/tags) |
 | imagePullPolicy | string | `"IfNotPresent"` |  |
+| imagePullSecrets | list | `[]` | Optional array of imagePullSecrets containing private registry credentials # Ref: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry |
 | manageNamespace | bool | `true` | should the operator manage(create/delete) namespaces for stages Refer to the guide for managing namespace (https://docs.kuberocketci.io/docs/operator-guide/auth/namespace-management) |
 | name | string | `"cd-pipeline-operator"` | component name |
 | nodeSelector | object | `{}` |  |
