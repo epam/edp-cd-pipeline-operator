@@ -1,6 +1,20 @@
 <a name="unreleased"></a>
 ## [Unreleased]
 
+### Routine
+
+- Rename ConfigMap from 'edp-config' to 'krci-config' ([#124](https://github.com/epam/edp-cd-pipeline-operator/issues/124))
+- Add ImagePullSecrets field support ([#131](https://github.com/epam/edp-cd-pipeline-operator/issues/131))
+- Update current development version ([#128](https://github.com/epam/edp-cd-pipeline-operator/issues/128))
+
+
+<a name="v2.25.1"></a>
+## [v2.25.1] - 2025-03-31
+### Routine
+
+- Rename ConfigMap from 'edp-config' to 'krci-config' ([#124](https://github.com/epam/edp-cd-pipeline-operator/issues/124))
+- Add ImagePullSecrets field support ([#131](https://github.com/epam/edp-cd-pipeline-operator/issues/131))
+
 
 <a name="v2.25.0"></a>
 ## [v2.25.0] - 2025-03-22
@@ -228,7 +242,8 @@ Helm parameter kioskEnabled was removed. Use instead --set global.tenancyEngine=
 <a name="v2.15.0"></a>
 ## [v2.15.0] - 2023-08-17
 
-[Unreleased]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.25.0...HEAD
+[Unreleased]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.25.1...HEAD
+[v2.25.1]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.25.0...v2.25.1
 [v2.25.0]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.24.0...v2.25.0
 [v2.24.0]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.23.0...v2.24.0
 [v2.23.0]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.22.0...v2.23.0
