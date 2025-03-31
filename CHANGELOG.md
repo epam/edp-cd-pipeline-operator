@@ -2,8 +2,8 @@
 ## [Unreleased]
 
 
-<a name="v2.25.0"></a>
-## v2.25.0 - 2025-03-12
+<a name="v2.25.1"></a>
+## v2.25.1 - 2025-03-25
 ### Features
 
 - Implement cluster secret connectivity status check ([#118](https://github.com/epam/edp-cd-pipeline-operator/issues/118))
@@ -66,6 +66,8 @@
 
 ### Routine
 
+- Rename ConfigMap from 'edp-config' to 'krci-config' ([#124](https://github.com/epam/edp-cd-pipeline-operator/issues/124))
+- Add ImagePullSecrets field support ([#131](https://github.com/epam/edp-cd-pipeline-operator/issues/131))
 - Align ApplicationSet to use semver versioning ([#122](https://github.com/epam/edp-cd-pipeline-operator/issues/122))
 - Add support for ServiceAccount annotations ([#120](https://github.com/epam/edp-cd-pipeline-operator/issues/120))
 - Update current development version ([#108](https://github.com/epam/edp-cd-pipeline-operator/issues/108))
@@ -116,4 +118,4 @@
 Helm parameter kioskEnabled was removed. Use instead --set global.tenancyEngine=kiosk.
 
 
-[Unreleased]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.25.0...HEAD
+[Unreleased]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.25.1...HEAD
