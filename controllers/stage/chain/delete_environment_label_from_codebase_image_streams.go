@@ -45,7 +45,7 @@ func (h DeleteEnvironmentLabelFromCodebaseImageStreams) deleteEnvironmentLabel(c
 	}
 
 	for _, name := range pipe.Spec.InputDockerStreams {
-		stream, err := cluster.GetCodebaseImageStream(h.client, name, stage.Namespace)
+		stream, err := cluster.GetCodebaseImageStreamByCodebaseBaseBranchName(ctx, h.client, name, stage.Namespace)
 		if err != nil {
 			return fmt.Errorf("failed to get %s codebase image stream: %w", name, err)
 		}

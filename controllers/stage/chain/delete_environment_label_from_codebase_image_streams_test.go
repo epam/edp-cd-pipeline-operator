@@ -7,9 +7,12 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"maps"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
@@ -25,6 +28,7 @@ const (
 func TestServeRequest_Success(t *testing.T) {
 	labels := make(map[string]string)
 	labels[createLabelName(name, name)] = labelValue
+	labels[cluster.CodebaseImageStreamCodebaseBranchLabel] = dockerImageName
 
 	stage := createStage(t, 0, cdPipeline)
 
@@ -56,9 +60,13 @@ func TestServeRequest_Success(t *testing.T) {
 	err := deleteEnvLabel.ServeRequest(ctrl.LoggerInto(context.Background(), logr.Discard()), &stage)
 	assert.NoError(t, err)
 
-	result, err := cluster.GetCodebaseImageStream(deleteEnvLabel.client, dockerImageName, namespace)
-	assert.NoError(t, err)
-	assert.Empty(t, result.Labels)
+	cbis := &codebaseApi.CodebaseImageStream{}
+	err = deleteEnvLabel.client.Get(context.Background(), client.ObjectKey{
+		Name:      dockerImageName,
+		Namespace: namespace,
+	}, cbis)
+	require.NoError(t, err)
+	assert.Empty(t, cbis.Labels[createLabelName(name, name)])
 }
 
 func TestDeleteEnvironmentLabel_VerifiedImageStream(t *testing.T) {
@@ -89,12 +97,13 @@ func TestDeleteEnvironmentLabel_VerifiedImageStream(t *testing.T) {
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:      dockerImageName,
 			Namespace: namespace,
-			Labels:    labels,
+			Labels:    maps.Clone(labels),
 		},
 		Spec: codebaseApi.CodebaseImageStreamSpec{
 			Codebase: codebase,
 		},
 	}
+	image.Labels[cluster.CodebaseImageStreamCodebaseBranchLabel] = dockerImageName
 
 	previousImage := codebaseApi.CodebaseImageStream{
 		ObjectMeta: metaV1.ObjectMeta{
@@ -109,21 +118,28 @@ func TestDeleteEnvironmentLabel_VerifiedImageStream(t *testing.T) {
 	}
 
 	err := deleteEnvLabel.deleteEnvironmentLabel(ctrl.LoggerInto(context.Background(), logr.Discard()), &stage)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
-	previousImageStream, err := cluster.GetCodebaseImageStream(deleteEnvLabel.client, cisName, namespace)
-	assert.NoError(t, err)
-	assert.Empty(t, previousImageStream.Labels)
+	previousImageStream := &codebaseApi.CodebaseImageStream{}
+	err = deleteEnvLabel.client.Get(context.Background(), client.ObjectKey{
+		Name:      cisName,
+		Namespace: namespace,
+	}, previousImageStream)
+	require.NoError(t, err)
+	assert.Empty(t, previousImageStream.Labels[createLabelName(name, name)])
 
-	currentImageStream, err := cluster.GetCodebaseImageStream(deleteEnvLabel.client, dockerImageName, namespace)
-	assert.NoError(t, err)
-	assert.Empty(t, currentImageStream.Labels)
+	currentImageStream := &codebaseApi.CodebaseImageStream{}
+	err = deleteEnvLabel.client.Get(context.Background(), client.ObjectKey{
+		Name:      dockerImageName,
+		Namespace: namespace,
+	}, currentImageStream)
+	require.NoError(t, err)
+	assert.Empty(t, currentImageStream.Labels[createLabelName(name, name)])
 }
 
 func TestDeleteEnvironmentLabel_ApplicationToPromote(t *testing.T) {
 	labels := make(map[string]string)
 	labels[createLabelName(name, name)] = labelValue
-
 	codebaseWithoutPromotion := "stub-codebase-non-prom"
 	cisName := createCisName(name, previousStageName, codebase)
 
@@ -150,12 +166,13 @@ func TestDeleteEnvironmentLabel_ApplicationToPromote(t *testing.T) {
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:      dockerImageName,
 			Namespace: namespace,
-			Labels:    labels,
+			Labels:    maps.Clone(labels),
 		},
 		Spec: codebaseApi.CodebaseImageStreamSpec{
 			Codebase: codebase,
 		},
 	}
+	image.Labels[cluster.CodebaseImageStreamCodebaseBranchLabel] = dockerImageName
 
 	previousImage := codebaseApi.CodebaseImageStream{
 		ObjectMeta: metaV1.ObjectMeta{
@@ -172,12 +189,20 @@ func TestDeleteEnvironmentLabel_ApplicationToPromote(t *testing.T) {
 	err := deleteEnvLabel.deleteEnvironmentLabel(ctrl.LoggerInto(context.Background(), logr.Discard()), &stage)
 	assert.NoError(t, err)
 
-	previousImageStream, err := cluster.GetCodebaseImageStream(deleteEnvLabel.client, cisName, namespace)
-	assert.NoError(t, err)
+	previousImageStream := &codebaseApi.CodebaseImageStream{}
+	err = deleteEnvLabel.client.Get(context.Background(), client.ObjectKey{
+		Name:      cisName,
+		Namespace: namespace,
+	}, previousImageStream)
+	require.NoError(t, err)
 	assert.Empty(t, previousImageStream.Labels)
 
-	currentImageStream, err := cluster.GetCodebaseImageStream(deleteEnvLabel.client, dockerImageName, namespace)
-	assert.NoError(t, err)
+	currentImageStream := &codebaseApi.CodebaseImageStream{}
+	err = deleteEnvLabel.client.Get(context.Background(), client.ObjectKey{
+		Name:      dockerImageName,
+		Namespace: namespace,
+	}, currentImageStream)
+	require.NoError(t, err)
 	assert.Equal(t, image.Labels, currentImageStream.Labels)
 }
 
@@ -232,7 +257,8 @@ func TestDeleteEnvironmentLabel_CantGetImageDockerStream(t *testing.T) {
 	}
 
 	err := deleteEnvLabel.deleteEnvironmentLabel(ctrl.LoggerInto(context.Background(), logr.Discard()), &stage)
-	assert.True(t, k8sErrors.IsNotFound(err))
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "CodebaseImageStream not found for CodebaseBranch")
 }
 
 func TestSetDeleteEnvironmentLabel_NoPreviousStageError(t *testing.T) {
@@ -259,12 +285,13 @@ func TestSetDeleteEnvironmentLabel_NoPreviousStageError(t *testing.T) {
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:      dockerImageName,
 			Namespace: namespace,
-			Labels:    labels,
+			Labels:    maps.Clone(labels),
 		},
 		Spec: codebaseApi.CodebaseImageStreamSpec{
 			Codebase: codebase,
 		},
 	}
+	image.Labels[cluster.CodebaseImageStreamCodebaseBranchLabel] = dockerImageName
 
 	previousImage := codebaseApi.CodebaseImageStream{
 		ObjectMeta: metaV1.ObjectMeta{

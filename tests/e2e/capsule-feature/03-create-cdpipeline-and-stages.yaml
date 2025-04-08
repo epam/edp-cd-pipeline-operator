@@ -130,6 +130,8 @@ apiVersion: v2.edp.epam.com/v1
 kind: CodebaseImageStream
 metadata:
   name: test-main
+  labels:
+    app.edp.epam.com/cbis-codebasebranch: test-main
 spec:
   codebase: test
   imageName: registry.host.local/registry-space/test

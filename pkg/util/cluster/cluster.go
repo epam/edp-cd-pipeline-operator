@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"strconv"
-	"strings"
 
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -35,8 +34,6 @@ func GetCdPipeline(c client.Client, name, namespace string) (*cdPipeApi.CDPipeli
 }
 
 func GetCodebaseImageStream(c client.Client, name, namespace string) (*codebaseApi.CodebaseImageStream, error) {
-	re := strings.NewReplacer("/", "-", ".", "-")
-	name = re.Replace(name)
 	i := &codebaseApi.CodebaseImageStream{}
 
 	if err := c.Get(context.Background(), types.NamespacedName{
@@ -47,6 +44,39 @@ func GetCodebaseImageStream(c client.Client, name, namespace string) (*codebaseA
 	}
 
 	return i, nil
+}
+
+// TODO: import this label from codebase-operator.
+const CodebaseImageStreamCodebaseBranchLabel = "app.edp.epam.com/cbis-codebasebranch"
+
+func GetCodebaseImageStreamByCodebaseBaseBranchName(
+	ctx context.Context,
+	k8sCl client.Client,
+	codebaseBranchName string,
+	namespace string,
+) (*codebaseApi.CodebaseImageStream, error) {
+	var codebaseImageStreamList codebaseApi.CodebaseImageStreamList
+
+	if err := k8sCl.List(
+		ctx,
+		&codebaseImageStreamList,
+		client.InNamespace(namespace),
+		client.MatchingLabels{
+			CodebaseImageStreamCodebaseBranchLabel: codebaseBranchName,
+		},
+	); err != nil {
+		return nil, fmt.Errorf("failed to get CodebaseImageStream by label: %w", err)
+	}
+
+	if len(codebaseImageStreamList.Items) == 0 {
+		return nil, fmt.Errorf("CodebaseImageStream not found for CodebaseBranch %s", codebaseBranchName)
+	}
+
+	if len(codebaseImageStreamList.Items) > 1 {
+		return nil, fmt.Errorf("multiple CodebaseImageStream found for CodebaseBranch %s", codebaseBranchName)
+	}
+
+	return &codebaseImageStreamList.Items[0], nil
 }
 
 // GetWatchNamespace returns the namespace the operator should be watching for changes.

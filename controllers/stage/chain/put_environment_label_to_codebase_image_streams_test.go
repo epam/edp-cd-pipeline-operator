@@ -7,11 +7,13 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	k8sApi "k8s.io/api/rbac/v1"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
@@ -48,7 +50,9 @@ func schemeInit(t *testing.T) *runtime.Scheme {
 	t.Helper()
 
 	scheme := runtime.NewScheme()
-	scheme.AddKnownTypes(k8sApi.SchemeGroupVersion, &cdPipeApi.Stage{}, &cdPipeApi.StageList{}, &cdPipeApi.CDPipeline{}, &codebaseApi.CodebaseImageStream{})
+	require.NoError(t, k8sApi.AddToScheme(scheme))
+	require.NoError(t, cdPipeApi.AddToScheme(scheme))
+	require.NoError(t, codebaseApi.AddToScheme(scheme))
 
 	return scheme
 }
@@ -72,7 +76,9 @@ func TestPutEnvironmentLabelToCodebaseImageStreams_ServeRequest_Success(t *testi
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:      dockerImageName,
 			Namespace: namespace,
-			Labels:    nil,
+			Labels: map[string]string{
+				cluster.CodebaseImageStreamCodebaseBranchLabel: dockerImageName,
+			},
 		},
 	}
 
@@ -83,8 +89,12 @@ func TestPutEnvironmentLabelToCodebaseImageStreams_ServeRequest_Success(t *testi
 	err := putEnvLabel.ServeRequest(ctrl.LoggerInto(context.Background(), logr.Discard()), &stage)
 	assert.NoError(t, err)
 
-	imageStream, err := cluster.GetCodebaseImageStream(putEnvLabel.client, dockerImageName, namespace)
-	assert.NoError(t, err)
+	imageStream := codebaseApi.CodebaseImageStream{}
+	err = putEnvLabel.client.Get(context.Background(), client.ObjectKey{
+		Name:      dockerImageName,
+		Namespace: namespace,
+	}, &imageStream)
+	require.NoError(t, err)
 
 	_, ok := imageStream.Labels[createLabelName(cdPipeline.Name, stage.Name)]
 	assert.True(t, ok)
@@ -115,7 +125,9 @@ func TestPutEnvironmentLabelToCodebaseImageStreams_ServeRequest_PreviousStageIma
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:      dockerImageName,
 			Namespace: namespace,
-			Labels:    nil,
+			Labels: map[string]string{
+				cluster.CodebaseImageStreamCodebaseBranchLabel: dockerImageName,
+			},
 		},
 		Spec: codebaseApi.CodebaseImageStreamSpec{
 			Codebase: codebase,
@@ -126,7 +138,6 @@ func TestPutEnvironmentLabelToCodebaseImageStreams_ServeRequest_PreviousStageIma
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:      cisName,
 			Namespace: namespace,
-			Labels:    nil,
 		},
 	}
 
@@ -137,8 +148,12 @@ func TestPutEnvironmentLabelToCodebaseImageStreams_ServeRequest_PreviousStageIma
 	err := putEnvLabel.ServeRequest(ctrl.LoggerInto(context.Background(), logr.Discard()), &stage)
 	assert.NoError(t, err)
 
-	imageStream, err := cluster.GetCodebaseImageStream(putEnvLabel.client, cisName, namespace)
-	assert.NoError(t, err)
+	imageStream := codebaseApi.CodebaseImageStream{}
+	err = putEnvLabel.client.Get(context.Background(), client.ObjectKey{
+		Name:      cisName,
+		Namespace: namespace,
+	}, &imageStream)
+	require.NoError(t, err)
 
 	_, ok := imageStream.Labels[createLabelName(cdPipeline.Name, stage.Name)]
 	assert.True(t, ok)
@@ -198,7 +213,8 @@ func TestPutEnvironmentLabelToCodebaseImageStreams_ServeRequest_CantGetImage(t *
 	}
 
 	err := putEnvLabel.ServeRequest(ctrl.LoggerInto(context.Background(), logr.Discard()), &stage)
-	assert.True(t, k8sErrors.IsNotFound(err))
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "couldn't get docker-image-name codebase image stream")
 }
 
 func TestPutEnvironmentLabelToCodebaseImageStreams_ServeRequest_CantGetVerifiedStream(t *testing.T) {
@@ -225,7 +241,9 @@ func TestPutEnvironmentLabelToCodebaseImageStreams_ServeRequest_CantGetVerifiedS
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:      dockerImageName,
 			Namespace: namespace,
-			Labels:    nil,
+			Labels: map[string]string{
+				cluster.CodebaseImageStreamCodebaseBranchLabel: dockerImageName,
+			},
 		},
 		Spec: codebaseApi.CodebaseImageStreamSpec{
 			Codebase: codebase,

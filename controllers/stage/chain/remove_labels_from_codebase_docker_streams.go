@@ -42,9 +42,9 @@ func (h RemoveLabelsFromCodebaseDockerStreamsAfterCdPipelineUpdate) ServeRequest
 
 	streams := strings.Split(annotations, ",")
 	for _, v := range streams {
-		stream, err := cluster.GetCodebaseImageStream(h.client, v, stage.Namespace)
+		stream, err := cluster.GetCodebaseImageStreamByCodebaseBaseBranchName(ctx, h.client, v, stage.Namespace)
 		if err != nil {
-			return fmt.Errorf("failed to get %v codebase image stream: %w", stream, err)
+			return fmt.Errorf("failed to get %v codebase image stream: %w", v, err)
 		}
 
 		env := fmt.Sprintf("%v/%v", pipe.Name, stage.Spec.Name)

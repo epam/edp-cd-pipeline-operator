@@ -6,7 +6,6 @@ import (
 
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -38,7 +37,7 @@ func (h PutCodebaseImageStream) ServeRequest(ctx context.Context, stage *cdPipeA
 	}
 
 	for _, ids := range pipe.Spec.InputDockerStreams {
-		stream, err := cluster.GetCodebaseImageStream(h.client, ids, stage.Namespace)
+		stream, err := cluster.GetCodebaseImageStreamByCodebaseBaseBranchName(ctx, h.client, ids, stage.Namespace)
 		if err != nil {
 			return fmt.Errorf("failed to get %v codebase image stream: %w", ids, err)
 		}
@@ -95,26 +94,6 @@ func (h PutCodebaseImageStream) createCodebaseImageStreamIfNotExists(
 
 	if err := h.client.Create(ctx, cis); err != nil {
 		if k8sErrors.IsAlreadyExists(err) {
-			// For backward compatibility, we need to update the controller reference for the existing CodebaseImageStream.
-			// We can remove this in the next releases.
-			existingCIS := &codebaseApi.CodebaseImageStream{}
-			if err = h.client.Get(ctx, types.NamespacedName{
-				Namespace: namespace,
-				Name:      name,
-			}, existingCIS); err != nil {
-				return fmt.Errorf("failed to get CodebaseImageStream: %w", err)
-			}
-
-			if metaV1.GetControllerOf(existingCIS) == nil {
-				if err = controllerutil.SetControllerReference(stage, existingCIS, h.client.Scheme()); err != nil {
-					return fmt.Errorf("failed to set controller reference for CodebaseImageStream: %w", err)
-				}
-			}
-
-			if err = h.client.Update(ctx, existingCIS); err != nil {
-				return fmt.Errorf("failed to update CodebaseImageStream controller reference: %w", err)
-			}
-
 			log.Info("CodebaseImageStream already exists. Skip creating")
 
 			return nil

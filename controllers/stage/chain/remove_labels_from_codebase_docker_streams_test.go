@@ -2,13 +2,16 @@ package chain
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
@@ -36,6 +39,7 @@ func createCodebaseImageStreamWithLabels(t *testing.T) codebaseApi.CodebaseImage
 
 	labels := make(map[string]string)
 	labels[createLabelName(cdPipeline, name)] = labelValue
+	labels[cluster.CodebaseImageStreamCodebaseBranchLabel] = dockerImageName
 
 	return codebaseApi.CodebaseImageStream{
 		ObjectMeta: metaV1.ObjectMeta{
@@ -48,19 +52,27 @@ func createCodebaseImageStreamWithLabels(t *testing.T) codebaseApi.CodebaseImage
 
 func TestRemoveLabelsFromCodebaseDockerStreamsAfterCdPipelineUpdate_ServeRequest_Success(t *testing.T) {
 	stage := createStage(t, 0, cdPipeline)
-	cdPipeline := createCdPipelineWithAnnotations(t)
+	cdPipe := createCdPipelineWithAnnotations(t)
 	image := createCodebaseImageStreamWithLabels(t)
 
 	removeLabel := RemoveLabelsFromCodebaseDockerStreamsAfterCdPipelineUpdate{
-		client: fake.NewClientBuilder().WithScheme(schemeInit(t)).WithObjects(&stage, &cdPipeline, &image).Build(),
+		client: fake.NewClientBuilder().WithScheme(schemeInit(t)).WithObjects(&stage, &cdPipe, &image).Build(),
 	}
 
 	err := removeLabel.ServeRequest(ctrl.LoggerInto(context.Background(), logr.Discard()), &stage)
 	assert.NoError(t, err)
 
-	currentImageStream, err := cluster.GetCodebaseImageStream(removeLabel.client, dockerImageName, namespace)
-	assert.NoError(t, err)
-	assert.Empty(t, currentImageStream.Labels)
+	currentImageStream := &codebaseApi.CodebaseImageStream{}
+	err = removeLabel.client.Get(
+		context.Background(),
+		client.ObjectKey{
+			Name:      dockerImageName,
+			Namespace: namespace,
+		},
+		currentImageStream,
+	)
+	require.NoError(t, err)
+	assert.Empty(t, currentImageStream.Labels[createLabelName(cdPipeline, name)])
 }
 
 func TestRemoveLabelsFromCodebaseDockerStreamsAfterCdPipelineUpdate_ServeRequest_CantGetCdPipeline(t *testing.T) {
@@ -89,7 +101,17 @@ func TestRemoveLabelsFromCodebaseDockerStreamsAfterCdPipelineUpdate_ServeRequest
 	err := removeLabel.ServeRequest(ctrl.LoggerInto(context.Background(), logr.Discard()), &stage)
 	assert.NoError(t, err)
 
-	currentImageStream, err := cluster.GetCodebaseImageStream(removeLabel.client, dockerImageName, namespace)
+	currentImageStream := &codebaseApi.CodebaseImageStream{}
+	err = removeLabel.client.Get(
+		context.Background(),
+		client.ObjectKey{
+			Name:      dockerImageName,
+			Namespace: namespace,
+		},
+		currentImageStream,
+	)
+	require.NoError(t, err)
+
 	assert.NoError(t, err)
 	assert.Equal(t, image.Labels, currentImageStream.Labels)
 }
@@ -99,13 +121,11 @@ func TestRemoveLabelsFromCodebaseDockerStreamsAfterCdPipelineUpdate_ServeRequest
 
 	cdPipeline := createCdPipelineWithAnnotations(t)
 
-	image := createCodebaseImageStreamWithLabels(t)
-	image.Name = name
-
 	removeLabel := RemoveLabelsFromCodebaseDockerStreamsAfterCdPipelineUpdate{
-		client: fake.NewClientBuilder().WithScheme(schemeInit(t)).WithObjects(&stage, &cdPipeline, &image).Build(),
+		client: fake.NewClientBuilder().WithScheme(schemeInit(t)).WithObjects(&stage, &cdPipeline).Build(),
 	}
 
 	err := removeLabel.ServeRequest(ctrl.LoggerInto(context.Background(), logr.Discard()), &stage)
-	assert.True(t, k8sErrors.IsNotFound(err))
+	require.Error(t, err)
+	require.Contains(t, err.Error(), fmt.Sprintf("failed to get %v codebase image stream", dockerImageName))
 }

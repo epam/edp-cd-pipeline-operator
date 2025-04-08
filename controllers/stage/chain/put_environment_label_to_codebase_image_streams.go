@@ -40,7 +40,7 @@ func (h PutEnvironmentLabelToCodebaseImageStreams) ServeRequest(ctx context.Cont
 	}
 
 	for _, name := range pipe.Spec.InputDockerStreams {
-		stream, err := cluster.GetCodebaseImageStream(h.client, name, stage.Namespace)
+		stream, err := cluster.GetCodebaseImageStreamByCodebaseBaseBranchName(ctx, h.client, name, stage.Namespace)
 		if err != nil {
 			return fmt.Errorf("couldn't get %s codebase image stream: %w", name, err)
 		}
