@@ -118,6 +118,7 @@ func TestTryToDeleteCDStage_Success(t *testing.T) {
 
 	labels := make(map[string]string)
 	labels[createLabelName(name, name)] = labelValue
+	labels[cluster.CodebaseImageStreamCodebaseBranchLabel] = dockerImageName
 
 	cdPipeline := &cdPipeApi.CDPipeline{
 		TypeMeta: metaV1.TypeMeta{},
@@ -151,9 +152,13 @@ func TestTryToDeleteCDStage_Success(t *testing.T) {
 	_, err := reconcileStage.tryToDeleteCDStage(ctrl.LoggerInto(context.Background(), logr.Discard()), stage)
 	assert.NoError(t, err)
 
-	previousImageStream, err := cluster.GetCodebaseImageStream(reconcileStage.client, dockerImageName, namespace)
-	assert.NoError(t, err)
-	assert.Empty(t, previousImageStream.Labels)
+	previousImageStream := &codebaseApi.CodebaseImageStream{}
+	err = fakeClient.Get(context.Background(), types.NamespacedName{
+		Namespace: namespace,
+		Name:      dockerImageName,
+	}, previousImageStream)
+	require.NoError(t, err)
+	assert.Empty(t, previousImageStream.Labels[createLabelName(name, name)])
 
 	_ = &cdPipeApi.Stage{}
 	err = fakeClient.Get(
@@ -268,6 +273,7 @@ func TestReconcileStage_Reconcile_Success(t *testing.T) {
 
 	labels := make(map[string]string)
 	labels[createLabelName(name, name)] = labelValue
+	labels[cluster.CodebaseImageStreamCodebaseBranchLabel] = dockerImageName
 
 	cdPipeline := &cdPipeApi.CDPipeline{
 		TypeMeta: metaV1.TypeMeta{},
@@ -305,9 +311,16 @@ func TestReconcileStage_Reconcile_Success(t *testing.T) {
 	}})
 	require.NoError(t, err)
 
-	previousImageStream, err := cluster.GetCodebaseImageStream(reconcileStage.client, dockerImageName, namespace)
-	assert.NoError(t, err)
-	assert.Empty(t, previousImageStream.Labels)
+	previousImageStream := &codebaseApi.CodebaseImageStream{}
+	err = reconcileStage.client.Get(context.Background(),
+		types.NamespacedName{
+			Namespace: namespace,
+			Name:      dockerImageName,
+		},
+		previousImageStream,
+	)
+	require.NoError(t, err)
+	assert.Empty(t, previousImageStream.Labels[createLabelName(name, name)])
 
 	_ = &cdPipeApi.Stage{}
 	err = fakeClient.Get(
@@ -364,6 +377,7 @@ func TestReconcileStage_ReconcileReconcile_SetOwnerRef(t *testing.T) {
 
 	labels := make(map[string]string)
 	labels[createLabelName(name, name)] = labelValue
+	labels[cluster.CodebaseImageStreamCodebaseBranchLabel] = dockerImageName
 
 	cdPipeline := &cdPipeApi.CDPipeline{
 		TypeMeta: metaV1.TypeMeta{},

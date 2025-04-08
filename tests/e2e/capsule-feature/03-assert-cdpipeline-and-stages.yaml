@@ -253,9 +253,9 @@ spec:
             gitUrlPath: test
             imageRepository: registry.host.local/registry-space/test
             imageTag: NaN
-            namespace: edp-mypipeline-dev
+            namespace: custom-namespace
             repoURL: ssh://git@gerrit-dev:30000/test
-            stage: dev
+            stage: qa
             versionType: default
             customValues: false
           - cluster: in-cluster
@@ -263,9 +263,9 @@ spec:
             gitUrlPath: test
             imageRepository: registry.host.local/registry-space/test
             imageTag: NaN
-            namespace: custom-namespace
+            namespace: edp-mypipeline-dev
             repoURL: ssh://git@gerrit-dev:30000/test
-            stage: qa
+            stage: dev
             versionType: default
             customValues: false
         template:

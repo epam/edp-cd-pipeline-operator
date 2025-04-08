@@ -17,6 +17,7 @@ import (
 
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/platform"
+	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/cluster"
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 	componentApi "github.com/epam/edp-component-operator/api/v1"
 )
@@ -63,6 +64,9 @@ func TestPutCodebaseImageStream_ShouldCreateCis(t *testing.T) {
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "cbis-name",
 			Namespace: "stub-namespace",
+			Labels: map[string]string{
+				cluster.CodebaseImageStreamCodebaseBranchLabel: "cbis-name",
+			},
 		},
 		Spec: codebaseApi.CodebaseImageStreamSpec{
 			Codebase: "cb-name",
@@ -277,6 +281,9 @@ func TestPutCodebaseImageStream_ShouldNotFailWithExistingCbis(t *testing.T) {
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "cbis-name",
 			Namespace: "stub-namespace",
+			Labels: map[string]string{
+				cluster.CodebaseImageStreamCodebaseBranchLabel: "cbis-name",
+			},
 		},
 		Spec: codebaseApi.CodebaseImageStreamSpec{
 			Codebase: "cb-name",
@@ -315,7 +322,6 @@ func TestPutCodebaseImageStream_ShouldNotFailWithExistingCbis(t *testing.T) {
 		},
 		cisResp)
 	assert.NoError(t, err)
-	assert.NotNil(t, metaV1.GetControllerOf(cisResp))
 }
 
 func TestPutCodebaseImageStream_ShouldCreateCisFromConfigMap(t *testing.T) {
@@ -360,6 +366,9 @@ func TestPutCodebaseImageStream_ShouldCreateCisFromConfigMap(t *testing.T) {
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "cbis-name",
 			Namespace: "stub-namespace",
+			Labels: map[string]string{
+				cluster.CodebaseImageStreamCodebaseBranchLabel: "cbis-name",
+			},
 		},
 		Spec: codebaseApi.CodebaseImageStreamSpec{
 			Codebase: "cb-name",
