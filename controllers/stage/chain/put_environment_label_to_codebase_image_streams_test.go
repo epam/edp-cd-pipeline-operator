@@ -77,7 +77,7 @@ func TestPutEnvironmentLabelToCodebaseImageStreams_ServeRequest_Success(t *testi
 			Name:      dockerImageName,
 			Namespace: namespace,
 			Labels: map[string]string{
-				cluster.CodebaseImageStreamCodebaseBranchLabel: dockerImageName,
+				cluster.CodebaseBranchLabel: dockerImageName,
 			},
 		},
 	}
@@ -126,7 +126,7 @@ func TestPutEnvironmentLabelToCodebaseImageStreams_ServeRequest_PreviousStageIma
 			Name:      dockerImageName,
 			Namespace: namespace,
 			Labels: map[string]string{
-				cluster.CodebaseImageStreamCodebaseBranchLabel: dockerImageName,
+				cluster.CodebaseBranchLabel: dockerImageName,
 			},
 		},
 		Spec: codebaseApi.CodebaseImageStreamSpec{
@@ -242,7 +242,7 @@ func TestPutEnvironmentLabelToCodebaseImageStreams_ServeRequest_CantGetVerifiedS
 			Name:      dockerImageName,
 			Namespace: namespace,
 			Labels: map[string]string{
-				cluster.CodebaseImageStreamCodebaseBranchLabel: dockerImageName,
+				cluster.CodebaseBranchLabel: dockerImageName,
 			},
 		},
 		Spec: codebaseApi.CodebaseImageStreamSpec{

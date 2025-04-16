@@ -28,7 +28,7 @@ const (
 func TestServeRequest_Success(t *testing.T) {
 	labels := make(map[string]string)
 	labels[createLabelName(name, name)] = labelValue
-	labels[cluster.CodebaseImageStreamCodebaseBranchLabel] = dockerImageName
+	labels[cluster.CodebaseBranchLabel] = dockerImageName
 
 	stage := createStage(t, 0, cdPipeline)
 
@@ -103,7 +103,7 @@ func TestDeleteEnvironmentLabel_VerifiedImageStream(t *testing.T) {
 			Codebase: codebase,
 		},
 	}
-	image.Labels[cluster.CodebaseImageStreamCodebaseBranchLabel] = dockerImageName
+	image.Labels[cluster.CodebaseBranchLabel] = dockerImageName
 
 	previousImage := codebaseApi.CodebaseImageStream{
 		ObjectMeta: metaV1.ObjectMeta{
@@ -172,7 +172,7 @@ func TestDeleteEnvironmentLabel_ApplicationToPromote(t *testing.T) {
 			Codebase: codebase,
 		},
 	}
-	image.Labels[cluster.CodebaseImageStreamCodebaseBranchLabel] = dockerImageName
+	image.Labels[cluster.CodebaseBranchLabel] = dockerImageName
 
 	previousImage := codebaseApi.CodebaseImageStream{
 		ObjectMeta: metaV1.ObjectMeta{
@@ -291,7 +291,7 @@ func TestSetDeleteEnvironmentLabel_NoPreviousStageError(t *testing.T) {
 			Codebase: codebase,
 		},
 	}
-	image.Labels[cluster.CodebaseImageStreamCodebaseBranchLabel] = dockerImageName
+	image.Labels[cluster.CodebaseBranchLabel] = dockerImageName
 
 	previousImage := codebaseApi.CodebaseImageStream{
 		ObjectMeta: metaV1.ObjectMeta{

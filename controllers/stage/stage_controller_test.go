@@ -118,7 +118,7 @@ func TestTryToDeleteCDStage_Success(t *testing.T) {
 
 	labels := make(map[string]string)
 	labels[createLabelName(name, name)] = labelValue
-	labels[cluster.CodebaseImageStreamCodebaseBranchLabel] = dockerImageName
+	labels[cluster.CodebaseBranchLabel] = dockerImageName
 
 	cdPipeline := &cdPipeApi.CDPipeline{
 		TypeMeta: metaV1.TypeMeta{},
@@ -273,7 +273,7 @@ func TestReconcileStage_Reconcile_Success(t *testing.T) {
 
 	labels := make(map[string]string)
 	labels[createLabelName(name, name)] = labelValue
-	labels[cluster.CodebaseImageStreamCodebaseBranchLabel] = dockerImageName
+	labels[cluster.CodebaseBranchLabel] = dockerImageName
 
 	cdPipeline := &cdPipeApi.CDPipeline{
 		TypeMeta: metaV1.TypeMeta{},
@@ -377,7 +377,7 @@ func TestReconcileStage_ReconcileReconcile_SetOwnerRef(t *testing.T) {
 
 	labels := make(map[string]string)
 	labels[createLabelName(name, name)] = labelValue
-	labels[cluster.CodebaseImageStreamCodebaseBranchLabel] = dockerImageName
+	labels[cluster.CodebaseBranchLabel] = dockerImageName
 
 	cdPipeline := &cdPipeApi.CDPipeline{
 		TypeMeta: metaV1.TypeMeta{},

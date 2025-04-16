@@ -39,7 +39,7 @@ func createCodebaseImageStreamWithLabels(t *testing.T) codebaseApi.CodebaseImage
 
 	labels := make(map[string]string)
 	labels[createLabelName(cdPipeline, name)] = labelValue
-	labels[cluster.CodebaseImageStreamCodebaseBranchLabel] = dockerImageName
+	labels[cluster.CodebaseBranchLabel] = dockerImageName
 
 	return codebaseApi.CodebaseImageStream{
 		ObjectMeta: metaV1.ObjectMeta{

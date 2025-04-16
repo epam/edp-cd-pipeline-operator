@@ -6,8 +6,6 @@ import (
 	"os"
 	"testing"
 
-	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
-	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	k8sApi "k8s.io/api/rbac/v1"
@@ -16,6 +14,9 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+
+	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
+	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 )
 
 const (
@@ -164,7 +165,7 @@ func TestGetCodebaseImageStreamByCodebaseBaseBranchName(t *testing.T) {
 							Name:      "test-branch",
 							Namespace: "default",
 							Labels: map[string]string{
-								CodebaseImageStreamCodebaseBranchLabel: "test-branch",
+								CodebaseBranchLabel: "test-branch",
 							},
 						},
 					}
@@ -199,7 +200,7 @@ func TestGetCodebaseImageStreamByCodebaseBaseBranchName(t *testing.T) {
 							Name:      "test-branch-1",
 							Namespace: "default",
 							Labels: map[string]string{
-								CodebaseImageStreamCodebaseBranchLabel: "test-branch",
+								CodebaseBranchLabel: "test-branch",
 							},
 						},
 					}
@@ -208,7 +209,7 @@ func TestGetCodebaseImageStreamByCodebaseBaseBranchName(t *testing.T) {
 							Name:      "test-branch-2",
 							Namespace: "default",
 							Labels: map[string]string{
-								CodebaseImageStreamCodebaseBranchLabel: "test-branch",
+								CodebaseBranchLabel: "test-branch",
 							},
 						},
 					}
