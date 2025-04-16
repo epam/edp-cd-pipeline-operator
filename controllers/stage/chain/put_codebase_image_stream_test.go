@@ -30,7 +30,7 @@ func TestPutCodebaseImageStream_ShouldCreateCis(t *testing.T) {
 		},
 		Spec: cdPipeApi.CDPipelineSpec{
 			InputDockerStreams: []string{
-				"cbis-name",
+				"codebasebranch-name",
 			},
 		},
 	}
@@ -65,7 +65,7 @@ func TestPutCodebaseImageStream_ShouldCreateCis(t *testing.T) {
 			Name:      "cbis-name",
 			Namespace: "stub-namespace",
 			Labels: map[string]string{
-				cluster.CodebaseImageStreamCodebaseBranchLabel: "cbis-name",
+				cluster.CodebaseBranchLabel: "codebasebranch-name",
 			},
 		},
 		Spec: codebaseApi.CodebaseImageStreamSpec{
@@ -247,7 +247,7 @@ func TestPutCodebaseImageStream_ShouldNotFailWithExistingCbis(t *testing.T) {
 		},
 		Spec: cdPipeApi.CDPipelineSpec{
 			InputDockerStreams: []string{
-				"cbis-name",
+				"codebasebranch-name",
 			},
 		},
 	}
@@ -282,7 +282,7 @@ func TestPutCodebaseImageStream_ShouldNotFailWithExistingCbis(t *testing.T) {
 			Name:      "cbis-name",
 			Namespace: "stub-namespace",
 			Labels: map[string]string{
-				cluster.CodebaseImageStreamCodebaseBranchLabel: "cbis-name",
+				cluster.CodebaseBranchLabel: "codebasebranch-name",
 			},
 		},
 		Spec: codebaseApi.CodebaseImageStreamSpec{
@@ -332,7 +332,7 @@ func TestPutCodebaseImageStream_ShouldCreateCisFromConfigMap(t *testing.T) {
 		},
 		Spec: cdPipeApi.CDPipelineSpec{
 			InputDockerStreams: []string{
-				"cbis-name",
+				"codebasebranch-name",
 			},
 		},
 	}
@@ -367,7 +367,7 @@ func TestPutCodebaseImageStream_ShouldCreateCisFromConfigMap(t *testing.T) {
 			Name:      "cbis-name",
 			Namespace: "stub-namespace",
 			Labels: map[string]string{
-				cluster.CodebaseImageStreamCodebaseBranchLabel: "cbis-name",
+				cluster.CodebaseBranchLabel: "codebasebranch-name",
 			},
 		},
 		Spec: codebaseApi.CodebaseImageStreamSpec{

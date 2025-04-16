@@ -47,7 +47,7 @@ func GetCodebaseImageStream(c client.Client, name, namespace string) (*codebaseA
 }
 
 // TODO: import this label from codebase-operator.
-const CodebaseImageStreamCodebaseBranchLabel = "app.edp.epam.com/cbis-codebasebranch"
+const CodebaseBranchLabel = "app.edp.epam.com/codebasebranch"
 
 func GetCodebaseImageStreamByCodebaseBaseBranchName(
 	ctx context.Context,
@@ -62,7 +62,7 @@ func GetCodebaseImageStreamByCodebaseBaseBranchName(
 		&codebaseImageStreamList,
 		client.InNamespace(namespace),
 		client.MatchingLabels{
-			CodebaseImageStreamCodebaseBranchLabel: codebaseBranchName,
+			CodebaseBranchLabel: codebaseBranchName,
 		},
 	); err != nil {
 		return nil, fmt.Errorf("failed to get CodebaseImageStream by label: %w", err)
