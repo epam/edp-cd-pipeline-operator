@@ -12,7 +12,9 @@ import (
 	"k8s.io/apimachinery/pkg/api/equality"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
@@ -325,14 +327,21 @@ func needToReconcile(object client.Object) bool {
 }
 
 func CheckClusterConnection(ctx context.Context, restConf *rest.Config) error {
-	cl, err := client.New(restConf, client.Options{Scheme: scheme.Scheme})
+	scheme := runtime.NewScheme()
+	restConf.GroupVersion = &schema.GroupVersion{Version: "v1"}
+	restConf.NegotiatedSerializer = serializer.NewCodecFactory(scheme).WithoutConversion()
+	restConf.APIPath = "/"
+
+	cl, err := rest.RESTClientFor(restConf)
 	if err != nil {
 		return fmt.Errorf("failed to create kubernetes client: %w", err)
 	}
 
-	namespaceList := &corev1.NamespaceList{}
-	if err = cl.List(ctx, namespaceList); err != nil {
-		return fmt.Errorf("failed to list namespaces: %w", err)
+	err = cl.Get().
+		AbsPath("/api").
+		Do(ctx).Error()
+	if err != nil {
+		return fmt.Errorf("failed to connect to cluster: %w", err)
 	}
 
 	return nil
