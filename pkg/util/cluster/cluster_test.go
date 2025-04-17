@@ -150,6 +150,7 @@ func TestGetCodebaseImageStreamByCodebaseBaseBranchName(t *testing.T) {
 		k8sCl              func(t *testing.T) client.Client
 		codebaseBranchName string
 	}
+
 	tests := []struct {
 		name    string
 		args    args
