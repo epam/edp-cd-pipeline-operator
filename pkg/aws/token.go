@@ -19,7 +19,10 @@ type TokenGenerator struct {
 // GetWithRole returns a token for the given cluster and role ARN.
 // The token is valid for 15 minutes.
 func (t *TokenGenerator) GetWithRole(clusterName, roleARN string) (Token, error) {
-	tkn, err := t.aws.GetWithRole(clusterName, roleARN)
+	tkn, err := t.aws.GetWithOptions(&token.GetTokenOptions{
+		ClusterID:     clusterName,
+		AssumeRoleARN: roleARN,
+	})
 	if err != nil {
 		return Token{}, fmt.Errorf("failed to get token: %w", err)
 	}

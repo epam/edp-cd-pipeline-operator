@@ -18,14 +18,18 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/yaml"
 
-	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
+
+	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
+)
+
+const (
+	ns = "default"
 )
 
 func TestArgoApplicationSetManager_CreateApplicationSet(t *testing.T) {
 	t.Parallel()
 
-	ns := "default"
 	scheme := runtime.NewScheme()
 
 	require.NoError(t, cdPipeApi.AddToScheme(scheme))
@@ -415,7 +419,6 @@ func TestArgoApplicationSetManager_CreateApplicationSet(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -432,7 +435,6 @@ func TestArgoApplicationSetManager_CreateApplicationSet(t *testing.T) {
 func TestArgoApplicationSetManager_CreateApplicationSetGenerators(t *testing.T) {
 	t.Parallel()
 
-	ns := "default"
 	scheme := runtime.NewScheme()
 
 	require.NoError(t, cdPipeApi.AddToScheme(scheme))
@@ -1008,7 +1010,6 @@ func TestArgoApplicationSetManager_CreateApplicationSetGenerators(t *testing.T) 
 	}
 
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -1025,7 +1026,6 @@ func TestArgoApplicationSetManager_CreateApplicationSetGenerators(t *testing.T) 
 func TestArgoApplicationSetManager_RemoveApplicationSetGenerators(t *testing.T) {
 	t.Parallel()
 
-	ns := "default"
 	scheme := runtime.NewScheme()
 
 	require.NoError(t, cdPipeApi.AddToScheme(scheme))
@@ -1156,7 +1156,6 @@ func TestArgoApplicationSetManager_RemoveApplicationSetGenerators(t *testing.T) 
 	}
 
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 

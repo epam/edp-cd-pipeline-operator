@@ -11,7 +11,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
-	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/helper"
+	"github.com/epam/edp-cd-pipeline-operator/v2/internal/controller/helper"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/consts"
 )
 

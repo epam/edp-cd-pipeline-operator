@@ -10,15 +10,16 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	pipelineApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
-	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/stage/chain/util"
+	"github.com/epam/edp-cd-pipeline-operator/v2/internal/controller/stage/chain/util"
 )
 
 const listLimit = 1000
 
-//+kubebuilder:webhook:path=/validate-v2-edp-epam-com-v1-stage,mutating=false,failurePolicy=fail,sideEffects=None,groups=v2.edp.epam.com,resources=stages,verbs=create;update;delete,versions=v1,name=stage.epam.com,admissionReviewVersions=v1
-//+kubebuilder:rbac:groups="",resources=namespaces,verbs=get;list;watch
+// +kubebuilder:webhook:path=/validate-v2-edp-epam-com-v1-stage,mutating=false,failurePolicy=fail,sideEffects=None,groups=v2.edp.epam.com,resources=stages,verbs=create;update;delete,versions=v1,name=stage.epam.com,admissionReviewVersions=v1
+// +kubebuilder:rbac:groups="",resources=namespaces,verbs=get;list;watch
 
 // StageValidationWebhook is a webhook for validating Stage CRD.
 type StageValidationWebhook struct {
@@ -46,27 +47,27 @@ func (r *StageValidationWebhook) SetupWebhookWithManager(mgr ctrl.Manager) error
 var _ webhook.CustomValidator = &StageValidationWebhook{}
 
 // ValidateCreate is a webhook for validating the creation of the Stage CR.
-func (r *StageValidationWebhook) ValidateCreate(ctx context.Context, obj runtime.Object) error {
+func (r *StageValidationWebhook) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
 	createdStage, ok := obj.(*pipelineApi.Stage)
 	if !ok {
-		return errors.New("the wrong object given, expected Stage")
+		return nil, errors.New("the wrong object given, expected Stage")
 	}
 
 	if err := r.uniqueTargetNamespaces(ctx, createdStage); err != nil {
-		return err
+		return nil, err
 	}
 
-	return r.uniqueTargetNamespaceAcrossCluster(ctx, createdStage)
+	return nil, r.uniqueTargetNamespaceAcrossCluster(ctx, createdStage)
 }
 
 // ValidateUpdate is a webhook for validating the updating of the Stage CR.
-func (*StageValidationWebhook) ValidateUpdate(_ context.Context, oldObj, newObj runtime.Object) error {
-	return checkResourceProtectionFromModificationOnUpdate(oldObj, newObj)
+func (*StageValidationWebhook) ValidateUpdate(_ context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
+	return nil, checkResourceProtectionFromModificationOnUpdate(oldObj, newObj)
 }
 
 // ValidateDelete is a webhook for validating the deleting of the Stage CR.
-func (*StageValidationWebhook) ValidateDelete(_ context.Context, obj runtime.Object) error {
-	return checkResourceProtectionFromModificationOnDelete(obj)
+func (*StageValidationWebhook) ValidateDelete(_ context.Context, obj runtime.Object) (admission.Warnings, error) {
+	return nil, checkResourceProtectionFromModificationOnDelete(obj)
 }
 
 func (r *StageValidationWebhook) uniqueTargetNamespaces(ctx context.Context, stage *pipelineApi.Stage) error {

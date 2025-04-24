@@ -45,31 +45,6 @@ rules:
   - v2.edp.epam.com
   resources:
   - cdpipelines
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - v2.edp.epam.com
-  resources:
-  - cdpipelines/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - v2.edp.epam.com
-  resources:
-  - cdpipelines/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - v2.edp.epam.com
-  resources:
   - stages
   verbs:
   - create
@@ -82,12 +57,14 @@ rules:
 - apiGroups:
   - v2.edp.epam.com
   resources:
+  - cdpipelines/finalizers
   - stages/finalizers
   verbs:
   - update
 - apiGroups:
   - v2.edp.epam.com
   resources:
+  - cdpipelines/status
   - stages/status
   verbs:
   - get

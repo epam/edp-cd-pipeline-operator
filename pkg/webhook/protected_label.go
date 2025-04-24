@@ -2,12 +2,12 @@ package webhook
 
 import (
 	"errors"
+	"slices"
 	"strings"
 
 	"k8s.io/apimachinery/pkg/api/equality"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"slices"
 
 	pipelineApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
 )

@@ -8,6 +8,7 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
+	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 )
 
 var _ = Describe("webhooks registration", func() {
@@ -34,8 +35,10 @@ var _ = Describe("webhooks registration", func() {
 		It("should register validation webhooks", func() {
 			By("creating manager")
 			k8sManager, err := ctrl.NewManager(cfg, ctrl.Options{
-				Scheme:             k8sClient.Scheme(),
-				MetricsBindAddress: "0",
+				Scheme: k8sClient.Scheme(),
+				Metrics: metricsserver.Options{
+					BindAddress: "0",
+				},
 			})
 			Expect(err).ToNot(HaveOccurred())
 
@@ -48,8 +51,10 @@ var _ = Describe("webhooks registration", func() {
 			It("should return error", func() {
 				By("creating manager")
 				k8sManager, err := ctrl.NewManager(cfg, ctrl.Options{
-					Scheme:             scheme.Scheme,
-					MetricsBindAddress: "0",
+					Scheme: scheme.Scheme,
+					Metrics: metricsserver.Options{
+						BindAddress: "0",
+					},
 				})
 				Expect(err).ToNot(HaveOccurred())
 
@@ -63,8 +68,10 @@ var _ = Describe("webhooks registration", func() {
 		It("should return error", func() {
 			By("creating manager")
 			k8sManager, err := ctrl.NewManager(cfg, ctrl.Options{
-				Scheme:             k8sClient.Scheme(),
-				MetricsBindAddress: "0",
+				Scheme: k8sClient.Scheme(),
+				Metrics: metricsserver.Options{
+					BindAddress: "0",
+				},
 			})
 			Expect(err).ToNot(HaveOccurred())
 
