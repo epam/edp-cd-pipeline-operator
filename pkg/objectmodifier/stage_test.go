@@ -10,7 +10,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
@@ -95,7 +95,6 @@ func Test_setStageLabel(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -157,7 +156,7 @@ func Test_stageOwnerRefModifier_Apply(t *testing.T) {
 						{
 							Name:       "test-pipeline",
 							UID:        types.UID("64fbdcc6-c176-41a9-8d8c-f5c0a955acd8"),
-							Controller: pointer.Bool(true),
+							Controller: ptr.To(true),
 							Kind:       consts.CDPipelineKind,
 						},
 					},
@@ -211,7 +210,6 @@ func Test_stageOwnerRefModifier_Apply(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -281,7 +279,7 @@ func TestStageBatchModifier_Apply(t *testing.T) {
 						{
 							Name:       "test-pipeline",
 							UID:        types.UID("64fbdcc6-c176-41a9-8d8c-f5c0a955acd8"),
-							Controller: pointer.Bool(true),
+							Controller: ptr.To(true),
 							Kind:       consts.CDPipelineKind,
 						},
 					},
@@ -335,7 +333,7 @@ func TestStageBatchModifier_Apply(t *testing.T) {
 						{
 							Name:       "test-pipeline",
 							UID:        types.UID("64fbdcc6-c176-41a9-8d8c-f5c0a955acd8"),
-							Controller: pointer.Bool(true),
+							Controller: ptr.To(true),
 							Kind:       consts.CDPipelineKind,
 						},
 					},
@@ -362,7 +360,6 @@ func TestStageBatchModifier_Apply(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 

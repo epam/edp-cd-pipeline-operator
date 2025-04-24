@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -137,7 +138,9 @@ func TestCDPipelineValidationWebhook_ValidateUpdate(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			cd := NewCDPipelineValidationWebhook(cl)
-			tt.wantErr(t, cd.ValidateUpdate(context.Background(), tt.args.oldObj, tt.args.newObj))
+			w, err := cd.ValidateUpdate(context.Background(), tt.args.oldObj, tt.args.newObj)
+			assert.Nil(t, w)
+			tt.wantErr(t, err)
 		})
 	}
 }
@@ -187,7 +190,9 @@ func TestCDPipelineValidationWebhook_ValidateDelete(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			cd := NewCDPipelineValidationWebhook(cl)
-			tt.wantErr(t, cd.ValidateDelete(context.Background(), tt.args.obj))
+			w, err := cd.ValidateDelete(context.Background(), tt.args.obj)
+			assert.Nil(t, w)
+			tt.wantErr(t, err)
 		})
 	}
 }

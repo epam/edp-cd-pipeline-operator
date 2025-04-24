@@ -14,8 +14,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
+
+	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
 )
 
 type generatorElement struct {

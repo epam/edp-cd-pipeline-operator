@@ -68,7 +68,6 @@ func TestCreateRole_Success(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			k8sClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(tt.objects...).Build()
 			s := NewRbacManager(k8sClient, logr.Discard())
@@ -140,7 +139,6 @@ func TestGetRole_Success(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			s := NewRbacManager(
 				fake.NewClientBuilder().WithScheme(scheme).WithObjects(tt.objects...).Build(),
@@ -187,7 +185,6 @@ func TestKubernetesRbac_RoleBindingExists(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -262,7 +259,6 @@ func TestKubernetesRbac_CreateRoleBindingIfNotExists(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			k8sClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(tt.objects...).Build()
 			s := NewRbacManager(k8sClient, logr.Discard())

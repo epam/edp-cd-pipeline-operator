@@ -13,9 +13,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	pipelineApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
-	"github.com/epam/edp-cd-pipeline-operator/v2/controllers/stage/chain/util"
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
+
+	pipelineApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
+	"github.com/epam/edp-cd-pipeline-operator/v2/internal/controller/stage/chain/util"
 )
 
 func TestStageValidationWebhook_ValidateCreate(t *testing.T) {
@@ -161,14 +162,13 @@ func TestStageValidationWebhook_ValidateCreate(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tt := tt
-
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
 			r := NewStageValidationWebhook(tt.client(t))
+			w, err := r.ValidateCreate(context.Background(), tt.obj)
 
-			err := r.ValidateCreate(context.Background(), tt.obj)
+			assert.Nil(t, w)
 			tt.wantErr(t, err)
 		})
 	}
@@ -242,7 +242,10 @@ func TestStageValidationWebhook_ValidateUpdate(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			cd := NewStageValidationWebhook(cl)
-			tt.wantErr(t, cd.ValidateUpdate(context.Background(), tt.args.oldObj, tt.args.newObj))
+			w, err := cd.ValidateUpdate(context.Background(), tt.args.oldObj, tt.args.newObj)
+
+			assert.Nil(t, w)
+			tt.wantErr(t, err)
 		})
 	}
 }
@@ -289,7 +292,10 @@ func TestStageValidationWebhook_ValidateDelete(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			st := NewStageValidationWebhook(cl)
-			tt.wantErr(t, st.ValidateDelete(context.Background(), tt.args.obj))
+			w, err := st.ValidateDelete(context.Background(), tt.args.obj)
+
+			assert.Nil(t, w)
+			tt.wantErr(t, err)
 		})
 	}
 }

@@ -4,6 +4,9 @@ dir: "{{.InterfaceDir}}/mocks"
 mockname: "Mock{{.InterfaceName}}"
 outpkg: "mocks"
 filename: "{{.InterfaceName | lower}}_mock.go"
+resolve-type-alias: False
+disable-version-string: True
+issue-845-fix: True
 packages:
   github.com/epam/edp-cd-pipeline-operator/v2/pkg/aws:
     interfaces:
