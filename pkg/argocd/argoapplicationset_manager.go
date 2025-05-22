@@ -4,6 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"reflect"
+	"slices"
+	"strings"
 
 	argoApi "github.com/argoproj/argo-cd/v2/pkg/apis/application/v1alpha1"
 	"golang.org/x/exp/maps"
@@ -459,34 +462,89 @@ func setGenerators(stageName string, appset *argoApi.ApplicationSet, stageGenera
 	return false, nil
 }
 
-func processGeneratorListElements(stageName string, generator *argoApi.ApplicationSetGenerator, stageGenerators map[string]apiextensionsv1.JSON) (bool, error) {
-	n := 0
-
-	for _, rawel := range generator.List.Elements {
-		el := &generatorElement{}
-		if err := json.Unmarshal(rawel.Raw, el); err != nil {
-			return false, fmt.Errorf("failed to unmarshal generator element: %w", err)
-		}
-
-		key := fmt.Sprintf("%s-%s", el.Codebase, el.Stage)
-		_, ok := stageGenerators[key]
-
-		if ok {
-			delete(stageGenerators, key)
-		}
-
-		if el.Stage != stageName || (el.Stage == stageName && ok) {
-			generator.List.Elements[n] = rawel
-			n++
-		}
+// processGeneratorListElements updates the generator's List.Elements for a given stage.
+// It filters, merges, and sorts elements to ensure predictable order and correct content.
+func processGeneratorListElements(
+	stageName string,
+	generator *argoApi.ApplicationSetGenerator,
+	stageGenerators map[string]apiextensionsv1.JSON,
+) (bool, error) {
+	// Filter out elements not matching the stage, and update with new/remaining stageGenerators.
+	filtered, remaining := filterAndUpdateElements(stageName, generator.List.Elements, stageGenerators)
+	if len(remaining) > 0 {
+		// Add any new elements for this stage
+		filtered = append(filtered, maps.Values(remaining)...)
+	}
+	// Sort elements for predictability in tests and output.
+	sorted, err := sortElementsByStageAndCodebase(filtered)
+	if err != nil {
+		return false, err
 	}
 
-	if len(generator.List.Elements) != n || len(stageGenerators) > 0 {
-		generator.List.Elements = generator.List.Elements[:n]
-		generator.List.Elements = append(generator.List.Elements, maps.Values(stageGenerators)...)
-
+	if !reflect.DeepEqual(generator.List.Elements, sorted) {
+		generator.List.Elements = sorted
 		return true, nil
 	}
 
 	return false, nil
+}
+
+// filterAndUpdateElements filters out elements for the given stage and updates the set of remaining stageGenerators.
+// Returns the filtered elements and the remaining (not yet present) stageGenerators.
+func filterAndUpdateElements(stageName string, elements []apiextensionsv1.JSON, stageGenerators map[string]apiextensionsv1.JSON) ([]apiextensionsv1.JSON, map[string]apiextensionsv1.JSON) {
+	filtered := make([]apiextensionsv1.JSON, 0, len(elements))
+	remaining := maps.Clone(stageGenerators)
+
+	for _, rawel := range elements {
+		var el generatorElement
+		_ = json.Unmarshal(rawel.Raw, &el) // error is handled in main func.
+		key := fmt.Sprintf("%s-%s", el.Codebase, el.Stage)
+		_, exists := remaining[key]
+
+		if exists {
+			// Remove from remaining if already present.
+			delete(remaining, key)
+		}
+		// Keep element if it's not for this stage, or if it's for this stage and still present in stageGenerators.
+		if el.Stage != stageName || (el.Stage == stageName && exists) {
+			filtered = append(filtered, rawel)
+		}
+	}
+
+	return filtered, remaining
+}
+
+// sortElementsByStageAndCodebase sorts elements by Stage and Codebase for deterministic output.
+func sortElementsByStageAndCodebase(elements []apiextensionsv1.JSON) ([]apiextensionsv1.JSON, error) {
+	type sortableElement struct {
+		Raw      []byte
+		Stage    string
+		Codebase string
+	}
+
+	sorted := make([]sortableElement, 0, len(elements))
+
+	for _, rawel := range elements {
+		var el generatorElement
+		if err := json.Unmarshal(rawel.Raw, &el); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal generator element for sorting: %w", err)
+		}
+
+		sorted = append(sorted, sortableElement{Raw: rawel.Raw, Stage: el.Stage, Codebase: el.Codebase})
+	}
+
+	slices.SortStableFunc(sorted, func(a, b sortableElement) int {
+		if cmp := strings.Compare(a.Stage, b.Stage); cmp != 0 {
+			return cmp
+		}
+
+		return strings.Compare(a.Codebase, b.Codebase)
+	})
+
+	result := make([]apiextensionsv1.JSON, len(sorted))
+	for i, el := range sorted {
+		result[i].Raw = el.Raw
+	}
+
+	return result, nil
 }

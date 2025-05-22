@@ -576,6 +576,23 @@ func TestArgoApplicationSetManager_CreateApplicationSetGenerators(t *testing.T) 
 				require.Len(t, appset.Spec.Generators, 1)
 				require.Len(t, appset.Spec.Generators[0].List.Elements, 3)
 
+				// Check that elements are sorted by stage, then codebase
+				prevStage := ""
+				prevCodebase := ""
+				for i, rawel := range appset.Spec.Generators[0].List.Elements {
+					el := &generatorElement{}
+					require.NoError(t, json.Unmarshal(rawel.Raw, el))
+					if i > 0 {
+						if prevStage == el.Stage {
+							require.LessOrEqual(t, prevCodebase, el.Codebase, "elements are not sorted by codebase")
+						} else {
+							require.Less(t, prevStage, el.Stage, "elements are not sorted by stage")
+						}
+					}
+					prevStage = el.Stage
+					prevCodebase = el.Codebase
+				}
+
 				expected := map[string]string{
 					"app1":   `{"cluster":"in-cluster", "codebase":"app1", "gitUrlPath":"company/app1", "imageRepository":"app1-main-image", "imageTag":"NaN", "namespace":"default", "stage":"stage1", "versionType":"default", "customValues":false, "repoURL": "ssh://@github.com:22/company/app1"}`,
 					"app2":   `{"stage":"stage1", "codebase": "app2"}`,
