@@ -1,0 +1,23 @@
+apiVersion: v2.edp.epam.com/v1
+kind: Stage
+metadata:
+  name: stage-with-same-target-namespace
+spec:
+  cdPipeline: mypipeline
+  clusterName: in-cluster
+  description: Env
+  name: stage-with-same-target-namespace
+  # this namespace is the same as in the Stage mypipeline-qa
+  namespace: custom-namespace
+  order: 1
+  qualityGates:
+    - autotestName: null
+      branchName: null
+      qualityGateType: manual
+      stepName: approve
+  source:
+    library:
+      name: default
+    type: default
+  triggerType: Auto
+  triggerTemplate: deploy
