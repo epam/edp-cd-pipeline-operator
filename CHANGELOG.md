@@ -2,8 +2,8 @@
 ## [Unreleased]
 
 
-<a name="v2.25.1"></a>
-## v2.25.1 - 2025-03-25
+<a name="v2.25.2"></a>
+## v2.25.2 - 2025-04-17
 ### Features
 
 - Implement cluster secret connectivity status check ([#118](https://github.com/epam/edp-cd-pipeline-operator/issues/118))
@@ -35,6 +35,7 @@
 
 ### Bug Fixes
 
+- Use the lightweight /api endpoint to check cluster connection ([#140](https://github.com/epam/edp-cd-pipeline-operator/issues/140))
 - Resolve repo path issue in ApplicationSet with GitServers ([#86](https://github.com/epam/edp-cd-pipeline-operator/issues/86))
 - Fix string concatenation for generating gitopsRepoUrl ([#25](https://github.com/epam/edp-cd-pipeline-operator/issues/25))
 - We have to use git over ssh for customValues in ApplicationSet ([#25](https://github.com/epam/edp-cd-pipeline-operator/issues/25))
@@ -118,4 +119,4 @@
 Helm parameter kioskEnabled was removed. Use instead --set global.tenancyEngine=kiosk.
 
 
-[Unreleased]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.25.1...HEAD
+[Unreleased]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.25.2...HEAD
