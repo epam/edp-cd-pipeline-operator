@@ -23,8 +23,8 @@ annotations:
   artifacthub.io/license: Apache-2.0
   artifacthub.io/operator: "true"
   artifacthub.io/images: |
-    - name: cd-pipeline-operator:2.25.1
-      image: epamedp/cd-pipeline-operator:2.25.1
+    - name: cd-pipeline-operator:2.25.2
+      image: epamedp/cd-pipeline-operator:2.25.2
   artifacthub.io/operatorCapabilities: Full Lifecycle
   artifacthub.io/crds: |
     - kind: CDPipeline

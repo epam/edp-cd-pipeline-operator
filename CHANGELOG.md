@@ -1,11 +1,34 @@
 <a name="unreleased"></a>
 ## [Unreleased]
 
+### Features
+
+- Use label selector for CodebaseImageStream ([#135](https://github.com/epam/edp-cd-pipeline-operator/issues/135))
+
+### Bug Fixes
+
+- Use the lightweight /api endpoint to check cluster connection ([#140](https://github.com/epam/edp-cd-pipeline-operator/issues/140))
+
+### Code Refactoring
+
+- Update codebasebranch label to improve consistency ([#135](https://github.com/epam/edp-cd-pipeline-operator/issues/135))
+
 ### Routine
 
+- Update current development version ([#156](https://github.com/epam/edp-cd-pipeline-operator/issues/156))
+- Make ApplicationSet generators sorted ([#151](https://github.com/epam/edp-cd-pipeline-operator/issues/151))
+- Add Multi-architecture build support ([#149](https://github.com/epam/edp-cd-pipeline-operator/issues/149))
+- Update current development version ([#133](https://github.com/epam/edp-cd-pipeline-operator/issues/133))
 - Rename ConfigMap from 'edp-config' to 'krci-config' ([#124](https://github.com/epam/edp-cd-pipeline-operator/issues/124))
 - Add ImagePullSecrets field support ([#131](https://github.com/epam/edp-cd-pipeline-operator/issues/131))
 - Update current development version ([#128](https://github.com/epam/edp-cd-pipeline-operator/issues/128))
+
+
+<a name="v2.25.2"></a>
+## [v2.25.2] - 2025-05-26
+### Bug Fixes
+
+- Use the lightweight /api endpoint to check cluster connection ([#140](https://github.com/epam/edp-cd-pipeline-operator/issues/140))
 
 
 <a name="v2.25.1"></a>
