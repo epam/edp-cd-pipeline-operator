@@ -3,7 +3,7 @@
 
 
 <a name="v2.25.2"></a>
-## v2.25.2 - 2025-04-17
+## v2.25.2 - 2025-05-26
 ### Features
 
 - Implement cluster secret connectivity status check ([#118](https://github.com/epam/edp-cd-pipeline-operator/issues/118))
