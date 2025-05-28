@@ -3,7 +3,7 @@ module github.com/epam/edp-cd-pipeline-operator/v2
 go 1.24
 
 require (
-	github.com/argoproj/argo-cd/v2 v2.14.11
+	github.com/argoproj/argo-cd/v2 v2.14.13
 	github.com/epam/edp-codebase-operator/v2 v2.3.0-95.0.20250422152333-67bb03787551
 	github.com/epam/edp-common v0.0.0-20230710145648-344bbce4120e
 	github.com/go-logr/logr v1.4.2
@@ -85,7 +85,7 @@ require (
 	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/ProtonMail/go-crypto v1.1.6 // indirect
 	github.com/antlr4-go/antlr/v4 v4.13.0 // indirect
-	github.com/argoproj/gitops-engine v0.7.1-0.20250328191959-6d3cf122b03f // indirect
+	github.com/argoproj/gitops-engine v0.7.1-0.20250521000818-c08b0a72c1f1 // indirect
 	github.com/argoproj/pkg v0.13.7-0.20230626144333-d56162821bd1 // indirect
 	github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2 // indirect
 	github.com/aws/aws-sdk-go v1.55.5 // indirect
