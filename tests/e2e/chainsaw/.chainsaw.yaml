@@ -1,0 +1,9 @@
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Configuration
+metadata:
+  name: configuration
+spec:
+  namespace: krci
+  parallel: 1
+  fullName: true
+  failFast: true

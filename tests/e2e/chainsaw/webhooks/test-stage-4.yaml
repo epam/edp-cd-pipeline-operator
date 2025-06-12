@@ -1,0 +1,17 @@
+apiVersion: v2.edp.epam.com/v1
+kind: Stage
+metadata:
+  name: test-stage-4
+  labels:
+    app.edp.epam.com/edit-protection: update
+spec:
+  name: test-stage-4
+  cdPipeline: test-pipeline
+  namespace: test-namespace-4
+  order: 1
+  description: "Test stage 4"
+  qualityGates:
+    - qualityGateType: manual
+      stepName: "manual-approval"
+      autotestName: ""
+      branchName: ""

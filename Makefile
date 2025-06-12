@@ -17,7 +17,7 @@ $(LOCALBIN):
 	mkdir -p $(LOCALBIN)
 
 # Use kind cluster for testing
-CONTAINER_REGISTRY_URL?="repo"
+CONTAINER_REGISTRY_URL?="docker.io"
 CONTAINER_REGISTRY_SPACE?="edp"
 START_KIND_CLUSTER?=true
 KIND_CLUSTER_NAME?="cd-pipeline-operator"
@@ -25,7 +25,7 @@ KUBE_VERSION?=1.31
 KIND_CONFIG?=./hack/kind-$(KUBE_VERSION).yaml
 
 E2E_IMAGE_REPOSITORY?="cd-pipeline-operator-image"
-E2E_IMAGE_TAG?="latest"
+E2E_IMAGE_TAG?="0.0.1"
 
 override LDFLAGS += \
   -X ${PACKAGE}.version=${VERSION} \
@@ -75,6 +75,9 @@ BUNDLE_DEFAULT_CHANNEL := --default-channel=$(DEFAULT_CHANNEL)
 endif
 BUNDLE_METADATA_OPTS ?= $(BUNDLE_CHANNELS) $(BUNDLE_DEFAULT_CHANNEL)
 
+# CONTAINER_TOOL defines the container tool to be used for building images.
+CONTAINER_TOOL ?= docker
+
 .DEFAULT_GOAL:=help
 # set default shell
 SHELL=/bin/bash -o pipefail -o errexit
@@ -100,11 +103,20 @@ test: fmt vet envtest
 	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) --arch=$(HOST_ARCH) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path)" \
 	go test ./... -coverprofile=coverage.out
 
-## Run e2e tests. Requires kind with running cluster and kuttl tool.
-e2e: build
-	docker build --no-cache -t ${CONTAINER_REGISTRY_URL}/${CONTAINER_REGISTRY_SPACE}/${E2E_IMAGE_REPOSITORY}:${E2E_IMAGE_TAG} .
+# Run e2e tests. Requires kind with running cluster and chainsaw tool.
+# To run e2e tests locally:
+# 1. Start a kind cluster: make start-kind
+# 2. Run the tests: make e2e
+# For Mac users with podman: CONTAINER_TOOL=podman HOST_OS=linux HOST_ARCH=amd64 make e2e
+# For debugging test failures: use $(CHAINSAW) test --pause-on-failure in the e2e target
+e2e: build chainsaw
+	$(CONTAINER_TOOL) build --no-cache --build-arg TARGETARCH=amd64 -t ${CONTAINER_REGISTRY_URL}/${CONTAINER_REGISTRY_SPACE}/${E2E_IMAGE_REPOSITORY}:${E2E_IMAGE_TAG} .
 	kind load --name $(KIND_CLUSTER_NAME) docker-image ${CONTAINER_REGISTRY_URL}/${CONTAINER_REGISTRY_SPACE}/${E2E_IMAGE_REPOSITORY}:${E2E_IMAGE_TAG}
-	E2E_IMAGE_REPOSITORY=${E2E_IMAGE_REPOSITORY} CONTAINER_REGISTRY_URL=${CONTAINER_REGISTRY_URL} CONTAINER_REGISTRY_SPACE=${CONTAINER_REGISTRY_SPACE} E2E_IMAGE_TAG=${E2E_IMAGE_TAG} kubectl-kuttl test
+	E2E_IMAGE_REPOSITORY=${E2E_IMAGE_REPOSITORY} \
+	CONTAINER_REGISTRY_URL=${CONTAINER_REGISTRY_URL} \
+	CONTAINER_REGISTRY_SPACE=${CONTAINER_REGISTRY_SPACE} \
+	E2E_IMAGE_TAG=${E2E_IMAGE_TAG} \
+	$(CHAINSAW) test --config tests/e2e/chainsaw/.chainsaw.yaml tests/e2e/chainsaw
 
 .PHONY: fmt
 fmt:  ## Run go fmt
@@ -165,6 +177,7 @@ GITCHGLOG_VERSION ?= v0.15.4
 CRDOC_VERSION ?= v0.6.4
 ENVTEST_K8S_VERSION = 1.31.0
 OPERATOR_SDK_VERSION ?= v1.39.2
+CHAINSAW_VERSION ?= v0.2.12
 
 KUSTOMIZE ?= $(LOCALBIN)/kustomize
 .PHONY: kustomize
@@ -263,3 +276,9 @@ bundle-push: ## Push the bundle image.
 .PHONY: docker-push
 docker-push: ## Push docker image with the manager.
 	docker push ${IMG}
+
+CHAINSAW = $(LOCALBIN)/chainsaw
+.PHONY: chainsaw
+chainsaw: ## Download chainsaw locally if necessary.
+	$(call go-install-tool,$(CHAINSAW),github.com/kyverno/chainsaw,$(CHAINSAW_VERSION))
+
