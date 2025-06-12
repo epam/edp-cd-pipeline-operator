@@ -23,7 +23,7 @@ spec:
   clusterName: in-cluster
   description: Development Environment
   name: dev
-  namespace: edp-mypipeline-dev
+  namespace: krci-mypipeline-dev
   order: 0
   qualityGates:
     - autotestName: null

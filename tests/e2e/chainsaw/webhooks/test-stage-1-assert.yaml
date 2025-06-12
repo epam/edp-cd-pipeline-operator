@@ -1,0 +1,10 @@
+apiVersion: v2.edp.epam.com/v1
+kind: Stage
+metadata:
+  name: test-stage-1
+spec:
+  name: test-stage-1
+  cdPipeline: test-pipeline
+  namespace: test-namespace
+  clusterName: test-cluster
+  order: 0

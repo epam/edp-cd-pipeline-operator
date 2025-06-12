@@ -1,9 +1,0 @@
-apiVersion: kuttl.dev/v1beta1
-kind: TestStep
-commands:
-  # delete cdpipeline, this command also deletes all dependent stages
-  - command: kubectl delete cdpipeline mypipeline
-    namespaced: true
-    # we have to uninstall helm since clusterwide resources, like ClusterRole are preserved
-  - command: helm uninstall cd-pipeline-operator-e2e
-    namespaced: true
