@@ -79,7 +79,7 @@ func SecretToIRSACluster(secret *corev1.Secret) (*IrsaClusterConfig, error) {
 func ArgoIRSAClusterSecretToKubeconfig(secret *corev1.Secret, tokenGenerator aws.AIMAuthTokenGenerator) ([]byte, error) {
 	argoConf, err := SecretToIRSACluster(secret)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get IRS secret config: %w", err)
+		return nil, fmt.Errorf("failed to get IRSA secret config: %w", err)
 	}
 
 	tk, err := tokenGenerator.GetWithRole(argoConf.AwsAuthConfig.ClusterName, argoConf.AwsAuthConfig.RoleARN)

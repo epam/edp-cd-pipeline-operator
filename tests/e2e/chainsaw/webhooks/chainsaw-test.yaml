@@ -1,0 +1,111 @@
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: stage-webhook-test
+spec:
+  namespace: webhooks-test
+  steps:
+  - name: install-cd-pipeline-operator
+    try:
+    - script:
+        bindings:
+        - name: image_repository
+          value: (join('/', [env('CONTAINER_REGISTRY_URL'), env('CONTAINER_REGISTRY_SPACE'), env('E2E_IMAGE_REPOSITORY')]))
+        - name: image_tag
+          value: (env('E2E_IMAGE_TAG'))
+        env:
+        - name: IMAGE_REPOSITORY
+          value: ($image_repository)
+        - name: E2E_IMAGE_TAG
+          value: ($image_tag)
+        - name: NAMESPACE
+          value: $namespace
+        content: |
+          set -e
+
+          helm install --replace --set image.repository=$IMAGE_REPOSITORY \
+          --set image.tag=$E2E_IMAGE_TAG \
+          --namespace $NAMESPACE \
+          --wait \
+          cd-pipeline-operator-e2e ../../../../deploy-templates
+        timeout: 2m
+        check:
+          ($error == null): true
+  - name: install-krci-dependencies
+    try:
+    - script:
+        content: |
+          set -e
+          
+          kubectl apply -f https://raw.githubusercontent.com/epam/edp-codebase-operator/master/deploy-templates/crds/v2.edp.epam.com_codebaseimagestreams.yaml
+          kubectl apply -f https://raw.githubusercontent.com/epam/edp-codebase-operator/master/deploy-templates/crds/v2.edp.epam.com_codebases.yaml
+          kubectl apply -f https://raw.githubusercontent.com/epam/edp-codebase-operator/master/deploy-templates/crds/v2.edp.epam.com_gitservers.yaml
+          kubectl apply -f https://raw.githubusercontent.com/argoproj/argo-cd/v2.9.3/manifests/crds/applicationset-crd.yaml
+        timeout: 30s
+    - apply:
+        file: krci-config.yaml
+        expect:
+          - match:
+              kind: ConfigMap
+              metadata:
+                name: krci-config
+              data:
+                container_registry_host: registry.host.local
+                container_registry_space: registry-space
+            check:
+              ($error == null): true
+    - apply:
+        file: test-main-cis.yaml
+        expect:
+          - match:
+              kind: CodebaseImageStream
+              metadata:
+                name: test-main
+              spec:
+                codebase: test
+                imageName: registry.host.local/registry-space/test
+                tags:
+                  - created: '2023-10-19T14:05:05Z'
+                    name: 0.1.0-SNAPSHOT.1
+            check:
+              ($error == null): true
+
+  - name: setup-test-environment
+    try:
+    - apply:
+        file: test-cdpipeline.yaml
+    - apply:
+        file: test-stage-1.yaml
+    - assert:
+        file: test-stage-1.yaml
+
+  - name: test-duplicate-namespace-in-cdpipeline
+    try:
+    - script:
+        content: |
+          kubectl apply -f test-stage-2-duplicate-namespace.yaml -n webhooks-test
+        check:
+          (contains($stderr, 'namespace test-namespace is already used in CDPipeline test-pipeline Stage test-stage-1')): true
+
+  - name: test-duplicate-namespace-across-cluster
+    try:
+    - apply:
+        file: test-namespace.yaml
+    - script:
+        content: |
+          kubectl apply -f test-stage-3-cluster-namespace.yaml -n webhooks-test
+        check:
+          (contains($stderr, 'namespace test-cluster-namespace is already used in the cluster')): true
+    cleanup:
+    - delete:
+        file: test-namespace.yaml
+
+  - name: test-resource-protection-on-update
+    try:
+    - apply:
+        file: test-stage-4.yaml
+    - script:
+        content: |
+          kubectl patch stage test-stage-4 -n webhooks-test --type=merge -p '{"spec":{"description":"Test stage 4 update"}}'
+        check:
+          (contains($stderr, 'resource contains label that protects it from modification')): true 

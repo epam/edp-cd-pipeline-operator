@@ -1,0 +1,10 @@
+apiVersion: v2.edp.epam.com/v1
+kind: CodebaseImageStream
+metadata:
+  name: test-main
+spec:
+  codebase: test
+  imageName: registry.host.local/registry-space/test
+  tags:
+    - created: '2023-10-19T14:05:05Z'
+      name: 0.1.0-SNAPSHOT.1 

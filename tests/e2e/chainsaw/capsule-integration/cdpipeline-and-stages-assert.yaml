@@ -41,7 +41,7 @@ spec:
   clusterName: in-cluster
   description: Development Environment
   name: dev
-  namespace: edp-mypipeline-dev
+  namespace: krci-mypipeline-dev
   order: 0
   qualityGates:
     - autotestName: null
@@ -74,10 +74,10 @@ apiVersion: v1
 kind: Namespace
 metadata:
   labels:
-    app.edp.epam.com/tenant: edp
-    capsule.clastix.io/tenant: edp-workload-edp
-    kubernetes.io/metadata.name: edp-mypipeline-dev
-  name: edp-mypipeline-dev
+    app.edp.epam.com/tenant: krci
+    capsule.clastix.io/tenant: edp-workload-krci
+    kubernetes.io/metadata.name: krci-mypipeline-dev
+  name: krci-mypipeline-dev
 spec:
   finalizers:
   - kubernetes
@@ -90,14 +90,14 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: tenant-admin
-  namespace: edp-mypipeline-dev
+  namespace: krci-mypipeline-dev
 subjects:
   - kind: Group
     apiGroup: rbac.authorization.k8s.io
-    name: edp-oidc-admins
+    name: krci-oidc-admins
   - kind: Group
     apiGroup: rbac.authorization.k8s.io
-    name: edp-oidc-developers
+    name: krci-oidc-developers
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
@@ -108,14 +108,14 @@ roleRef:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: capsule-edp-workload-edp-1-capsule-namespace-deleter
-  namespace: edp-mypipeline-dev
+  name: capsule-edp-workload-krci-1-capsule-namespace-deleter
+  namespace: krci-mypipeline-dev
   labels:
-    capsule.clastix.io/tenant: edp-workload-edp
+    capsule.clastix.io/tenant: edp-workload-krci
 subjects:
   - kind: ServiceAccount
     name: edp-cd-pipeline-operator
-    namespace: edp
+    namespace: krci
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
@@ -126,14 +126,14 @@ roleRef:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: capsule-edp-workload-edp-0-admin
-  namespace: edp-mypipeline-dev
+  name: capsule-edp-workload-krci-0-admin
+  namespace: krci-mypipeline-dev
   labels:
-    capsule.clastix.io/tenant: edp-workload-edp
+    capsule.clastix.io/tenant: edp-workload-krci
 subjects:
   - kind: ServiceAccount
     name: edp-cd-pipeline-operator
-    namespace: edp
+    namespace: krci
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
@@ -192,8 +192,8 @@ apiVersion: v1
 kind: Namespace
 metadata:
   labels:
-    app.edp.epam.com/tenant: edp
-    capsule.clastix.io/tenant: edp-workload-edp
+    app.edp.epam.com/tenant: krci
+    capsule.clastix.io/tenant: edp-workload-krci
     kubernetes.io/metadata.name: custom-namespace
   name: custom-namespace
 spec:
@@ -213,11 +213,11 @@ metadata:
 apiVersion: capsule.clastix.io/v1beta2
 kind: Tenant
 metadata:
-  name: edp-workload-edp
+  name: edp-workload-krci
 status:
   namespaces:
     - custom-namespace
-    - edp-mypipeline-dev
+    - krci-mypipeline-dev
   size: 2
   state: Active
 spec:
@@ -230,7 +230,7 @@ spec:
         - admin
         - capsule-namespace-deleter
       kind: ServiceAccount
-      name: system:serviceaccount:edp:edp-cd-pipeline-operator
+      name: system:serviceaccount:krci:edp-cd-pipeline-operator
   resourceQuotas:
     scope: Tenant
 
@@ -239,7 +239,7 @@ apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
   name: mypipeline
-  namespace: edp
+  namespace: krci
   ownerReferences:
     - apiVersion: v2.edp.epam.com/v1
       kind: CDPipeline
@@ -253,7 +253,7 @@ spec:
             gitUrlPath: test
             imageRepository: registry.host.local/registry-space/test
             imageTag: NaN
-            namespace: edp-mypipeline-dev
+            namespace: krci-mypipeline-dev
             repoURL: ssh://git@gerrit-dev:30000/test
             stage: dev
             versionType: default
@@ -289,7 +289,7 @@ spec:
       destination:
         name: '{{ .cluster }}'
         namespace: '{{ .namespace }}'
-      project: edp
+      project: krci
       source:
         helm:
           parameters:

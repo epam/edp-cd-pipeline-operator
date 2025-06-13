@@ -1,0 +1,12 @@
+apiVersion: v2.edp.epam.com/v1
+kind: CDPipeline
+metadata:
+  name: test-pipeline
+spec:
+  name: test-pipeline
+  inputDockerStreams:
+    - test-main
+  applications:
+    - test-app
+  applicationsToPromote:
+    - test-app 

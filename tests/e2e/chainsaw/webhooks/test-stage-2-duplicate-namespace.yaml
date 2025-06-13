@@ -1,0 +1,15 @@
+apiVersion: v2.edp.epam.com/v1
+kind: Stage
+metadata:
+  name: test-stage-2
+spec:
+  name: test-stage-2
+  cdPipeline: test-pipeline
+  namespace: test-namespace
+  order: 0
+  description: "Test stage 2"
+  qualityGates:
+    - qualityGateType: manual
+      stepName: "manual-approval"
+      autotestName: ""
+      branchName: "" 
