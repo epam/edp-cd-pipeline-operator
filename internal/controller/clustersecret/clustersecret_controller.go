@@ -48,6 +48,8 @@ const (
 	// https://aws.github.io/aws-eks-best-practices/security/docs/iam/#controlling-access-to-eks-clusters
 	irsaSecretProcessAfter = time.Minute * 10
 	zeroDuration           = time.Duration(0)
+	// Error requeue period to avoid continuous reconciliation loops
+	errorRequeuePeriod = time.Minute
 )
 
 type ReconcileClusterSecret struct {
@@ -257,28 +259,31 @@ func (r *ReconcileClusterSecret) processError(ctx context.Context, secret *corev
 	log := ctrl.LoggerFrom(ctx)
 
 	log.Info("Start processing error")
+	log.Error(err, "Error processing secret")
 
 	annotations := maps.Clone(secret.GetAnnotations())
 	if annotations == nil {
 		annotations = make(map[string]string, 2)
 	}
 
-	annotations[clusterSecretErrorAnnotation] = err.Error()
-	annotations[clusterSecretConnectionAnnotation] = "false"
+	currentError := annotations[clusterSecretErrorAnnotation]
+	newError := err.Error()
 
-	if !equality.Semantic.DeepEqual(annotations, secret.GetAnnotations()) {
+	if currentError != newError {
+		annotations[clusterSecretErrorAnnotation] = newError
+		annotations[clusterSecretConnectionAnnotation] = "false"
+
 		log.Info("Updating Secret connection status")
-
 		secret.SetAnnotations(annotations)
 
 		if updateErr := r.client.Update(ctx, secret); updateErr != nil {
 			log.Error(updateErr, "Failed to update secret connection status")
 		}
-
-		return reconcile.Result{}, err
 	}
 
-	return reconcile.Result{}, err
+	return reconcile.Result{
+		RequeueAfter: errorRequeuePeriod,
+	}, nil
 }
 
 func (r *ReconcileClusterSecret) processSuccess(
