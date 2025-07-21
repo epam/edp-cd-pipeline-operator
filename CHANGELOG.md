@@ -1,20 +1,31 @@
 <a name="unreleased"></a>
 ## [Unreleased]
 
+
+<a name="v2.26.0"></a>
+## [v2.26.0] - 2025-07-21
 ### Features
 
 - Use label selector for CodebaseImageStream ([#135](https://github.com/epam/edp-cd-pipeline-operator/issues/135))
 
 ### Bug Fixes
 
+- Improve error handling in ClusterSecret reconciliation ([#160](https://github.com/epam/edp-cd-pipeline-operator/issues/160))
 - Use the lightweight /api endpoint to check cluster connection ([#140](https://github.com/epam/edp-cd-pipeline-operator/issues/140))
 
 ### Code Refactoring
 
 - Update codebasebranch label to improve consistency ([#135](https://github.com/epam/edp-cd-pipeline-operator/issues/135))
 
+### Testing
+
+- Migrate e2e test from kuttl to chainsaw ([#153](https://github.com/epam/edp-cd-pipeline-operator/issues/153))
+
 ### Routine
 
+- Bump Codecov version ([#164](https://github.com/epam/edp-cd-pipeline-operator/issues/164))
+- Bump CodeQL version ([#164](https://github.com/epam/edp-cd-pipeline-operator/issues/164))
+- Allow overriding securityContext ([#162](https://github.com/epam/edp-cd-pipeline-operator/issues/162))
 - Update current development version ([#156](https://github.com/epam/edp-cd-pipeline-operator/issues/156))
 - Make ApplicationSet generators sorted ([#151](https://github.com/epam/edp-cd-pipeline-operator/issues/151))
 - Add Multi-architecture build support ([#149](https://github.com/epam/edp-cd-pipeline-operator/issues/149))
@@ -265,7 +276,120 @@ Helm parameter kioskEnabled was removed. Use instead --set global.tenancyEngine=
 <a name="v2.15.0"></a>
 ## [v2.15.0] - 2023-08-17
 
-[Unreleased]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.25.1...HEAD
+<a name="v2.14.1"></a>
+## [v2.14.1] - 2023-03-29
+
+<a name="v2.14.0"></a>
+## [v2.14.0] - 2023-03-24
+
+<a name="v2.13.0"></a>
+## [v2.13.0] - 2022-12-06
+
+<a name="v2.12.1"></a>
+## [v2.12.1] - 2022-10-28
+
+<a name="v2.12.0"></a>
+## [v2.12.0] - 2022-08-26
+
+<a name="v2.11.0"></a>
+## [v2.11.0] - 2022-05-25
+
+<a name="v2.10.0"></a>
+## [v2.10.0] - 2021-12-06
+
+<a name="v2.9.0"></a>
+## [v2.9.0] - 2021-12-03
+
+<a name="v2.8.2"></a>
+## [v2.8.2] - 2021-12-03
+
+<a name="v2.8.1"></a>
+## [v2.8.1] - 2021-12-03
+
+<a name="v2.8.0"></a>
+## [v2.8.0] - 2021-12-03
+
+<a name="v2.7.1"></a>
+## [v2.7.1] - 2021-12-03
+
+<a name="v2.7.0"></a>
+## [v2.7.0] - 2021-12-03
+
+<a name="v2.3.0-58.0.20210420131932-c2003069fbbd"></a>
+## [v2.3.0-58.0.20210420131932-c2003069fbbd] - 2021-04-20
+
+<a name="v2.3.0-58"></a>
+## [v2.3.0-58] - 2020-01-21
+
+<a name="v2.3.0-55"></a>
+## [v2.3.0-55] - 2020-01-13
+
+<a name="v2.3.0-54"></a>
+## [v2.3.0-54] - 2019-12-25
+
+<a name="v2.2.1-57"></a>
+## [v2.2.1-57] - 2020-01-21
+
+<a name="v2.2.1-56"></a>
+## [v2.2.1-56] - 2020-01-13
+
+<a name="v2.2.0-53"></a>
+## [v2.2.0-53] - 2019-12-20
+
+<a name="v2.2.0-52"></a>
+## [v2.2.0-52] - 2019-12-13
+
+<a name="v2.2.0-51"></a>
+## [v2.2.0-51] - 2019-12-11
+
+<a name="v2.2.0-50"></a>
+## [v2.2.0-50] - 2019-12-10
+
+<a name="v2.2.0-49"></a>
+## [v2.2.0-49] - 2019-12-06
+
+<a name="v2.2.0-48"></a>
+## [v2.2.0-48] - 2019-12-05
+
+<a name="v2.2.0-47"></a>
+## [v2.2.0-47] - 2019-12-05
+
+<a name="v2.2.0-46"></a>
+## [v2.2.0-46] - 2019-12-04
+
+<a name="v2.2.0-45"></a>
+## [v2.2.0-45] - 2019-12-02
+
+<a name="v2.2.0-44"></a>
+## [v2.2.0-44] - 2019-11-22
+
+<a name="v2.2.0-43"></a>
+## [v2.2.0-43] - 2019-11-21
+
+<a name="v2.2.0-42"></a>
+## [v2.2.0-42] - 2019-11-13
+
+<a name="v2.2.0-41"></a>
+## [v2.2.0-41] - 2019-10-28
+
+<a name="v2.2.0-40"></a>
+## [v2.2.0-40] - 2019-10-25
+
+<a name="v2.2.0-39"></a>
+## [v2.2.0-39] - 2019-10-24
+
+<a name="v2.2.0-38"></a>
+## [v2.2.0-38] - 2019-09-30
+
+<a name="v2.1.0-37"></a>
+## [v2.1.0-37] - 2019-09-26
+
+<a name="v2.1.0-36"></a>
+## v2.1.0-36 - 2019-09-16
+
+[Unreleased]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.26.0...HEAD
+[v2.26.0]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.25.2...v2.26.0
+[v2.25.2]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.25.1...v2.25.2
 [v2.25.1]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.25.0...v2.25.1
 [v2.25.0]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.24.0...v2.25.0
 [v2.24.0]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.23.0...v2.24.0
@@ -279,3 +403,39 @@ Helm parameter kioskEnabled was removed. Use instead --set global.tenancyEngine=
 [v2.16.1]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.16.0...v2.16.1
 [v2.16.0]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.15.0...v2.16.0
 [v2.15.0]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.14.1...v2.15.0
+[v2.14.1]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.14.0...v2.14.1
+[v2.14.0]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.13.0...v2.14.0
+[v2.13.0]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.12.1...v2.13.0
+[v2.12.1]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.12.0...v2.12.1
+[v2.12.0]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.11.0...v2.12.0
+[v2.11.0]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.10.0...v2.11.0
+[v2.10.0]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.9.0...v2.10.0
+[v2.9.0]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.8.2...v2.9.0
+[v2.8.2]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.8.1...v2.8.2
+[v2.8.1]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.8.0...v2.8.1
+[v2.8.0]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.7.1...v2.8.0
+[v2.7.1]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.7.0...v2.7.1
+[v2.7.0]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.3.0-58.0.20210420131932-c2003069fbbd...v2.7.0
+[v2.3.0-58.0.20210420131932-c2003069fbbd]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.3.0-58...v2.3.0-58.0.20210420131932-c2003069fbbd
+[v2.3.0-58]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.3.0-55...v2.3.0-58
+[v2.3.0-55]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.3.0-54...v2.3.0-55
+[v2.3.0-54]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.2.1-57...v2.3.0-54
+[v2.2.1-57]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.2.1-56...v2.2.1-57
+[v2.2.1-56]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.2.0-53...v2.2.1-56
+[v2.2.0-53]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.2.0-52...v2.2.0-53
+[v2.2.0-52]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.2.0-51...v2.2.0-52
+[v2.2.0-51]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.2.0-50...v2.2.0-51
+[v2.2.0-50]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.2.0-49...v2.2.0-50
+[v2.2.0-49]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.2.0-48...v2.2.0-49
+[v2.2.0-48]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.2.0-47...v2.2.0-48
+[v2.2.0-47]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.2.0-46...v2.2.0-47
+[v2.2.0-46]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.2.0-45...v2.2.0-46
+[v2.2.0-45]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.2.0-44...v2.2.0-45
+[v2.2.0-44]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.2.0-43...v2.2.0-44
+[v2.2.0-43]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.2.0-42...v2.2.0-43
+[v2.2.0-42]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.2.0-41...v2.2.0-42
+[v2.2.0-41]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.2.0-40...v2.2.0-41
+[v2.2.0-40]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.2.0-39...v2.2.0-40
+[v2.2.0-39]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.2.0-38...v2.2.0-39
+[v2.2.0-38]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.1.0-37...v2.2.0-38
+[v2.1.0-37]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.1.0-36...v2.1.0-37
