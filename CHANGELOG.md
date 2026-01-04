@@ -1,6 +1,13 @@
 <a name="unreleased"></a>
 ## [Unreleased]
 
+### Routine
+
+- Update KubeRocketAI ([#170](https://github.com/epam/edp-cd-pipeline-operator/issues/170))
+- Update KubeRocketAI ([#170](https://github.com/epam/edp-cd-pipeline-operator/issues/170))
+- Setup KubeRocketAI ([#170](https://github.com/epam/edp-cd-pipeline-operator/issues/170))
+- Update current development version ([#168](https://github.com/epam/edp-cd-pipeline-operator/issues/168))
+
 
 <a name="v2.26.0"></a>
 ## [v2.26.0] - 2025-07-21
