@@ -8,8 +8,9 @@ import (
 	"slices"
 	"strings"
 
-	argoApi "github.com/argoproj/argo-cd/v2/pkg/apis/application/v1alpha1"
-	"golang.org/x/exp/maps"
+	"maps"
+
+	argoApi "github.com/argoproj/argo-cd/v3/pkg/apis/application/v1alpha1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -273,8 +274,13 @@ func (c *ArgoApplicationSetManager) getImageRepo(ctx context.Context, ns, codeba
 	return image.Spec.ImageName, nil
 }
 
-// TODO: we can optimize this method by getting all codebases at once. We need to add label with name to codebase.
-func (c *ArgoApplicationSetManager) getPipelinesCodebasesMap(ctx context.Context, ns string, apps []string) (map[string]codebaseApi.Codebase, error) {
+// TODO: we can optimize this method by getting all codebases at once.
+// We need to add label with name to codebase.
+func (c *ArgoApplicationSetManager) getPipelinesCodebasesMap(
+	ctx context.Context,
+	ns string,
+	apps []string,
+) (map[string]codebaseApi.Codebase, error) {
 	m := make(map[string]codebaseApi.Codebase, len(apps))
 
 	for _, app := range apps {
@@ -322,7 +328,12 @@ func (c *ArgoApplicationSetManager) getGitServers(
 
 func (c *ArgoApplicationSetManager) getGitOpsRepoUrl(ctx context.Context, ns string) (string, error) {
 	codebaseList := &codebaseApi.CodebaseList{}
-	if err := c.client.List(ctx, codebaseList, client.InNamespace(ns), client.MatchingLabels(gitOpsCodebaseLabels)); err != nil {
+	if err := c.client.List(
+		ctx,
+		codebaseList,
+		client.InNamespace(ns),
+		client.MatchingLabels(gitOpsCodebaseLabels),
+	); err != nil {
 		return "", fmt.Errorf("failed to list codebases: %w", err)
 	}
 
@@ -437,7 +448,11 @@ func generateApplicationSet(
 	}
 }
 
-func setGenerators(stageName string, appset *argoApi.ApplicationSet, stageGenerators map[string]apiextensionsv1.JSON) (bool, error) {
+func setGenerators(
+	stageName string,
+	appset *argoApi.ApplicationSet,
+	stageGenerators map[string]apiextensionsv1.JSON,
+) (bool, error) {
 	if len(appset.Spec.Generators) == 0 {
 		appset.Spec.Generators = []argoApi.ApplicationSetGenerator{
 			{
@@ -471,10 +486,8 @@ func processGeneratorListElements(
 ) (bool, error) {
 	// Filter out elements not matching the stage, and update with new/remaining stageGenerators.
 	filtered, remaining := filterAndUpdateElements(stageName, generator.List.Elements, stageGenerators)
-	if len(remaining) > 0 {
-		// Add any new elements for this stage
-		filtered = append(filtered, maps.Values(remaining)...)
-	}
+	// Add any new elements for this stage
+	filtered = append(filtered, slices.Collect(maps.Values(remaining))...)
 	// Sort elements for predictability in tests and output.
 	sorted, err := sortElementsByStageAndCodebase(filtered)
 	if err != nil {
@@ -489,14 +502,20 @@ func processGeneratorListElements(
 	return false, nil
 }
 
-// filterAndUpdateElements filters out elements for the given stage and updates the set of remaining stageGenerators.
+// filterAndUpdateElements filters out elements for the given stage
+// and updates the set of remaining stageGenerators.
 // Returns the filtered elements and the remaining (not yet present) stageGenerators.
-func filterAndUpdateElements(stageName string, elements []apiextensionsv1.JSON, stageGenerators map[string]apiextensionsv1.JSON) ([]apiextensionsv1.JSON, map[string]apiextensionsv1.JSON) {
+func filterAndUpdateElements(
+	stageName string,
+	elements []apiextensionsv1.JSON,
+	stageGenerators map[string]apiextensionsv1.JSON,
+) ([]apiextensionsv1.JSON, map[string]apiextensionsv1.JSON) {
 	filtered := make([]apiextensionsv1.JSON, 0, len(elements))
 	remaining := maps.Clone(stageGenerators)
 
 	for _, rawel := range elements {
 		var el generatorElement
+
 		_ = json.Unmarshal(rawel.Raw, &el) // error is handled in main func.
 		key := fmt.Sprintf("%s-%s", el.Codebase, el.Stage)
 		_, exists := remaining[key]

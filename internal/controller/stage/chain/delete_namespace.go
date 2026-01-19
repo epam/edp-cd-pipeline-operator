@@ -20,7 +20,11 @@ type DeleteNamespace struct {
 func (h DeleteNamespace) ServeRequest(ctx context.Context, stage *cdPipeApi.Stage) error {
 	l := ctrl.LoggerFrom(ctx).WithValues("namespace", stage.Spec.Namespace)
 
-	if err := h.multiClusterClient.Get(ctx, client.ObjectKey{Name: stage.Spec.Namespace}, &corev1.Namespace{}); err != nil {
+	if err := h.multiClusterClient.Get(
+		ctx,
+		client.ObjectKey{Name: stage.Spec.Namespace},
+		&corev1.Namespace{},
+	); err != nil {
 		if apierrors.IsNotFound(err) {
 			l.Info("Namespace has already been deleted")
 

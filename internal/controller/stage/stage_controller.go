@@ -60,19 +60,24 @@ func (r *ReconcileStage) SetupWithManager(mgr ctrl.Manager) error {
 			if !ok {
 				return false
 			}
+
 			no, ok := e.ObjectNew.(*cdPipeApi.Stage)
 			if !ok {
 				return false
 			}
+
 			if !reflect.DeepEqual(oo.Spec, no.Spec) {
 				return true
 			}
+
 			if no.DeletionTimestamp != nil {
 				return true
 			}
+
 			if no.Status.ShouldBeHandled {
 				return true
 			}
+
 			return false
 		},
 	}

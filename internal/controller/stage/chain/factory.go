@@ -19,7 +19,12 @@ import (
 type multiClusterClient client.Client
 
 func CreateChain(ctx context.Context, c client.Client, stage *cdPipeApi.Stage) (handler.CdStageHandler, error) {
-	multiClusterCl, err := multiclusterclient.NewClientProvider(c).GetClusterClient(ctx, stage.Namespace, stage.Spec.ClusterName, client.Options{})
+	multiClusterCl, err := multiclusterclient.NewClientProvider(c).GetClusterClient(
+		ctx,
+		stage.Namespace,
+		stage.Spec.ClusterName,
+		client.Options{},
+	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get cluster internalClient: %w", err)
 	}
@@ -75,7 +80,12 @@ func CreateDeleteChain(ctx context.Context, c client.Client, stage *cdPipeApi.St
 		},
 	)
 
-	multiClusterCl, err := multiclusterclient.NewClientProvider(c).GetClusterClient(ctx, stage.Namespace, stage.Spec.ClusterName, client.Options{})
+	multiClusterCl, err := multiclusterclient.NewClientProvider(c).GetClusterClient(
+		ctx,
+		stage.Namespace,
+		stage.Spec.ClusterName,
+		client.Options{},
+	)
 	if err != nil {
 		log.Error(err, "Failed to get cluster internalClient. Skipping namespace deletion.")
 		return ch, nil

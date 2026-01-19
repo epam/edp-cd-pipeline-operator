@@ -1,6 +1,7 @@
 package aws
 
 import (
+	"context"
 	"fmt"
 
 	"sigs.k8s.io/aws-iam-authenticator/pkg/token"
@@ -19,7 +20,7 @@ type TokenGenerator struct {
 // GetWithRole returns a token for the given cluster and role ARN.
 // The token is valid for 15 minutes.
 func (t *TokenGenerator) GetWithRole(clusterName, roleARN string) (Token, error) {
-	tkn, err := t.aws.GetWithOptions(&token.GetTokenOptions{
+	tkn, err := t.aws.GetWithOptions(context.TODO(), &token.GetTokenOptions{
 		ClusterID:     clusterName,
 		AssumeRoleARN: roleARN,
 	})

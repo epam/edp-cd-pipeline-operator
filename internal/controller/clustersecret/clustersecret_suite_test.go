@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 	"path/filepath"
-	goruntime "runtime"
 	"strings"
 	"testing"
 	"time"
@@ -54,8 +54,7 @@ var _ = BeforeSuite(func() {
 	testEnv = &envtest.Environment{
 		CRDDirectoryPaths:     []string{filepath.Join("..", "..", "..", "config", "crd", "bases")},
 		ErrorIfCRDPathMissing: true,
-		BinaryAssetsDirectory: filepath.Join("..", "..", "..", "bin", "k8s",
-			fmt.Sprintf("1.30.0-%s-%s", goruntime.GOOS, goruntime.GOARCH)),
+		BinaryAssetsDirectory: getFirstFoundEnvTestBinaryDir(),
 	}
 
 	var err error
@@ -103,8 +102,8 @@ func ConvertRestConfigToKubeConfig(cfg *rest.Config) ([]byte, error) {
 
 	cluster := clientcmdapi.NewCluster()
 	cluster.Server = cfg.Host
-	cluster.CertificateAuthorityData = cfg.TLSClientConfig.CAData
-	cluster.InsecureSkipTLSVerify = cfg.TLSClientConfig.Insecure
+	cluster.CertificateAuthorityData = cfg.CAData
+	cluster.InsecureSkipTLSVerify = cfg.Insecure
 
 	kubecontext := clientcmdapi.NewContext()
 	kubecontext.Cluster = "default-cluster"
@@ -112,8 +111,8 @@ func ConvertRestConfigToKubeConfig(cfg *rest.Config) ([]byte, error) {
 
 	authInfo := clientcmdapi.NewAuthInfo()
 	authInfo.Token = cfg.BearerToken
-	authInfo.ClientKeyData = cfg.TLSClientConfig.KeyData
-	authInfo.ClientCertificateData = cfg.TLSClientConfig.CertData
+	authInfo.ClientKeyData = cfg.KeyData
+	authInfo.ClientCertificateData = cfg.CertData
 
 	kubeConfig.Clusters["default-cluster"] = cluster
 	kubeConfig.Contexts["default-context"] = kubecontext
@@ -126,6 +125,24 @@ func ConvertRestConfigToKubeConfig(cfg *rest.Config) ([]byte, error) {
 	}
 
 	return rawConfig, nil
+}
+
+func getFirstFoundEnvTestBinaryDir() string {
+	basePath := filepath.Join("..", "..", "..", "bin", "k8s")
+
+	entries, err := os.ReadDir(basePath)
+	if err != nil {
+		logf.Log.Error(err, "Failed to read directory", "path", basePath)
+		return ""
+	}
+
+	for _, entry := range entries {
+		if entry.IsDir() {
+			return filepath.Join(basePath, entry.Name())
+		}
+	}
+
+	return ""
 }
 
 func newTokenGenMock() *mocks.MockAIMAuthTokenGenerator {

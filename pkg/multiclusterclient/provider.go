@@ -21,7 +21,12 @@ func NewClientProvider(internalClusterClient client.Client) *ClientProvider {
 	return &ClientProvider{internalClusterClient: internalClusterClient}
 }
 
-func (c *ClientProvider) GetClusterClient(ctx context.Context, secretNamespace, clusterName string, options client.Options) (client.Client, error) {
+func (c *ClientProvider) GetClusterClient(
+	ctx context.Context,
+	secretNamespace string,
+	clusterName string,
+	options client.Options,
+) (client.Client, error) {
 	if clusterName == "" || clusterName == cdPipeApi.InCluster {
 		return c.internalClusterClient, nil
 	}
@@ -48,7 +53,11 @@ func (c *ClientProvider) GetClusterClient(ctx context.Context, secretNamespace, 
 	return cl, nil
 }
 
-func (c *ClientProvider) getClusterSecret(ctx context.Context, clusterName, secretNamespace string) (*corev1.Secret, error) {
+func (c *ClientProvider) getClusterSecret(
+	ctx context.Context,
+	clusterName string,
+	secretNamespace string,
+) (*corev1.Secret, error) {
 	secret := &corev1.Secret{}
 	if err := c.internalClusterClient.Get(
 		ctx,

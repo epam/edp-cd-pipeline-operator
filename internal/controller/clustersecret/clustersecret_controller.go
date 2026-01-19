@@ -7,7 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"golang.org/x/exp/maps"
+	"maps"
+
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
@@ -63,7 +64,11 @@ func NewReconcileClusterSecret(
 	aimAuthTokenGenerator aws.AIMAuthTokenGenerator,
 	checkClusterConnection func(ctx context.Context, restConf *rest.Config) error,
 ) *ReconcileClusterSecret {
-	return &ReconcileClusterSecret{client: k8sClient, aimAuthTokenGenerator: aimAuthTokenGenerator, checkClusterConnection: checkClusterConnection}
+	return &ReconcileClusterSecret{
+		client:                 k8sClient,
+		aimAuthTokenGenerator:  aimAuthTokenGenerator,
+		checkClusterConnection: checkClusterConnection,
+	}
 }
 
 func (r *ReconcileClusterSecret) SetupWithManager(mgr ctrl.Manager) error {
@@ -94,7 +99,7 @@ func (r *ReconcileClusterSecret) SetupWithManager(mgr ctrl.Manager) error {
 
 // +kubebuilder:rbac:groups="",namespace=placeholder,resources=secrets,verbs=get;list;watch;update;patch;create
 
-// Reconcile process secrets with labelapp.edp.epam.com/secret-type=cluster.
+// Reconcile process secrets with label app.edp.epam.com/secret-type=cluster.
 // Based on the second label app.edp.epam.com/cluster-type the secret will be processed in different ways:
 // - app.edp.epam.com/cluster-type=bearer - secret contains kubeconfig and should be converted to ArgoCD cluster secret.
 // - app.edp.epam.com/cluster-type=irsa - secret contains AWS IRSA configuration and should be converted to kubeconfig.
@@ -162,8 +167,8 @@ func (r *ReconcileClusterSecret) createArgoCDClusterSecret(ctx context.Context, 
 	if res, err = controllerutil.CreateOrUpdate(ctx, r.client, argoClusterSecret, func() error {
 		argoClusterConf := &argocd.ClusterConfig{}
 		argoClusterConf.BearerToken = restConf.BearerToken
-		argoClusterConf.CAData = restConf.TLSClientConfig.CAData
-		argoClusterConf.Insecure = restConf.TLSClientConfig.Insecure
+		argoClusterConf.CAData = restConf.CAData
+		argoClusterConf.Insecure = restConf.Insecure
 
 		var rawConf json.RawMessage
 
@@ -183,7 +188,11 @@ func (r *ReconcileClusterSecret) createArgoCDClusterSecret(ctx context.Context, 
 			return nil
 		}
 
-		if err = controllerutil.SetControllerReference(secret, argoClusterSecret, r.client.Scheme()); err != nil {
+		if err = controllerutil.SetControllerReference(
+			secret,
+			argoClusterSecret,
+			r.client.Scheme(),
+		); err != nil {
 			return fmt.Errorf("failed to set controller reference: %w", err)
 		}
 
@@ -255,7 +264,11 @@ func (r *ReconcileClusterSecret) irsaToKubeConfigSecret(ctx context.Context, sec
 	return nil
 }
 
-func (r *ReconcileClusterSecret) processError(ctx context.Context, secret *corev1.Secret, err error) (reconcile.Result, error) {
+func (r *ReconcileClusterSecret) processError(
+	ctx context.Context,
+	secret *corev1.Secret,
+	err error,
+) (reconcile.Result, error) {
 	log := ctrl.LoggerFrom(ctx)
 
 	log.Info("Start processing error")

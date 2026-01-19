@@ -19,7 +19,10 @@ type RemoveLabelsFromCodebaseDockerStreamsAfterCdPipelineUpdate struct {
 
 const dockerStreamsBeforeUpdateAnnotationKey = "deploy.edp.epam.com/docker-streams-before-update"
 
-func (h RemoveLabelsFromCodebaseDockerStreamsAfterCdPipelineUpdate) ServeRequest(ctx context.Context, stage *cdPipeApi.Stage) error {
+func (h RemoveLabelsFromCodebaseDockerStreamsAfterCdPipelineUpdate) ServeRequest(
+	ctx context.Context,
+	stage *cdPipeApi.Stage,
+) error {
 	log := ctrl.LoggerFrom(ctx)
 	if stage.IsManualTriggerType() {
 		log.Info("Trigger type is not auto deploy, skipping")
@@ -37,6 +40,7 @@ func (h RemoveLabelsFromCodebaseDockerStreamsAfterCdPipelineUpdate) ServeRequest
 	if annotations == "" {
 		log.Info("CodebaseImageStream doesn't contain %v annotation." +
 			" skip deleting env labels from CodebaseImageStream resources")
+
 		return nil
 	}
 

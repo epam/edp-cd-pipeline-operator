@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	argoApi "github.com/argoproj/argo-cd/v2/pkg/apis/application/v1alpha1"
+	argoApi "github.com/argoproj/argo-cd/v3/pkg/apis/application/v1alpha1"
 	"github.com/go-logr/logr"
 	projectApi "github.com/openshift/api/project"
 	"github.com/stretchr/testify/assert"
@@ -305,10 +305,13 @@ func TestReconcileStage_Reconcile_Success(t *testing.T) {
 		objectmodifier.NewStageBatchModifier(fakeClient, []objectmodifier.StageModifier{}),
 	)
 
-	_, err := reconcileStage.Reconcile(ctrl.LoggerInto(context.Background(), logr.Discard()), reconcile.Request{NamespacedName: types.NamespacedName{
-		Namespace: namespace,
-		Name:      name,
-	}})
+	_, err := reconcileStage.Reconcile(
+		ctrl.LoggerInto(context.Background(), logr.Discard()),
+		reconcile.Request{NamespacedName: types.NamespacedName{
+			Namespace: namespace,
+			Name:      name,
+		}},
+	)
 	require.NoError(t, err)
 
 	previousImageStream := &codebaseApi.CodebaseImageStream{}
@@ -415,10 +418,13 @@ func TestReconcileStage_ReconcileReconcile_SetOwnerRef(t *testing.T) {
 		objectmodifier.NewStageBatchModifierAll(fakeClient, scheme),
 	)
 
-	_, err := reconcileStage.Reconcile(ctrl.LoggerInto(context.Background(), logr.Discard()), reconcile.Request{NamespacedName: types.NamespacedName{
-		Namespace: namespace,
-		Name:      name,
-	}})
+	_, err := reconcileStage.Reconcile(
+		ctrl.LoggerInto(context.Background(), logr.Discard()),
+		reconcile.Request{NamespacedName: types.NamespacedName{
+			Namespace: namespace,
+			Name:      name,
+		}},
+	)
 	require.NoError(t, err)
 
 	expectedLabels := map[string]string{
@@ -449,10 +455,13 @@ func TestReconcileStage_Reconcile_StageIsNotFound(t *testing.T) {
 	}, stage)
 	assert.True(t, k8sErrors.IsNotFound(err))
 
-	_, err = reconcileStage.Reconcile(ctrl.LoggerInto(context.Background(), logr.Discard()), reconcile.Request{NamespacedName: types.NamespacedName{
-		Namespace: namespace,
-		Name:      name,
-	}})
+	_, err = reconcileStage.Reconcile(
+		ctrl.LoggerInto(context.Background(), logr.Discard()),
+		reconcile.Request{NamespacedName: types.NamespacedName{
+			Namespace: namespace,
+			Name:      name,
+		}},
+	)
 	assert.NoError(t, err)
 }
 

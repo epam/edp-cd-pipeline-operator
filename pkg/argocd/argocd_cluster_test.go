@@ -37,7 +37,11 @@ func TestArgoIRSAClusterSecretToKubeconfig(t *testing.T) {
 			name: "successful conversion",
 			secret: &corev1.Secret{
 				Data: map[string][]byte{
-					"config": []byte(`{"awsAuthConfig":{"clusterName":"test","roleARN":"arn:aws:iam::123456789012:role/test"},"tlsClientConfig":{"insecure":true}}`),
+					"config": []byte(
+						`{"awsAuthConfig":{"clusterName":"test",` +
+							`"roleARN":"arn:aws:iam::123456789012:role/test"},` +
+							`"tlsClientConfig":{"insecure":true}}`,
+					),
 					"server": []byte("https://test-cluster"),
 				},
 			},
@@ -60,7 +64,6 @@ func TestArgoIRSAClusterSecretToKubeconfig(t *testing.T) {
 
 				assert.Equal(t, "https://test-cluster", config.Host)
 				assert.Equal(t, "token", config.BearerToken)
-
 			},
 			wantErr: assert.NoError,
 		},

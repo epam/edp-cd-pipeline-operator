@@ -46,7 +46,10 @@ func (*CDPipelineValidationWebhook) ValidateCreate(_ context.Context, _ runtime.
 }
 
 // ValidateUpdate is a webhook for validating the updating of the CDPipeline CR.
-func (*CDPipelineValidationWebhook) ValidateUpdate(_ context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
+func (*CDPipelineValidationWebhook) ValidateUpdate(
+	_ context.Context,
+	oldObj, newObj runtime.Object,
+) (admission.Warnings, error) {
 	pipe, ok := newObj.(*pipelineApi.CDPipeline)
 	if !ok {
 		return nil, nil

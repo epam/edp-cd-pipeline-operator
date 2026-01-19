@@ -115,7 +115,10 @@ func TestDeleteEnvironmentLabel_VerifiedImageStream(t *testing.T) {
 	}
 
 	deleteEnvLabel := DeleteEnvironmentLabelFromCodebaseImageStreams{
-		client: fake.NewClientBuilder().WithScheme(schemeInit(t)).WithObjects(&stage, &prevStage, &cdPipeline, &image, &previousImage).Build(),
+		client: fake.NewClientBuilder().
+			WithScheme(schemeInit(t)).
+			WithObjects(&stage, &prevStage, &cdPipeline, &image, &previousImage).
+			Build(),
 	}
 
 	err := deleteEnvLabel.deleteEnvironmentLabel(ctrl.LoggerInto(context.Background(), logr.Discard()), &stage)
@@ -184,7 +187,10 @@ func TestDeleteEnvironmentLabel_ApplicationToPromote(t *testing.T) {
 	}
 
 	deleteEnvLabel := DeleteEnvironmentLabelFromCodebaseImageStreams{
-		client: fake.NewClientBuilder().WithScheme(schemeInit(t)).WithObjects(&stage, &prevStage, &cdPipeline, &image, &previousImage).Build(),
+		client: fake.NewClientBuilder().
+			WithScheme(schemeInit(t)).
+			WithObjects(&stage, &prevStage, &cdPipeline, &image, &previousImage).
+			Build(),
 	}
 
 	err := deleteEnvLabel.deleteEnvironmentLabel(ctrl.LoggerInto(context.Background(), logr.Discard()), &stage)
@@ -303,7 +309,10 @@ func TestSetDeleteEnvironmentLabel_NoPreviousStageError(t *testing.T) {
 	}
 
 	deleteEnvLabel := DeleteEnvironmentLabelFromCodebaseImageStreams{
-		client: fake.NewClientBuilder().WithScheme(schemeInit(t)).WithObjects(&stage, &cdPipeline, &image, &previousImage).Build(),
+		client: fake.NewClientBuilder().
+			WithScheme(schemeInit(t)).
+			WithObjects(&stage, &cdPipeline, &image, &previousImage).
+			Build(),
 	}
 
 	err := deleteEnvLabel.deleteEnvironmentLabel(ctrl.LoggerInto(context.Background(), logr.Discard()), &stage)
@@ -330,6 +339,12 @@ func TestSetEnvLabelForVerifiedImageStream_IsNotFoundPreviousImageStream(t *test
 
 	cisName := createCisName(name, previousStageName, image.Spec.Codebase)
 
-	err := deleteEnvLabel.setEnvLabelForVerifiedImageStream(ctrl.LoggerInto(context.Background(), logr.Discard()), &stage, &image, name, dockerImageName)
+	err := deleteEnvLabel.setEnvLabelForVerifiedImageStream(
+		ctrl.LoggerInto(context.Background(), logr.Discard()),
+		&stage,
+		&image,
+		name,
+		dockerImageName,
+	)
 	assert.Equal(t, edpErr.CISNotFoundError(fmt.Sprintf("codebase image stream %s is not found", cisName)), err)
 }

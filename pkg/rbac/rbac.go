@@ -22,7 +22,13 @@ type Manager interface {
 	GetRoleBinding(name, namespace string) (*rbacApi.RoleBinding, error)
 	RoleBindingExists(ctx context.Context, name, namespace string) (bool, error)
 	CreateRoleBinding(name, namespace string, subjects []rbacApi.Subject, roleRef rbacApi.RoleRef) error
-	CreateRoleBindingIfNotExists(ctx context.Context, name, namespace string, subjects []rbacApi.Subject, roleRef rbacApi.RoleRef) error
+	CreateRoleBindingIfNotExists(
+		ctx context.Context,
+		name string,
+		namespace string,
+		subjects []rbacApi.Subject,
+		roleRef rbacApi.RoleRef,
+	) error
 	GetRole(name, namespace string) (*rbacApi.Role, error)
 	CreateRole(name, namespace string, rules []rbacApi.PolicyRule) error
 }
@@ -77,7 +83,12 @@ func (s KubernetesRbac) RoleBindingExists(ctx context.Context, name, namespace s
 	return true, nil
 }
 
-func (s KubernetesRbac) CreateRoleBinding(name, namespace string, subjects []rbacApi.Subject, roleRef rbacApi.RoleRef) error {
+func (s KubernetesRbac) CreateRoleBinding(
+	name string,
+	namespace string,
+	subjects []rbacApi.Subject,
+	roleRef rbacApi.RoleRef,
+) error {
 	log := s.log.WithValues(crNameLogKey, name)
 	log.Info("creating rolebinding")
 
