@@ -87,7 +87,12 @@ func (h ConfigureSecretManager) configureEso(ctx context.Context, stage *cdPipeA
 		return err
 	}
 
-	secretStore, err := h.createSecretStore(ctrl.LoggerInto(ctx, logger), stage.Namespace, stage.Spec.Namespace, serviceAccount.Name)
+	secretStore, err := h.createSecretStore(
+		ctrl.LoggerInto(ctx, logger),
+		stage.Namespace,
+		stage.Spec.Namespace,
+		serviceAccount.Name,
+	)
 	if err != nil {
 		return err
 	}
@@ -140,7 +145,10 @@ func (h ConfigureSecretManager) configureOwn(ctx context.Context, stage *cdPipeA
 	return nil
 }
 
-func (h ConfigureSecretManager) createServiceAccount(ctx context.Context, namespace string) (*corev1.ServiceAccount, error) {
+func (h ConfigureSecretManager) createServiceAccount(
+	ctx context.Context,
+	namespace string,
+) (*corev1.ServiceAccount, error) {
 	l := ctrl.LoggerFrom(ctx)
 
 	serviceAccount := &corev1.ServiceAccount{

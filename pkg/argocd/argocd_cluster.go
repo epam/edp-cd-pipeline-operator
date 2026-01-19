@@ -76,7 +76,10 @@ func SecretToIRSACluster(secret *corev1.Secret) (*IrsaClusterConfig, error) {
 // ArgoIRSAClusterSecretToKubeconfig converts the ArgoCD IRSA cluster secret to kubeconfig format.
 // For authentication, it uses the AWS IAM Role and generates a token.
 // Be aware that the token is valid for 15 minutes.
-func ArgoIRSAClusterSecretToKubeconfig(secret *corev1.Secret, tokenGenerator aws.AIMAuthTokenGenerator) ([]byte, error) {
+func ArgoIRSAClusterSecretToKubeconfig(
+	secret *corev1.Secret,
+	tokenGenerator aws.AIMAuthTokenGenerator,
+) ([]byte, error) {
 	argoConf, err := SecretToIRSACluster(secret)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get IRSA secret config: %w", err)

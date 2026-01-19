@@ -21,7 +21,7 @@ CONTAINER_REGISTRY_URL?="docker.io"
 CONTAINER_REGISTRY_SPACE?="edp"
 START_KIND_CLUSTER?=true
 KIND_CLUSTER_NAME?="cd-pipeline-operator"
-KUBE_VERSION?=1.31
+KUBE_VERSION?=1.34
 KIND_CONFIG?=./hack/kind-$(KUBE_VERSION).yaml
 
 E2E_IMAGE_REPOSITORY?="cd-pipeline-operator-image"
@@ -88,6 +88,7 @@ help:  ## Display this help
 manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
 	$(CONTROLLER_GEN) rbac:roleName=manager-role crd webhook paths="./..." output:crd:artifacts:config=deploy-templates/crds
 	$(CONTROLLER_GEN) rbac:roleName=manager-role crd webhook paths="./..." output:crd:artifacts:config=config/crd/bases
+	$(MAKE) api-docs
 
 .PHONY: generate
 generate: controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
@@ -99,7 +100,7 @@ validate-docs: api-docs helm-docs  ## Validate helm and api docs
 	@git diff -s --exit-code docs/api.md || (echo " Run 'make api-docs' to address the issue." && git diff && exit 1)
 
 # Run tests
-test: fmt vet envtest
+test: fmt vet setup-envtest
 	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) --arch=$(HOST_ARCH) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path)" \
 	go test ./... -coverprofile=coverage.out
 
@@ -128,7 +129,11 @@ vet:  ## Run go vet
 
 .PHONY: lint
 lint: golangci-lint ## Run go lint
-	${GOLANGCI_LINT} run -v -c .golangci.yaml ./...
+	${GOLANGCI_LINT} run -v ./...
+
+.PHONY: lint-fix
+lint-fix: golangci-lint ## Run go lint fix
+	${GOLANGCI_LINT} run -v ./... --fix
 
 .PHONY: build
 build:  ## build operator's binary
@@ -158,7 +163,7 @@ helm-docs: helmdocs	## generate helm docs
 GOLANGCI_LINT = ${CURRENT_DIR}/bin/golangci-lint
 .PHONY: golangci-lint
 golangci-lint: ## Download golangci-lint locally if necessary.
-	$(call go-install-tool,$(GOLANGCI_LINT),github.com/golangci/golangci-lint/cmd/golangci-lint,$(GOLANGCI_LINT_VERSION))
+	$(call go-install-tool,$(GOLANGCI_LINT),github.com/golangci/golangci-lint/v2/cmd/golangci-lint,$(GOLANGCI_LINT_VERSION))
 
 .PHONY: install
 install: manifests kustomize ## Install CRDs into the K8s cluster specified in ~/.kube/config.
@@ -167,17 +172,17 @@ install: manifests kustomize ## Install CRDs into the K8s cluster specified in ~
 ##@ Build Dependencies
 
 ## Tool Versions
-KUSTOMIZE_VERSION ?= v5.4.3
-CONTROLLER_TOOLS_VERSION ?= v0.16.5
-ENVTEST_VERSION ?= release-0.19
-GOLANGCI_LINT_VERSION ?= v1.64.7
-MOCKERY_VERSION ?= v2.53.2
+KUSTOMIZE_VERSION ?= v5.6.0
+CONTROLLER_TOOLS_VERSION ?= v0.18.0
+ENVTEST_VERSION ?= $(shell go list -m -f "{{ .Version }}" sigs.k8s.io/controller-runtime | awk -F'[v.]' '{printf "release-%d.%d", $$2, $$3}')
+ENVTEST_K8S_VERSION ?= $(shell go list -m -f "{{ .Version }}" k8s.io/api | awk -F'[v.]' '{printf "1.%d", $$3}')
+GOLANGCI_LINT_VERSION ?= v2.8.0
+MOCKERY_VERSION ?= v3.6.3
 HELMDOCS_VERSION ?= v1.14.2
 GITCHGLOG_VERSION ?= v0.15.4
 CRDOC_VERSION ?= v0.6.4
-ENVTEST_K8S_VERSION = 1.31.0
-OPERATOR_SDK_VERSION ?= v1.39.2
-CHAINSAW_VERSION ?= v0.2.12
+OPERATOR_SDK_VERSION ?= v1.42.0
+CHAINSAW_VERSION ?= v0.2.14
 
 KUSTOMIZE ?= $(LOCALBIN)/kustomize
 .PHONY: kustomize
@@ -228,9 +233,17 @@ bundle: manifests kustomize operator-sdk ## Generate bundle manifests and metada
 	$(KUSTOMIZE) build config/manifests | $(OPERATOR_SDK) generate bundle $(BUNDLE_GEN_FLAGS)
 	$(OPERATOR_SDK) bundle validate ./bundle
 
-ENVTEST=$(LOCALBIN)/setup-envtest
+.PHONY: setup-envtest
+setup-envtest: envtest ## Download the binaries required for ENVTEST in the local bin directory.
+	@echo "Setting up envtest binaries for Kubernetes version $(ENVTEST_K8S_VERSION)..."
+	@$(ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path || { \
+		echo "Error: Failed to set up envtest binaries for version $(ENVTEST_K8S_VERSION)."; \
+		exit 1; \
+	}
+
+ENVTEST ?= $(LOCALBIN)/setup-envtest
 .PHONY: envtest
-envtest: $(ENVTEST) ## Download envtest-setup locally if necessary.
+envtest: $(ENVTEST) ## Download setup-envtest locally if necessary.
 $(ENVTEST): $(LOCALBIN)
 	$(call go-install-tool,$(ENVTEST),sigs.k8s.io/controller-runtime/tools/setup-envtest,$(ENVTEST_VERSION))
 
@@ -246,7 +259,7 @@ mocks: mockery
 MOCKERY = $(LOCALBIN)/mockery
 .PHONY: mockery
 mockery: ## Download mockery locally if necessary.
-	$(call go-install-tool,$(MOCKERY),github.com/vektra/mockery/v2,$(MOCKERY_VERSION))
+	$(call go-install-tool,$(MOCKERY),github.com/vektra/mockery/v3,$(MOCKERY_VERSION))
 
 .PHONY: operator-sdk
 OPERATOR_SDK ?= $(LOCALBIN)/operator-sdk

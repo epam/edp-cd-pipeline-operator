@@ -51,6 +51,7 @@ func (r *ReconcileCDPipeline) SetupWithManager(mgr ctrl.Manager) error {
 			if !ok {
 				return false
 			}
+
 			no, ok := e.ObjectNew.(*cdPipeApi.CDPipeline)
 			if !ok {
 				return false
@@ -121,7 +122,10 @@ func (r *ReconcileCDPipeline) Reconcile(ctx context.Context, request reconcile.R
 	return reconcile.Result{}, nil
 }
 
-func (r *ReconcileCDPipeline) tryToDeletePipeline(ctx context.Context, pipeline *cdPipeApi.CDPipeline) (*reconcile.Result, error) {
+func (r *ReconcileCDPipeline) tryToDeletePipeline(
+	ctx context.Context,
+	pipeline *cdPipeApi.CDPipeline,
+) (*reconcile.Result, error) {
 	log := ctrl.LoggerFrom(ctx)
 
 	if pipeline.GetDeletionTimestamp().IsZero() {

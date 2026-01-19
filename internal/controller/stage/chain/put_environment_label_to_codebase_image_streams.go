@@ -4,7 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"golang.org/x/exp/slices"
+	"slices"
+
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -22,7 +23,10 @@ type PutEnvironmentLabelToCodebaseImageStreams struct {
 }
 
 // nolint
-func (h PutEnvironmentLabelToCodebaseImageStreams) ServeRequest(ctx context.Context, stage *cdPipeApi.Stage) error {
+func (h PutEnvironmentLabelToCodebaseImageStreams) ServeRequest(
+	ctx context.Context,
+	stage *cdPipeApi.Stage,
+) error {
 	logger := ctrl.LoggerFrom(ctx)
 	if stage.IsManualTriggerType() {
 		logger.Info("Trigger type is not auto deploy, skipping")
@@ -41,12 +45,18 @@ func (h PutEnvironmentLabelToCodebaseImageStreams) ServeRequest(ctx context.Cont
 	}
 
 	for _, name := range pipe.Spec.InputDockerStreams {
-		stream, err := cluster.GetCodebaseImageStreamByCodebaseBaseBranchName(ctx, h.client, name, stage.Namespace)
+		stream, err := cluster.GetCodebaseImageStreamByCodebaseBaseBranchName(
+			ctx,
+			h.client,
+			name,
+			stage.Namespace,
+		)
 		if err != nil {
 			return fmt.Errorf("couldn't get %s codebase image stream: %w", name, err)
 		}
 
-		if stage.IsFirst() || !slices.Contains(pipe.Spec.ApplicationsToPromote, stream.Spec.Codebase) {
+		if stage.IsFirst() ||
+			!slices.Contains(pipe.Spec.ApplicationsToPromote, stream.Spec.Codebase) {
 			if updErr := h.updateLabel(ctx, stream, pipe.Name, stage.Spec.Name); updErr != nil {
 				return updErr
 			}
@@ -85,7 +95,12 @@ func (h PutEnvironmentLabelToCodebaseImageStreams) updateLabelForVerifiedStream(
 	return h.updateLabel(ctx, verifiedStream, pipeName, stage.Spec.Name)
 }
 
-func (h PutEnvironmentLabelToCodebaseImageStreams) updateLabel(ctx context.Context, cis *codebaseApi.CodebaseImageStream, pipeName, stageName string) error {
+func (h PutEnvironmentLabelToCodebaseImageStreams) updateLabel(
+	ctx context.Context,
+	cis *codebaseApi.CodebaseImageStream,
+	pipeName string,
+	stageName string,
+) error {
 	log := ctrl.LoggerFrom(ctx)
 
 	setLabel(&cis.ObjectMeta, pipeName, stageName)

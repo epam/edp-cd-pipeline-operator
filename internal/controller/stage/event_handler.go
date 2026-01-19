@@ -35,7 +35,11 @@ func NewPipelineEventHandler(c client.Client, log logr.Logger) *PipelineEventHan
 }
 
 // Update triggers all stages of the CDPipeline reconciliation.
-func (h *PipelineEventHandler) Update(ctx context.Context, evt event.UpdateEvent, q workqueue.TypedRateLimitingInterface[reconcile.Request]) {
+func (h *PipelineEventHandler) Update(
+	ctx context.Context,
+	evt event.UpdateEvent,
+	q workqueue.TypedRateLimitingInterface[reconcile.Request],
+) {
 	if evt.ObjectNew == nil {
 		h.log.Info("Object is nil")
 		return

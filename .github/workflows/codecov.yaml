@@ -5,14 +5,14 @@ on:
     branches: [ master ]
 
 env:
-  GOLANG_VERSION: '1.24'
+  GOLANG_VERSION: '1.25'
 
 jobs:
 
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - name: Set up Go
         uses: actions/setup-go@v6
@@ -26,6 +26,6 @@ jobs:
         run: make test
 
       - name: Upload codecov
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v5
         with:
-          file: coverage.out
+          files: coverage.out

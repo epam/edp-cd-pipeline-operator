@@ -61,7 +61,10 @@ func (r *StageValidationWebhook) ValidateCreate(ctx context.Context, obj runtime
 }
 
 // ValidateUpdate is a webhook for validating the updating of the Stage CR.
-func (*StageValidationWebhook) ValidateUpdate(_ context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
+func (*StageValidationWebhook) ValidateUpdate(
+	_ context.Context,
+	oldObj, newObj runtime.Object,
+) (admission.Warnings, error) {
 	return nil, checkResourceProtectionFromModificationOnUpdate(oldObj, newObj)
 }
 
@@ -100,7 +103,10 @@ func (r *StageValidationWebhook) uniqueTargetNamespaces(ctx context.Context, sta
 	return nil
 }
 
-func (r *StageValidationWebhook) uniqueTargetNamespaceAcrossCluster(ctx context.Context, stage *pipelineApi.Stage) error {
+func (r *StageValidationWebhook) uniqueTargetNamespaceAcrossCluster(
+	ctx context.Context,
+	stage *pipelineApi.Stage,
+) error {
 	namespaces := &corev1.NamespaceList{}
 	if err := r.client.List(
 		ctx,

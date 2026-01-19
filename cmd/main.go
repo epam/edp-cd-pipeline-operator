@@ -8,7 +8,7 @@ import (
 
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
-	argoApi "github.com/argoproj/argo-cd/v2/pkg/apis/application/v1alpha1"
+	argoApi "github.com/argoproj/argo-cd/v3/pkg/apis/application/v1alpha1"
 	projectApi "github.com/openshift/api/project"
 	corev1 "k8s.io/api/core/v1"
 	k8sApi "k8s.io/api/rbac/v1"

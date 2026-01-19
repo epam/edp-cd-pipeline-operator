@@ -25,6 +25,30 @@ func TestDelegateNamespaceDeletion_ServeRequest(t *testing.T) {
 	require.NoError(t, projectApi.AddToScheme(scheme))
 	require.NoError(t, corev1.AddToScheme(scheme))
 
+	makeAssertNotFoundFunc := func(obj client.Object) func(t *testing.T, c client.Client, s *cdPipeApi.Stage) {
+		return func(t *testing.T, c client.Client, s *cdPipeApi.Stage) {
+			err := c.Get(
+				context.Background(),
+				client.ObjectKey{Name: s.Spec.Namespace}, obj,
+			)
+			require.Error(t, err)
+			require.True(t, apiErrors.IsNotFound(err))
+		}
+	}
+
+	makeStage := func() *cdPipeApi.Stage {
+		return &cdPipeApi.Stage{
+			ObjectMeta: metaV1.ObjectMeta{
+				Name:      "stage-1",
+				Namespace: "default",
+			},
+			Spec: cdPipeApi.StageSpec{
+				Namespace:   "default-stage-1",
+				ClusterName: cdPipeApi.InCluster,
+			},
+		}
+	}
+
 	tests := []struct {
 		name       string
 		stage      *cdPipeApi.Stage
@@ -38,16 +62,7 @@ func TestDelegateNamespaceDeletion_ServeRequest(t *testing.T) {
 			prepare: func(t *testing.T) {
 				t.Setenv(platform.TypeEnv, platform.Openshift)
 			},
-			stage: &cdPipeApi.Stage{
-				ObjectMeta: metaV1.ObjectMeta{
-					Name:      "stage-1",
-					Namespace: "default",
-				},
-				Spec: cdPipeApi.StageSpec{
-					Namespace:   "default-stage-1",
-					ClusterName: cdPipeApi.InCluster,
-				},
-			},
+			stage: makeStage(),
 			objects: []client.Object{
 				&projectApi.Project{
 					ObjectMeta: metaV1.ObjectMeta{
@@ -55,31 +70,15 @@ func TestDelegateNamespaceDeletion_ServeRequest(t *testing.T) {
 					},
 				},
 			},
-			wantErr: require.NoError,
-			wantAssert: func(t *testing.T, c client.Client, s *cdPipeApi.Stage) {
-				err := c.Get(
-					context.Background(),
-					client.ObjectKey{Name: s.Spec.Namespace}, &projectApi.Project{},
-				)
-				require.Error(t, err)
-				require.True(t, apiErrors.IsNotFound(err))
-			},
+			wantErr:    require.NoError,
+			wantAssert: makeAssertNotFoundFunc(&projectApi.Project{}),
 		},
 		{
 			name: "deletion of namespace is successful",
 			prepare: func(t *testing.T) {
 				t.Setenv(platform.TypeEnv, platform.Kubernetes)
 			},
-			stage: &cdPipeApi.Stage{
-				ObjectMeta: metaV1.ObjectMeta{
-					Name:      "stage-1",
-					Namespace: "default",
-				},
-				Spec: cdPipeApi.StageSpec{
-					Namespace:   "default-stage-1",
-					ClusterName: cdPipeApi.InCluster,
-				},
-			},
+			stage: makeStage(),
 			objects: []client.Object{
 				&corev1.Namespace{
 					ObjectMeta: metaV1.ObjectMeta{
@@ -87,15 +86,8 @@ func TestDelegateNamespaceDeletion_ServeRequest(t *testing.T) {
 					},
 				},
 			},
-			wantErr: require.NoError,
-			wantAssert: func(t *testing.T, c client.Client, s *cdPipeApi.Stage) {
-				err := c.Get(
-					context.Background(),
-					client.ObjectKey{Name: s.Spec.Namespace}, &corev1.Namespace{},
-				)
-				require.Error(t, err)
-				require.True(t, apiErrors.IsNotFound(err))
-			},
+			wantErr:    require.NoError,
+			wantAssert: makeAssertNotFoundFunc(&corev1.Namespace{}),
 		},
 		{
 			name:    "no platform env is set, default is kubernetes",

@@ -251,6 +251,7 @@ func TestKubernetesRbac_CreateRoleBindingIfNotExists(t *testing.T) {
 			wantErr: assert.NoError,
 			wantCheck: func(t *testing.T, k8sClient client.Client) {
 				var list rbacApi.RoleBindingList
+
 				err := k8sClient.List(context.Background(), &list)
 				assert.NoError(t, err)
 				assert.Len(t, list.Items, 1)

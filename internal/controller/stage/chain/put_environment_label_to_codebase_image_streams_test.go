@@ -143,7 +143,10 @@ func TestPutEnvironmentLabelToCodebaseImageStreams_ServeRequest_PreviousStageIma
 	}
 
 	putEnvLabel := PutEnvironmentLabelToCodebaseImageStreams{
-		client: fake.NewClientBuilder().WithScheme(schemeInit(t)).WithObjects(&stage, &prevStage, &cdPipeline, &image, &previousImage).Build(),
+		client: fake.NewClientBuilder().
+			WithScheme(schemeInit(t)).
+			WithObjects(&stage, &prevStage, &cdPipeline, &image, &previousImage).
+			Build(),
 	}
 
 	err := putEnvLabel.ServeRequest(ctrl.LoggerInto(context.Background(), logr.Discard()), &stage)
@@ -252,9 +255,18 @@ func TestPutEnvironmentLabelToCodebaseImageStreams_ServeRequest_CantGetVerifiedS
 	}
 
 	putEnvLabel := PutEnvironmentLabelToCodebaseImageStreams{
-		client: fake.NewClientBuilder().WithScheme(schemeInit(t)).WithObjects(&stage, &prevStage, &cdPipeline, &image).Build(),
+		client: fake.NewClientBuilder().
+			WithScheme(schemeInit(t)).
+			WithObjects(&stage, &prevStage, &cdPipeline, &image).
+			Build(),
 	}
 
 	err := putEnvLabel.ServeRequest(ctrl.LoggerInto(context.Background(), logr.Discard()), &stage)
-	assert.Equal(t, edpErr.CISNotFoundError("failed to get stub-cdPipeline-name-stub_name-stub-codebase-verified CodebaseImageStream"), err)
+	assert.Equal(
+		t,
+		edpErr.CISNotFoundError(
+			"failed to get stub-cdPipeline-name-stub_name-stub-codebase-verified CodebaseImageStream",
+		),
+		err,
+	)
 }
