@@ -252,6 +252,7 @@ spec:
             codebase: test
             gitUrlPath: test
             imageRepository: registry.host.local/registry-space/test
+            imageDigest: ""
             imageTag: NaN
             namespace: krci-mypipeline-dev
             repoURL: ssh://git@gerrit-dev:30000/test
@@ -262,6 +263,7 @@ spec:
             codebase: test
             gitUrlPath: test
             imageRepository: registry.host.local/registry-space/test
+            imageDigest: ""
             imageTag: NaN
             namespace: custom-namespace
             repoURL: ssh://git@gerrit-dev:30000/test
@@ -297,6 +299,8 @@ spec:
               value: '{{ .imageTag }}'
             - name: image.repository
               value: '{{ .imageRepository }}'
+            - name: image.digest
+              value: '{{ .imageDigest }}'
           releaseName: '{{ .codebase }}'
         path: deploy-templates
         repoURL: '{{ .repoURL }}'
