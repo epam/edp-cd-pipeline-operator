@@ -28,6 +28,7 @@ type generatorElement struct {
 	Codebase        string `json:"codebase"`
 	ImageTag        string `json:"imageTag"`
 	ImageRepository string `json:"imageRepository"`
+	ImageDigest     string `json:"imageDigest"`
 	Cluster         string `json:"cluster"`
 	Namespace       string `json:"namespace"`
 	RepoURL         string `json:"repoURL"`
@@ -381,6 +382,8 @@ func generateTemplatePatch(pipeline, gitopsUrl string) string {
                 value: '{{ .imageTag }}'
               - name: image.repository
                 value: {{ .imageRepository }}
+              - name: image.digest
+                value: '{{ .imageDigest }}'
             releaseName: '{{ .codebase }}'
             valueFiles:
               - $values/%s/{{ .stage }}/{{ .codebase }}-values.yaml
@@ -434,6 +437,10 @@ func generateApplicationSet(
 								{
 									Name:  "image.repository",
 									Value: "{{ .imageRepository }}",
+								},
+								{
+									Name:  "image.digest",
+									Value: "{{ .imageDigest }}",
 								},
 							},
 							ReleaseName: "{{ .codebase }}",
