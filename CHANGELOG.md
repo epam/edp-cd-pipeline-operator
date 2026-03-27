@@ -1,9 +1,13 @@
 <a name="unreleased"></a>
 ## [Unreleased]
 
+
+<a name="v2.27.0"></a>
+## [v2.27.0] - 2026-03-27
 ### Routine
 
-- Update KubeRocketAI ([#170](https://github.com/epam/edp-cd-pipeline-operator/issues/170))
+- Update Operator SDK from v1.39.2 to v1.42.0 ([#180](https://github.com/epam/edp-cd-pipeline-operator/issues/180))
+- Update CI configuration and KubeRocketAI ([#170](https://github.com/epam/edp-cd-pipeline-operator/issues/170))
 - Update KubeRocketAI ([#170](https://github.com/epam/edp-cd-pipeline-operator/issues/170))
 - Setup KubeRocketAI ([#170](https://github.com/epam/edp-cd-pipeline-operator/issues/170))
 - Update current development version ([#168](https://github.com/epam/edp-cd-pipeline-operator/issues/168))
@@ -394,7 +398,8 @@ Helm parameter kioskEnabled was removed. Use instead --set global.tenancyEngine=
 <a name="v2.1.0-36"></a>
 ## v2.1.0-36 - 2019-09-16
 
-[Unreleased]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.26.0...HEAD
+[Unreleased]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.27.0...HEAD
+[v2.27.0]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.26.0...v2.27.0
 [v2.26.0]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.25.2...v2.26.0
 [v2.25.2]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.25.1...v2.25.2
 [v2.25.1]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.25.0...v2.25.1
