@@ -2,6 +2,9 @@
 ## [Unreleased]
 
 
+<a name="v2.28.0"></a>
+## [v2.28.0] - 2026-04-04
+
 <a name="v2.27.0"></a>
 ## [v2.27.0] - 2026-03-27
 ### Routine
@@ -398,7 +401,8 @@ Helm parameter kioskEnabled was removed. Use instead --set global.tenancyEngine=
 <a name="v2.1.0-36"></a>
 ## v2.1.0-36 - 2019-09-16
 
-[Unreleased]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.27.0...HEAD
+[Unreleased]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.28.0...HEAD
+[v2.28.0]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.27.0...v2.28.0
 [v2.27.0]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.26.0...v2.27.0
 [v2.26.0]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.25.2...v2.26.0
 [v2.25.2]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.25.1...v2.25.2
