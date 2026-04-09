@@ -36,6 +36,9 @@ linters:
       - linters:
           - lll
         source: "\\+kubebuilder"
+      - linters:
+          - lll
+        path: _test\.go
     paths:
       - third_party$
       - builtin$
