@@ -3,7 +3,7 @@
 
 
 <a name="v2.29.0"></a>
-## v2.29.0 - 2026-04-10
+## v2.29.0 - 2026-04-13
 ### Features
 
 - add image digest support to ApplicationSet template
