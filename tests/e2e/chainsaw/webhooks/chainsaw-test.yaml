@@ -5,6 +5,28 @@ metadata:
 spec:
   namespace: webhooks-test
   steps:
+  - name: install-cert-manager
+    try:
+    - script:
+        content: |
+          set -e
+
+          helm status cert-manager -n cert-manager >/dev/null 2>&1 || \
+          helm install cert-manager oci://quay.io/jetstack/charts/cert-manager \
+            --version v1.20.2 \
+            --namespace cert-manager \
+            --create-namespace \
+            --set crds.enabled=true \
+            --set prometheus.enabled=false \
+            --wait
+        timeout: 3m
+        check:
+          ($error == null): true
+    cleanup:
+    - script:
+        content: |
+          helm uninstall cert-manager -n cert-manager 2>/dev/null || true
+        timeout: 2m
   - name: install-cd-pipeline-operator
     try:
     - script:

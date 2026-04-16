@@ -24,6 +24,7 @@ A Helm chart for KubeRocketCI CD Pipeline Operator
 | affinity | string | `nil` |  |
 | annotations | object | `{}` |  |
 | capsuleTenant | object | `{"create":true,"spec":null}` | Required tenancyEngine: capsule. Specify Capsule Tenant specification for Environments. |
+| enableWebhooks | bool | `true` | Enable webhook resources. Requires cert-manager to be installed in the cluster. |
 | global.adminGroupName | string | `""` | specify the admin OIDC group name. If empty, default {{ .Release.Namespace }}-oidc-admins. |
 | global.developerGroupName | string | `""` | specify the developer OIDC group name. If empty, default {{ .Release.Namespace }}-oidc-developers. |
 | global.platform | string | `"kubernetes"` | platform type that can be "kubernetes" or "openshift" |

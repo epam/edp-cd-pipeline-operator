@@ -9,6 +9,9 @@ global:
 # -- component name
 name: cd-pipeline-operator
 
+# -- Enable webhook resources. Requires cert-manager to be installed in the cluster.
+enableWebhooks: true
+
 # -- defines the type of the tenant engine that can be "none" or "capsule";
 # for Stages with external cluster tenancyEngine will be ignored
 tenancyEngine: "none"

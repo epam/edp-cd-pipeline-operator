@@ -31,6 +31,10 @@ spec:
           imagePullPolicy: "{{ .Values.imagePullPolicy }}"
           command:
             - /manager
+          {{- if .Values.enableWebhooks }}
+          args:
+            - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+          {{- end }}
           {{- if .Values.securityContext }}
           securityContext: {{ toYaml .Values.securityContext | nindent 12 }}
           {{- end }}
@@ -51,6 +55,9 @@ spec:
               value: "{{ .Values.global.adminGroupName }}"
             - name: OIDC_DEVELOPER_GROUP_NAME
               value: "{{ .Values.global.developerGroupName }}"
+            - name: ENABLE_WEBHOOKS
+              value: "{{ .Values.enableWebhooks }}"
+          {{- if .Values.enableWebhooks }}
           ports:
             - containerPort: 9443
               name: webhook-server
@@ -59,6 +66,7 @@ spec:
             - mountPath: /tmp/k8s-webhook-server/serving-certs
               name: cert
               readOnly: true
+          {{- end }}
           resources:
 {{ toYaml .Values.resources | indent 12 }}
       {{- with .Values.nodeSelector }}
@@ -73,8 +81,10 @@ spec:
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+      {{- if .Values.enableWebhooks }}
       volumes:
         - name: cert
           secret:
             defaultMode: 420
-            secretName: edp-cd-pipeline-operator-webhook-certs
+            secretName: {{ .Values.name }}-webhook-certs
+      {{- end }}
