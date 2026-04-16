@@ -1,3 +1,4 @@
+{{- if .Values.enableWebhooks }}
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
@@ -5,14 +6,6 @@ metadata:
     {{- include "cd-pipeline-operator.labels" . | nindent 4 }}
   name: edp-{{ .Values.name }}-{{ .Release.Namespace }}-validation-webhook
 rules:
-- apiGroups:
-    - admissionregistration.k8s.io
-  resources:
-    - validatingwebhookconfigurations
-  verbs:
-    - get
-    - update
-    - patch
 - apiGroups:
     - ""
   resources:
@@ -38,3 +31,4 @@ subjects:
   - kind: ServiceAccount
     name: edp-{{ .Values.name }}
     namespace: {{ .Release.Namespace }}
+{{- end }}
