@@ -3,7 +3,7 @@ module github.com/epam/edp-cd-pipeline-operator/v2
 go 1.25.8
 
 require (
-	github.com/argoproj/argo-cd/v3 v3.3.9
+	github.com/argoproj/argo-cd/v3 v3.3.10
 	github.com/epam/edp-codebase-operator/v2 v2.3.0-95.0.20260409074152-c90432564f34
 	github.com/epam/edp-common v0.0.0-20230710145648-344bbce4120e
 	github.com/go-logr/logr v1.4.3
