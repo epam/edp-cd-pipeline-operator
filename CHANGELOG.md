@@ -3,7 +3,7 @@
 
 
 <a name="v2.30.0"></a>
-## v2.30.0 - 2026-05-20
+## v2.30.0 - 2026-05-21
 ### Features
 
 - replace self-signed cert generation with cert-manager
