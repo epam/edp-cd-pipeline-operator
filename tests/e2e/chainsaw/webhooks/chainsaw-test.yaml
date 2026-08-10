@@ -41,7 +41,7 @@ spec:
         - name: E2E_IMAGE_TAG
           value: ($image_tag)
         - name: NAMESPACE
-          value: $namespace
+          value: ($namespace)
         content: |
           set -e
 
