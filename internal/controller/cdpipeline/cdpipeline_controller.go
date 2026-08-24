@@ -74,10 +74,12 @@ func (r *ReconcileCDPipeline) SetupWithManager(mgr ctrl.Manager) error {
 	return nil
 }
 
-// +kubebuilder:rbac:groups=v2.edp.epam.com,namespace=placeholder,resources=cdpipelines,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=v2.edp.epam.com,namespace=placeholder,resources=cdpipelines/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=v2.edp.epam.com,namespace=placeholder,resources=cdpipelines,verbs=get;list;watch;update
+// +kubebuilder:rbac:groups=v2.edp.epam.com,namespace=placeholder,resources=cdpipelines/status,verbs=get;update
 // +kubebuilder:rbac:groups=v2.edp.epam.com,namespace=placeholder,resources=cdpipelines/finalizers,verbs=update
-// +kubebuilder:rbac:groups=argoproj.io,namespace=placeholder,resources=applicationsets,verbs=get;list;watch;update;patch;create
+// +kubebuilder:rbac:groups=v2.edp.epam.com,namespace=placeholder,resources=codebases,verbs=get;list
+// +kubebuilder:rbac:groups=v2.edp.epam.com,namespace=placeholder,resources=gitservers,verbs=get
+// +kubebuilder:rbac:groups=argoproj.io,namespace=placeholder,resources=applicationsets,verbs=get;create;update
 
 func (r *ReconcileCDPipeline) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	log := ctrl.LoggerFrom(ctx)

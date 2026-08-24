@@ -59,6 +59,10 @@ func (h ConfigureSecretManager) ServeRequest(ctx context.Context, stage *cdPipeA
 	return nil
 }
 
+// bind lets the operator reference this Role from the eso-<target-ns>
+// RoleBinding without holding selfsubjectrulesreviews.
+// +kubebuilder:rbac:groups=rbac.authorization.k8s.io,namespace=placeholder,resources=roles,resourceNames=external-secret-integration,verbs=get;bind
+
 func (h ConfigureSecretManager) configureEso(ctx context.Context, stage *cdPipeApi.Stage) error {
 	logger := ctrl.LoggerFrom(ctx)
 
@@ -145,6 +149,9 @@ func (h ConfigureSecretManager) configureOwn(ctx context.Context, stage *cdPipeA
 	return nil
 }
 
+// +kubebuilder:rbac:groups="",resources=serviceaccounts;secrets,verbs=create
+// +kubebuilder:rbac:groups=external-secrets.io,resources=secretstores;externalsecrets,verbs=create
+
 func (h ConfigureSecretManager) createServiceAccount(
 	ctx context.Context,
 	namespace string,
@@ -167,6 +174,9 @@ func (h ConfigureSecretManager) createServiceAccount(
 
 	return serviceAccount, nil
 }
+
+// The eso-<target-ns> RoleBinding lives in the operator namespace.
+// +kubebuilder:rbac:groups=rbac.authorization.k8s.io,namespace=placeholder,resources=rolebindings,verbs=get;create
 
 func (h ConfigureSecretManager) createRoleBinding(
 	ctx context.Context,

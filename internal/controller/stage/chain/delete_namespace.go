@@ -17,6 +17,8 @@ type DeleteNamespace struct {
 	multiClusterClient multiClusterClient
 }
 
+// +kubebuilder:rbac:groups="",resources=namespaces,verbs=get;delete
+
 func (h DeleteNamespace) ServeRequest(ctx context.Context, stage *cdPipeApi.Stage) error {
 	l := ctrl.LoggerFrom(ctx).WithValues("namespace", stage.Spec.Namespace)
 

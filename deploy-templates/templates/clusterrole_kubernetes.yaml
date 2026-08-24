@@ -1,6 +1,4 @@
-{{- if eq .Values.tenancyEngine "none" -}}
 {{- if eq .Values.global.platform "kubernetes" -}}
-{{- if .Values.manageNamespace -}}
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
@@ -8,15 +6,20 @@ metadata:
     {{- include "cd-pipeline-operator.labels" . | nindent 4 }}
   name: edp-{{ .Values.name }}-{{ .Release.Namespace }}
 rules:
+# Stage target namespaces are arbitrary: cluster-scoped.
+# get is required in both modes; manageNamespace=false reads a pre-created
+# namespace through CheckNamespaceExist.
 - apiGroups:
     - ""
   resources:
     - namespaces
   verbs:
     - get
-    - list
+{{- if and (eq .Values.tenancyEngine "none") .Values.manageNamespace }}
+# tenancyEngine=capsule keeps these off the cluster scope: the Tenant owner
+# binding grants create, and Capsule binds capsule-namespace-deleter inside each
+# adopted namespace for delete.
     - create
     - delete
-{{- end -}}
-{{- end -}}
+{{- end }}
 {{- end -}}

@@ -1,0 +1,16 @@
+apiVersion: v2.edp.epam.com/v1
+kind: Stage
+metadata:
+  name: unm-dev
+status:
+  available: true
+  value: active
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: unm-target-dev
+  labels:
+    app.edp.epam.com/tenant: krci
+status:
+  phase: Active

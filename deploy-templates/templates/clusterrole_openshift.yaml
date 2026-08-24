@@ -1,18 +1,19 @@
-{{- if .Values.enableWebhooks }}
+{{- if eq .Values.global.platform "openshift" -}}
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
     {{- include "cd-pipeline-operator.labels" . | nindent 4 }}
-  name: edp-{{ .Values.name }}-{{ .Release.Namespace }}-validation-webhook
+  name: edp-{{ .Values.name }}-{{ .Release.Namespace }}
 rules:
+# Stage target projects are arbitrary: cluster-scoped.
+# self-provisioner covers ProjectRequest create only.
 - apiGroups:
-    - ""
+    - project.openshift.io
   resources:
-    - namespaces
+    - projects
   verbs:
-    - list
-    - watch
+    - get
 
 ---
 
@@ -21,13 +22,13 @@ kind: ClusterRoleBinding
 metadata:
   labels:
     {{- include "cd-pipeline-operator.labels" . | nindent 4 }}
-  name: edp-{{ .Values.name }}-{{ .Release.Namespace }}-validation-webhook
+  name: edp-{{ .Values.name }}-{{ .Release.Namespace }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: edp-{{ .Values.name }}-{{ .Release.Namespace }}-validation-webhook
+  name: edp-{{ .Values.name }}-{{ .Release.Namespace }}
 subjects:
   - kind: ServiceAccount
     name: edp-{{ .Values.name }}
     namespace: {{ .Release.Namespace }}
-{{- end }}
+{{- end -}}

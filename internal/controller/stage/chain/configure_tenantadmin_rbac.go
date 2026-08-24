@@ -20,6 +20,10 @@ type ConfigureTenantAdminRbac struct {
 	rbac rbac.Manager
 }
 
+// bind lets the operator grant ClusterRole admin without holding it.
+// +kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=rolebindings,verbs=get;create
+// +kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterroles,resourceNames=admin,verbs=bind
+
 func (h ConfigureTenantAdminRbac) ServeRequest(ctx context.Context, stage *cdPipeApi.Stage) error {
 	targetNamespace := stage.Spec.Namespace
 	logger := ctrl.LoggerFrom(ctx).WithValues("target-ns", targetNamespace)

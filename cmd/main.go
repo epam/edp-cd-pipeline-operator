@@ -49,6 +49,10 @@ const (
 	ctrlManagerDefaultPort = 9443
 )
 
+// Leader election: lease lock plus the event the recorder emits.
+// +kubebuilder:rbac:groups=coordination.k8s.io,namespace=placeholder,resources=leases,verbs=create;get;update
+// +kubebuilder:rbac:groups="",namespace=placeholder,resources=events,verbs=create;patch
+
 func main() {
 	var (
 		metricsAddr                                      string

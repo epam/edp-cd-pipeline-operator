@@ -1,0 +1,58 @@
+{{- if and (eq .Values.global.platform "kubernetes") (eq .Values.tenancyEngine "none") -}}
+# tenancyEngine=capsule omits this ClusterRole. Capsule binds ClusterRole admin
+# to the operator inside each adopted namespace, which covers rolebindings,
+# secrets and serviceaccounts and satisfies the escalation check for the
+# tenant-admin binding. Granting them cluster-wide would let the operator bind
+# admin in any namespace and defeat the isolation engine.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    {{- include "cd-pipeline-operator.labels" . | nindent 4 }}
+  name: edp-{{ .Values.name }}-{{ .Release.Namespace }}-target-namespace
+rules:
+# tenant-admin RoleBinding in every Stage target namespace.
+- apiGroups:
+    - rbac.authorization.k8s.io
+  resources:
+    - rolebindings
+  verbs:
+    - get
+    - create
+# The RBAC authorizer refuses a binding to a role the grantor does not hold,
+# unless the grantor holds bind on that role.
+- apiGroups:
+    - rbac.authorization.k8s.io
+  resources:
+    - clusterroles
+  resourceNames:
+    - admin
+  verbs:
+    - bind
+{{- if eq .Values.secretManager "own" }}
+# SECRET_MANAGER=own copies regcred into the target namespace.
+- apiGroups:
+    - ""
+  resources:
+    - secrets
+  verbs:
+    - create
+{{- end }}
+
+---
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  labels:
+    {{- include "cd-pipeline-operator.labels" . | nindent 4 }}
+  name: edp-{{ .Values.name }}-{{ .Release.Namespace }}-target-namespace
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: edp-{{ .Values.name }}-{{ .Release.Namespace }}-target-namespace
+subjects:
+  - kind: ServiceAccount
+    name: edp-{{ .Values.name }}
+    namespace: {{ .Release.Namespace }}
+{{- end -}}

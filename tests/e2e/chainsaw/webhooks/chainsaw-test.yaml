@@ -22,11 +22,6 @@ spec:
         timeout: 3m
         check:
           ($error == null): true
-    cleanup:
-    - script:
-        content: |
-          helm uninstall cert-manager -n cert-manager 2>/dev/null || true
-        timeout: 2m
   - name: install-cd-pipeline-operator
     try:
     - script:
@@ -59,10 +54,18 @@ spec:
         content: |
           set -e
           
-          kubectl apply -f https://raw.githubusercontent.com/epam/edp-codebase-operator/master/deploy-templates/crds/v2.edp.epam.com_codebaseimagestreams.yaml
-          kubectl apply -f https://raw.githubusercontent.com/epam/edp-codebase-operator/master/deploy-templates/crds/v2.edp.epam.com_codebases.yaml
-          kubectl apply -f https://raw.githubusercontent.com/epam/edp-codebase-operator/master/deploy-templates/crds/v2.edp.epam.com_gitservers.yaml
-          kubectl apply -f https://raw.githubusercontent.com/argoproj/argo-cd/v2.9.3/manifests/crds/applicationset-crd.yaml
+          # Shared pre-install: the first suite to run pulls the CRDs, the rest
+          # skip it. Chainsaw has no global setup hook and test order is not
+          # deterministic, so every suite carries the same guarded step.
+          if ! kubectl get crd codebases.v2.edp.epam.com >/dev/null 2>&1; then
+            base=https://raw.githubusercontent.com/epam/edp-codebase-operator/master/deploy-templates/crds
+            kubectl apply -f $base/v2.edp.epam.com_codebaseimagestreams.yaml
+            kubectl apply -f $base/v2.edp.epam.com_codebases.yaml
+            kubectl apply -f $base/v2.edp.epam.com_gitservers.yaml
+          fi
+          if ! kubectl get crd applicationsets.argoproj.io >/dev/null 2>&1; then
+            kubectl apply -f https://raw.githubusercontent.com/argoproj/argo-cd/v2.9.3/manifests/crds/applicationset-crd.yaml
+          fi
         timeout: 30s
     - apply:
         file: krci-config.yaml

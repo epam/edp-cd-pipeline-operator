@@ -1,0 +1,79 @@
+{{- $tenantScope := .Values.tenantScopePolicy | default (dict "enabled" true) -}}
+{{- if and (eq .Values.global.platform "kubernetes") (eq .Values.tenancyEngine "none") .Values.manageNamespace $tenantScope.enabled -}}
+# tenancyEngine=none has no isolation engine. RBAC cannot scope a verb to the
+# namespaces the operator provisioned: Stage target namespaces are arbitrary and
+# resourceNames does not apply to create. This policy supplies the boundary
+# Capsule would otherwise enforce. It constrains only the operator
+# ServiceAccount; every other principal passes unchanged.
+#
+# Requires manageNamespace=true. PutNamespace is the only writer of the tenant
+# label, so with manageNamespace=false there is nothing to key on.
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicy
+metadata:
+  labels:
+    {{- include "cd-pipeline-operator.labels" . | nindent 4 }}
+  name: edp-{{ .Values.name }}-{{ .Release.Namespace }}-tenant-scope
+spec:
+  failurePolicy: Fail
+  matchConstraints:
+    resourceRules:
+      - apiGroups: [""]
+        apiVersions: ["v1"]
+        operations: ["DELETE"]
+        resources: ["namespaces"]
+        scope: "Cluster"
+      - apiGroups: ["rbac.authorization.k8s.io"]
+        apiVersions: ["v1"]
+        operations: ["CREATE"]
+        resources: ["rolebindings"]
+        scope: "Namespaced"
+      - apiGroups: [""]
+        apiVersions: ["v1"]
+        operations: ["CREATE"]
+        resources: ["secrets", "serviceaccounts"]
+        scope: "Namespaced"
+      - apiGroups: ["external-secrets.io"]
+        apiVersions: ["v1", "v1beta1"]
+        operations: ["CREATE"]
+        resources: ["secretstores", "externalsecrets"]
+        scope: "Namespaced"
+  variables:
+    - name: isOperator
+      expression: >-
+        request.userInfo.username ==
+        'system:serviceaccount:{{ .Release.Namespace }}:edp-{{ .Values.name }}'
+    # The operator also writes into its own namespace: the Argo CD cluster
+    # secret and the eso-<target-ns> RoleBinding. That namespace carries no
+    # tenant label.
+    - name: isOwnNamespace
+      expression: >-
+        request.resource.resource != 'namespaces' &&
+        request.namespace == '{{ .Release.Namespace }}'
+    - name: tenantScoped
+      expression: >-
+        request.resource.resource == 'namespaces'
+          ? (oldObject != null && has(oldObject.metadata.labels)
+              && 'app.edp.epam.com/tenant' in oldObject.metadata.labels)
+          : (namespaceObject != null && has(namespaceObject.metadata.labels)
+              && 'app.edp.epam.com/tenant' in namespaceObject.metadata.labels)
+  validations:
+    - expression: >-
+        !variables.isOperator || variables.isOwnNamespace || variables.tenantScoped
+      message: >-
+        edp-{{ .Values.name }} may act only on its own namespace and namespaces
+        it provisioned (label app.edp.epam.com/tenant).
+      reason: Forbidden
+
+---
+
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicyBinding
+metadata:
+  labels:
+    {{- include "cd-pipeline-operator.labels" . | nindent 4 }}
+  name: edp-{{ .Values.name }}-{{ .Release.Namespace }}-tenant-scope
+spec:
+  policyName: edp-{{ .Values.name }}-{{ .Release.Namespace }}-tenant-scope
+  validationActions: ["Deny"]
+{{- end -}}

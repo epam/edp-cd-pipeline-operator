@@ -97,7 +97,7 @@ func (r *ReconcileClusterSecret) SetupWithManager(mgr ctrl.Manager) error {
 	return nil
 }
 
-// +kubebuilder:rbac:groups="",namespace=placeholder,resources=secrets,verbs=get;list;watch;update;patch;create
+// +kubebuilder:rbac:groups="",namespace=placeholder,resources=secrets,verbs=get;list;watch;create;update
 
 // Reconcile process secrets with label app.edp.epam.com/secret-type=cluster.
 // Based on the second label app.edp.epam.com/cluster-type the secret will be processed in different ways:

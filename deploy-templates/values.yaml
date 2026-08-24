@@ -116,6 +116,14 @@ securityContext:
 # Refer to the guide for managing namespace (https://docs.kuberocketci.io/docs/operator-guide/auth/namespace-management)
 manageNamespace: true
 
+tenantScopePolicy:
+  # -- Restrict the operator to namespaces it provisioned when tenancyEngine is none.
+  # Installs a ValidatingAdmissionPolicy that denies namespace deletion and RoleBinding
+  # creation outside namespaces labelled app.edp.epam.com/tenant. Ignored when
+  # tenancyEngine is capsule, which enforces the same boundary through the Tenant.
+  # Requires Kubernetes 1.30 or later.
+  enabled: true
+
 # -- Flag indicating whether the operator should manage secrets for stages.
 # This parameter controls the provisioning of the 'regcred' secret within deployed environments, facilitating access to private container registries.
 # Set the parameter to "none" under the following conditions:

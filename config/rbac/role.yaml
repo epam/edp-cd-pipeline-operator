@@ -9,9 +9,40 @@ rules:
   resources:
   - namespaces
   verbs:
+  - create
+  - delete
   - get
   - list
   - watch
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  - serviceaccounts
+  verbs:
+  - create
+- apiGroups:
+  - external-secrets.io
+  resources:
+  - externalsecrets
+  - secretstores
+  verbs:
+  - create
+- apiGroups:
+  - rbac.authorization.k8s.io
+  resourceNames:
+  - admin
+  resources:
+  - clusterroles
+  verbs:
+  - bind
+- apiGroups:
+  - rbac.authorization.k8s.io
+  resources:
+  - rolebindings
+  verbs:
+  - create
+  - get
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
@@ -22,12 +53,25 @@ rules:
 - apiGroups:
   - ""
   resources:
+  - configmaps
+  verbs:
+  - create
+  - get
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
+- apiGroups:
+  - ""
+  resources:
   - secrets
   verbs:
   - create
   - get
   - list
-  - patch
   - update
   - watch
 - apiGroups:
@@ -37,21 +81,39 @@ rules:
   verbs:
   - create
   - get
-  - list
-  - patch
   - update
-  - watch
 - apiGroups:
-  - v2.edp.epam.com
+  - coordination.k8s.io
   resources:
-  - cdpipelines
-  - stages
+  - leases
+  verbs:
+  - create
+  - get
+  - update
+- apiGroups:
+  - rbac.authorization.k8s.io
+  resources:
+  - rolebindings
   verbs:
   - create
   - delete
   - get
+- apiGroups:
+  - rbac.authorization.k8s.io
+  resourceNames:
+  - external-secret-integration
+  resources:
+  - roles
+  verbs:
+  - bind
+  - get
+- apiGroups:
+  - v2.edp.epam.com
+  resources:
+  - cdpipelines
+  verbs:
+  - get
   - list
-  - patch
   - update
   - watch
 - apiGroups:
@@ -68,5 +130,37 @@ rules:
   - stages/status
   verbs:
   - get
+  - update
+- apiGroups:
+  - v2.edp.epam.com
+  resources:
+  - codebaseimagestreams
+  verbs:
+  - create
+  - get
+  - list
+  - update
+- apiGroups:
+  - v2.edp.epam.com
+  resources:
+  - codebases
+  verbs:
+  - get
+  - list
+- apiGroups:
+  - v2.edp.epam.com
+  resources:
+  - gitservers
+  verbs:
+  - get
+- apiGroups:
+  - v2.edp.epam.com
+  resources:
+  - stages
+  verbs:
+  - deletecollection
+  - get
+  - list
   - patch
   - update
+  - watch
