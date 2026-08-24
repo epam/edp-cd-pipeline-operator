@@ -1,0 +1,142 @@
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: unmanaged-namespace
+spec:
+  # The operator's admission webhook starts serving after the pod reports
+  # ready, so the first CR apply can hit a refused connection.
+  timeouts:
+    apply: 90s
+    assert: 90s
+  description: |
+    manageNamespace=false is the branch that reads a pre-created namespace
+    through CheckNamespaceExist instead of creating one. The operator needs
+    namespaces get for it, and must leave the namespace behind on Stage delete.
+  steps:
+  - name: install-krci-dependencies
+    try:
+    - script:
+        content: |
+          set -e
+          # Shared pre-install: the first suite to run pulls the CRDs, the rest
+          # skip it. Chainsaw has no global setup hook and test order is not
+          # deterministic, so every suite carries the same guarded step.
+          if ! kubectl get crd codebases.v2.edp.epam.com >/dev/null 2>&1; then
+            base=https://raw.githubusercontent.com/epam/edp-codebase-operator/master/deploy-templates/crds
+            kubectl apply -f $base/v2.edp.epam.com_codebaseimagestreams.yaml
+            kubectl apply -f $base/v2.edp.epam.com_codebases.yaml
+            kubectl apply -f $base/v2.edp.epam.com_gitservers.yaml
+          fi
+          if ! kubectl get crd applicationsets.argoproj.io >/dev/null 2>&1; then
+            kubectl apply -f https://raw.githubusercontent.com/argoproj/argo-cd/v2.9.3/manifests/crds/applicationset-crd.yaml
+          fi
+        timeout: 30s
+    - apply:
+        file: krci-config.yaml
+    - apply:
+        file: test-main-cis.yaml
+  - name: install-cert-manager
+    try:
+    - script:
+        content: |
+          set -e
+          helm status cert-manager -n cert-manager >/dev/null 2>&1 || \
+          helm install cert-manager oci://quay.io/jetstack/charts/cert-manager \
+            --version v1.20.2 --namespace cert-manager --create-namespace \
+            --set crds.enabled=true --set prometheus.enabled=false --wait
+        timeout: 3m
+        check:
+          ($error == null): true
+  - name: pre-create-target-namespace
+    description: The platform administrator owns the namespace, not the operator.
+    try:
+    - script:
+        content: |
+          set -e
+          kubectl create namespace unm-target-dev --dry-run=client -o yaml | kubectl apply -f -
+        timeout: 30s
+  - name: install-cd-pipeline-operator
+    try:
+    - script:
+        bindings:
+        - name: image_repository
+          value: (join('/', [env('CONTAINER_REGISTRY_URL'), env('CONTAINER_REGISTRY_SPACE'), env('E2E_IMAGE_REPOSITORY')]))
+        - name: image_tag
+          value: (env('E2E_IMAGE_TAG'))
+        env:
+        - name: IMAGE_REPOSITORY
+          value: ($image_repository)
+        - name: E2E_IMAGE_TAG
+          value: ($image_tag)
+        - name: NAMESPACE
+          value: ($namespace)
+        content: |
+          set -e
+          helm uninstall cd-pipeline-operator-e2e -n $NAMESPACE --wait 2>/dev/null || true
+
+          helm install --replace --set image.repository=$IMAGE_REPOSITORY \
+          --set image.tag=$E2E_IMAGE_TAG \
+          --set tenancyEngine=none \
+          --set manageNamespace=false \
+          --namespace $NAMESPACE --wait \
+          cd-pipeline-operator-e2e ../../../../deploy-templates
+        timeout: 3m
+        check:
+          ($error == null): true
+    - assert:
+        resource:
+          apiVersion: apps/v1
+          kind: Deployment
+          metadata:
+            name: cd-pipeline-operator
+          status:
+            readyReplicas: 1
+    cleanup:
+    - script:
+        # Cleanups run in reverse step order, so this is the last thing to go.
+        # The operator must outlive the CR deletions above; without it the
+        # CDPipeline finalizer is never cleared and the delete hangs.
+        env:
+        - name: NAMESPACE
+          value: ($namespace)
+        content: |
+          helm uninstall cd-pipeline-operator-e2e -n $NAMESPACE --wait 2>/dev/null || true
+        timeout: 2m
+  - name: create-cdpipeline-and-stage
+    description: Reconcile must succeed against the pre-created namespace.
+    try:
+    - apply:
+        file: cdpipeline-and-stage.yaml
+    - sleep:
+        duration: 30s
+    - assert:
+        resource:
+          apiVersion: v2.edp.epam.com/v1
+          kind: Stage
+          metadata:
+            name: unm-dev
+          status:
+            available: true
+            value: active
+  - name: delete-stage-keeps-namespace
+    description: The operator did not create the namespace, so it must not remove it.
+    try:
+    - delete:
+        ref:
+          apiVersion: v2.edp.epam.com/v1
+          kind: Stage
+          name: unm-dev
+    - sleep:
+        duration: 20s
+    - assert:
+        resource:
+          apiVersion: v1
+          kind: Namespace
+          metadata:
+            name: unm-target-dev
+          status:
+            phase: Active
+    cleanup:
+    - script:
+        content: kubectl delete namespace unm-target-dev --ignore-not-found
+        timeout: 2m

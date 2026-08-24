@@ -38,6 +38,9 @@ func (h CheckNamespaceExist) ServeRequest(ctx context.Context, stage *cdPipeApi.
 	return nil
 }
 
+// Stage target namespaces are arbitrary, so this rule is cluster-scoped.
+// +kubebuilder:rbac:groups="",resources=namespaces,verbs=get
+
 func (h CheckNamespaceExist) namespaceExist(ctx context.Context, name string) error {
 	log := ctrl.LoggerFrom(ctx)
 	log.Info("Checking existence of namespace", "name", name)

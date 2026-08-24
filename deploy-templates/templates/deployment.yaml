@@ -31,8 +31,9 @@ spec:
           imagePullPolicy: "{{ .Values.imagePullPolicy }}"
           command:
             - /manager
-          {{- if .Values.enableWebhooks }}
           args:
+            - --leader-elect
+          {{- if .Values.enableWebhooks }}
             - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
           {{- end }}
           {{- if .Values.securityContext }}

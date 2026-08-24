@@ -43,5 +43,6 @@ A Helm chart for KubeRocketCI CD Pipeline Operator
 | securityContext | object | `{"allowPrivilegeEscalation":false}` | Container Security Context Ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/ |
 | serviceAccount.annotations | object | `{}` |  |
 | tenancyEngine | string | `"none"` | defines the type of the tenant engine that can be "none" or "capsule"; for Stages with external cluster tenancyEngine will be ignored |
+| tenantScopePolicy.enabled | bool | `true` | Restrict the operator to namespaces it provisioned when tenancyEngine is none. Installs a ValidatingAdmissionPolicy that denies namespace deletion and RoleBinding creation outside namespaces labelled app.edp.epam.com/tenant. Ignored when tenancyEngine is capsule, which enforces the same boundary through the Tenant. Requires Kubernetes 1.30 or later. |
 | tolerations | list | `[]` |  |
 

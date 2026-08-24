@@ -19,7 +19,7 @@ import (
 const listLimit = 1000
 
 // +kubebuilder:webhook:path=/validate-v2-edp-epam-com-v1-stage,mutating=false,failurePolicy=fail,sideEffects=None,groups=v2.edp.epam.com,resources=stages,verbs=create;update;delete,versions=v1,name=stage.epam.com,admissionReviewVersions=v1
-// +kubebuilder:rbac:groups="",resources=namespaces,verbs=get;list;watch
+// +kubebuilder:rbac:groups="",resources=namespaces,verbs=list;watch
 
 // StageValidationWebhook is a webhook for validating Stage CRD.
 type StageValidationWebhook struct {

@@ -17,6 +17,9 @@ type PutNamespace struct {
 	client multiClusterClient
 }
 
+// Stage target namespaces are arbitrary, so this rule is cluster-scoped.
+// +kubebuilder:rbac:groups="",resources=namespaces,verbs=create
+
 func (h PutNamespace) ServeRequest(ctx context.Context, stage *cdPipeApi.Stage) error {
 	l := ctrl.LoggerFrom(context.Background())
 

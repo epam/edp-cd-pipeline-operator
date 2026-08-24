@@ -6,45 +6,112 @@ metadata:
     {{- include "cd-pipeline-operator.labels" . | nindent 4 }}
   name: edp-{{ .Values.name }}
 rules:
+# ApplicationSet per CDPipeline. Always read by name; no list or watch.
 - apiGroups:
     - argoproj.io
   resources:
     - applicationsets
   verbs:
     - get
-    - list
-    - patch
-    - update
-    - watch
     - create
+    - update
+# Owned CRs, watched through the manager cache: list and watch are required.
 - apiGroups:
-    - '*'
+    - v2.edp.epam.com
   resources:
     - cdpipelines
-    - cdpipelines/finalizers
-    - cdpipelines/status
-    - codebases
-    - codebases/finalizers
-    - codebases/status
-    - codebasebranches
-    - codebasebranches/finalizers
-    - codebasebranches/status
     - stages
-    - stages/finalizers
-    - stages/status
-    - gitservers
-    - gitservers/status
-    - gitservers/finalizers
-    - edpcomponents
-    - edpcomponents/finalizers
-    - edpcomponents/status
-    - codebaseimagestreams
-    - codebaseimagestreams/status
-    - codebaseimagestreams/finalizers
-    - configmaps
-    - events
   verbs:
-    - '*'
+    - get
+    - list
+    - watch
+    - update
+# objectmodifier patches the cdPipelineName label and the owner reference
+# before reconcile. Stages only.
+- apiGroups:
+    - v2.edp.epam.com
+  resources:
+    - stages
+  verbs:
+    - patch
+# DeleteAllOf issues a collection DELETE; the RBAC authorizer maps it to
+# deletecollection, not delete.
+- apiGroups:
+    - v2.edp.epam.com
+  resources:
+    - stages
+  verbs:
+    - deletecollection
+- apiGroups:
+    - v2.edp.epam.com
+  resources:
+    - cdpipelines/status
+    - stages/status
+  verbs:
+    - get
+    - update
+- apiGroups:
+    - v2.edp.epam.com
+  resources:
+    - cdpipelines/finalizers
+    - stages/finalizers
+  verbs:
+    - update
+# Environment labels on CodebaseImageStreams; created for autotest stages.
+- apiGroups:
+    - v2.edp.epam.com
+  resources:
+    - codebaseimagestreams
+  verbs:
+    - get
+    - list
+    - create
+    - update
+# Read-only inputs for ApplicationSet generation. GitServers are read by name.
+- apiGroups:
+    - v2.edp.epam.com
+  resources:
+    - codebases
+  verbs:
+    - get
+    - list
+- apiGroups:
+    - v2.edp.epam.com
+  resources:
+    - gitservers
+  verbs:
+    - get
+# Per-Stage ConfigMap.
+- apiGroups:
+    - ""
+  resources:
+    - configmaps
+  verbs:
+    - get
+    - create
+# Cluster secrets, watched through the manager cache. Also covers the regcred
+# read for SECRET_MANAGER=own and the Argo CD cluster secret.
+- apiGroups:
+    - ""
+  resources:
+    - secrets
+  verbs:
+    - get
+    - list
+    - watch
+    - create
+    - update
+{{- if eq .Values.secretManager "eso" }}
+# The eso-<target-ns> RoleBinding is created in this namespace.
+- apiGroups:
+    - rbac.authorization.k8s.io
+  resources:
+    - rolebindings
+  verbs:
+    - get
+    - create
+{{- end }}
+# Leader election: lease lock plus the event the recorder emits.
 - apiGroups:
     - coordination.k8s.io
   resources:
@@ -52,16 +119,12 @@ rules:
   verbs:
     - create
     - get
-    - list
     - update
-- apiGroups: [ "" ]
+- apiGroups:
+    - ""
   resources:
-    - secrets
+    - events
   verbs:
     - create
-    - get
-    - list
     - patch
-    - update
-    - watch
 {{- end -}}

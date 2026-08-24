@@ -1,0 +1,177 @@
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: least-privilege-none
+spec:
+  # The operator's admission webhook starts serving after the pod reports
+  # ready, so the first CR apply can hit a refused connection.
+  timeouts:
+    apply: 90s
+    assert: 90s
+  description: |
+    tenancyEngine=none has no isolation engine. The operator must still be
+    confined to the namespaces it provisioned. The tenant-scope
+    ValidatingAdmissionPolicy supplies that boundary.
+  steps:
+  - name: install-krci-dependencies
+    try:
+    - script:
+        content: |
+          set -e
+          # Shared pre-install: the first suite to run pulls the CRDs, the rest
+          # skip it. Chainsaw has no global setup hook and test order is not
+          # deterministic, so every suite carries the same guarded step.
+          if ! kubectl get crd codebases.v2.edp.epam.com >/dev/null 2>&1; then
+            base=https://raw.githubusercontent.com/epam/edp-codebase-operator/master/deploy-templates/crds
+            kubectl apply -f $base/v2.edp.epam.com_codebaseimagestreams.yaml
+            kubectl apply -f $base/v2.edp.epam.com_codebases.yaml
+            kubectl apply -f $base/v2.edp.epam.com_gitservers.yaml
+          fi
+          if ! kubectl get crd applicationsets.argoproj.io >/dev/null 2>&1; then
+            kubectl apply -f https://raw.githubusercontent.com/argoproj/argo-cd/v2.9.3/manifests/crds/applicationset-crd.yaml
+          fi
+        timeout: 30s
+    - apply:
+        file: krci-config.yaml
+    - apply:
+        file: test-main-cis.yaml
+  - name: install-cert-manager
+    try:
+    - script:
+        content: |
+          set -e
+          helm status cert-manager -n cert-manager >/dev/null 2>&1 || \
+          helm install cert-manager oci://quay.io/jetstack/charts/cert-manager \
+            --version v1.20.2 --namespace cert-manager --create-namespace \
+            --set crds.enabled=true --set prometheus.enabled=false --wait
+        timeout: 3m
+        check:
+          ($error == null): true
+  - name: install-cd-pipeline-operator
+    try:
+    - script:
+        bindings:
+        - name: image_repository
+          value: (join('/', [env('CONTAINER_REGISTRY_URL'), env('CONTAINER_REGISTRY_SPACE'), env('E2E_IMAGE_REPOSITORY')]))
+        - name: image_tag
+          value: (env('E2E_IMAGE_TAG'))
+        env:
+        - name: IMAGE_REPOSITORY
+          value: ($image_repository)
+        - name: E2E_IMAGE_TAG
+          value: ($image_tag)
+        - name: NAMESPACE
+          value: ($namespace)
+        content: |
+          set -e
+          helm uninstall cd-pipeline-operator-e2e -n $NAMESPACE --wait 2>/dev/null || true
+
+          helm install --replace --set image.repository=$IMAGE_REPOSITORY \
+          --set image.tag=$E2E_IMAGE_TAG \
+          --set tenancyEngine=none \
+          --namespace $NAMESPACE --wait \
+          cd-pipeline-operator-e2e ../../../../deploy-templates
+        timeout: 3m
+        check:
+          ($error == null): true
+    - assert:
+        resource:
+          apiVersion: apps/v1
+          kind: Deployment
+          metadata:
+            name: cd-pipeline-operator
+          status:
+            readyReplicas: 1
+    cleanup:
+    - script:
+        # Cleanups run in reverse step order, so this is the last thing to go.
+        # The operator must outlive the CR deletions above; without it the
+        # CDPipeline finalizer is never cleared and the delete hangs.
+        env:
+        - name: NAMESPACE
+          value: ($namespace)
+        content: |
+          helm uninstall cd-pipeline-operator-e2e -n $NAMESPACE --wait 2>/dev/null || true
+        timeout: 2m
+  - name: create-cdpipeline-and-stage
+    try:
+    - apply:
+        file: cdpipeline-and-stage.yaml
+    - sleep:
+        duration: 30s
+    - assert:
+        file: stage-assert.yaml
+  - name: assert-confined-to-own-namespaces
+    description: |
+      Real API calls under impersonation, not a manifest check. Only these can
+      fail when the operator is granted more than it needs.
+    try:
+    - script:
+        content: |
+          set -e
+          SA=system:serviceaccount:${NAMESPACE}:edp-cd-pipeline-operator
+          kubectl create namespace lpn-foreign --dry-run=client -o yaml | kubectl apply -f -
+
+          if kubectl delete namespace lpn-foreign --as=$SA --dry-run=server 2>/dev/null; then
+            echo "ESCAPE PATH OPEN: operator may delete a namespace it did not provision"
+            exit 1
+          fi
+
+          if kubectl -n lpn-foreign create rolebinding evil --clusterrole=admin \
+               --serviceaccount=${NAMESPACE}:edp-cd-pipeline-operator \
+               --as=$SA --dry-run=server 2>/dev/null; then
+            echo "ESCAPE PATH OPEN: operator may grant RBAC in a foreign namespace"
+            exit 1
+          fi
+
+          if kubectl -n lpn-foreign create secret generic evil --from-literal=k=v \
+               --as=$SA --dry-run=server 2>/dev/null; then
+            echo "ESCAPE PATH OPEN: operator may write secrets in a foreign namespace"
+            exit 1
+          fi
+
+          if kubectl -n kube-system create secret generic evil --from-literal=k=v \
+               --as=$SA --dry-run=server 2>/dev/null; then
+            echo "ESCAPE PATH OPEN: operator may write secrets in kube-system"
+            exit 1
+          fi
+
+          if kubectl -n lpn-foreign create serviceaccount evil \
+               --as=$SA --dry-run=server 2>/dev/null; then
+            echo "ESCAPE PATH OPEN: operator may create ServiceAccounts in a foreign namespace"
+            exit 1
+          fi
+
+          # The operator legitimately writes into its own namespace (Argo CD
+          # cluster secret, eso-<target-ns> RoleBinding). The policy must not
+          # break that.
+          if ! kubectl -n ${NAMESPACE} create rolebinding probe --clusterrole=admin \
+               --group=probe --as=$SA --dry-run=server >/dev/null 2>&1; then
+            echo "OPERATOR BROKEN: cannot write RBAC in its own namespace"
+            exit 1
+          fi
+        env:
+        - name: NAMESPACE
+          value: ($namespace)
+        timeout: 1m
+        check:
+          ($error == null): true
+    cleanup:
+    - script:
+        content: kubectl delete namespace lpn-foreign --ignore-not-found
+        timeout: 1m
+  - name: delete-stage-removes-namespace
+    try:
+    - delete:
+        ref:
+          apiVersion: v2.edp.epam.com/v1
+          kind: Stage
+          name: lpn-dev
+    - sleep:
+        duration: 20s
+    - error:
+        resource:
+          apiVersion: v1
+          kind: Namespace
+          metadata:
+            name: lpn-target-dev

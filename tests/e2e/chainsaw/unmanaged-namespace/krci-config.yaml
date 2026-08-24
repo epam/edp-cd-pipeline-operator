@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: krci-config
+data:
+  container_registry_host: registry.host.local
+  container_registry_space: registry-space 

@@ -19,6 +19,8 @@ type DeleteRegistryViewerRbac struct {
 }
 
 // ServeRequest deletes sa-registry-viewer RoleBinding.
+// +kubebuilder:rbac:groups=rbac.authorization.k8s.io,namespace=placeholder,resources=rolebindings,verbs=delete
+
 func (h DeleteRegistryViewerRbac) ServeRequest(ctx context.Context, stage *cdPipeApi.Stage) error {
 	targetNamespace := stage.Spec.Namespace
 	roleBindingName := generateSaRegistryViewerRoleBindingName(stage)
