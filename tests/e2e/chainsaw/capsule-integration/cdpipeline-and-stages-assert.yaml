@@ -104,14 +104,16 @@ roleRef:
   name: admin
 
 # cd-pipeline-operator can manage Stage namespace
+# Capsule-managed RoleBindings: matched by label and roleRef; Capsule owns the
+# name. Label key: projectcapsule.dev/tenant on RoleBindings,
+# capsule.clastix.io/tenant on Namespaces.
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: capsule-edp-workload-krci-1-capsule-namespace-deleter
   namespace: krci-mypipeline-dev
   labels:
-    capsule.clastix.io/tenant: edp-workload-krci
+    projectcapsule.dev/tenant: edp-workload-krci
 subjects:
   - kind: ServiceAccount
     name: edp-cd-pipeline-operator
@@ -126,10 +128,9 @@ roleRef:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: capsule-edp-workload-krci-0-admin
   namespace: krci-mypipeline-dev
   labels:
-    capsule.clastix.io/tenant: edp-workload-krci
+    projectcapsule.dev/tenant: edp-workload-krci
 subjects:
   - kind: ServiceAccount
     name: edp-cd-pipeline-operator
@@ -221,18 +222,13 @@ status:
   size: 2
   state: Active
 spec:
-  ingressOptions:
-    hostnameCollisionScope: Disabled
-  limitRanges: {}
-  networkPolicies: {}
+  # Owners only; Capsule defaults the other spec fields.
   owners:
     - clusterRoles:
         - admin
         - capsule-namespace-deleter
       kind: ServiceAccount
       name: system:serviceaccount:krci:edp-cd-pipeline-operator
-  resourceQuotas:
-    scope: Tenant
 
 ---
 apiVersion: argoproj.io/v1alpha1
