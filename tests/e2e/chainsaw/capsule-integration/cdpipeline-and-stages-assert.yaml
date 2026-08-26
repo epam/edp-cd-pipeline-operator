@@ -104,14 +104,18 @@ roleRef:
   name: admin
 
 # cd-pipeline-operator can manage Stage namespace
+# NOTE: match by tenant label + roleRef, not by name - Capsule owns the
+# RoleBinding name and it is not a stable contract across Capsule versions.
+# Capsule 0.14.2 stamps its own managed RoleBindings with
+# projectcapsule.dev/tenant, not capsule.clastix.io/tenant (that label is
+# still used on the Namespace itself, just not on these RoleBindings).
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: capsule-edp-workload-krci-1-capsule-namespace-deleter
   namespace: krci-mypipeline-dev
   labels:
-    capsule.clastix.io/tenant: edp-workload-krci
+    projectcapsule.dev/tenant: edp-workload-krci
 subjects:
   - kind: ServiceAccount
     name: edp-cd-pipeline-operator
@@ -122,14 +126,14 @@ roleRef:
   name: capsule-namespace-deleter
 
 # cd-pipeline-operator is admin in the Stage namespace
+# NOTE: match by tenant label + roleRef, not by name - see note above.
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: capsule-edp-workload-krci-0-admin
   namespace: krci-mypipeline-dev
   labels:
-    capsule.clastix.io/tenant: edp-workload-krci
+    projectcapsule.dev/tenant: edp-workload-krci
 subjects:
   - kind: ServiceAccount
     name: edp-cd-pipeline-operator
@@ -221,18 +225,15 @@ status:
   size: 2
   state: Active
 spec:
-  ingressOptions:
-    hostnameCollisionScope: Disabled
-  limitRanges: {}
-  networkPolicies: {}
+  # Capsule 0.14.2 no longer defaults ingressOptions/limitRanges/
+  # networkPolicies/resourceQuotas onto the Tenant spec the way 0.10.9 did -
+  # only owners (the security-relevant part) is asserted here.
   owners:
     - clusterRoles:
         - admin
         - capsule-namespace-deleter
       kind: ServiceAccount
       name: system:serviceaccount:krci:edp-cd-pipeline-operator
-  resourceQuotas:
-    scope: Tenant
 
 ---
 apiVersion: argoproj.io/v1alpha1
