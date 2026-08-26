@@ -13,15 +13,28 @@ status:
   size: 0
   state: Active
 spec:
-  ingressOptions:
-    hostnameCollisionScope: Disabled
-  limitRanges: {}
-  networkPolicies: {}
+  # Owners only; Capsule defaults the other spec fields.
   owners:
     - clusterRoles:
         - admin
         - capsule-namespace-deleter
       kind: ServiceAccount
       name: system:serviceaccount:krci:edp-cd-pipeline-operator
-  resourceQuotas:
-    scope: Tenant 
+
+---
+# cainjector sets caBundle after `helm install --wait` returns.
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  name: (join('-', ['edp-cd-pipeline-operator-validating-webhook-configuration', $namespace]))
+(length(webhooks) > `0`): true
+(length(webhooks[?!clientConfig.caBundle])): 0
+
+---
+# Ready endpoint means the webhook server is listening (readyz gate).
+apiVersion: discovery.k8s.io/v1
+kind: EndpointSlice
+metadata:
+  labels:
+    kubernetes.io/service-name: edp-cd-pipeline-operator-webhook-service
+(length((endpoints || `[]`)[?conditions.ready]) > `0`): true

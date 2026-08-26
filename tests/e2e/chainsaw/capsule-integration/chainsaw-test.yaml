@@ -13,11 +13,19 @@ spec:
           helm repo add projectcapsule https://projectcapsule.github.io/charts
           helm repo update
 
-          # Pinned to the version edp-cluster-add-ons ships, so CI exercises what
-          # customers run. Bump both together.
-          helm install --replace capsule projectcapsule/capsule --version 0.10.9 \
-          --set 'manager.options.capsuleUserGroups[0]=capsule.clastix.io' \
-          --set 'manager.options.capsuleUserGroups[1]=system:serviceaccounts:krci' \
+          # Version, users and TLS settings mirror edp-cluster-add-ons
+          # (clusters/core/addons/capsule/values.yaml). Bump both together.
+          # TLS: Capsule's own controller; cert-manager is installed later.
+          helm install --replace capsule projectcapsule/capsule --version 0.14.3 \
+          --set 'manager.options.users[0].kind=Group' \
+          --set 'manager.options.users[0].name=projectcapsule.dev' \
+          --set 'manager.options.users[1].kind=Group' \
+          --set 'manager.options.users[1].name=capsule.clastix.io' \
+          --set 'manager.options.users[2].kind=Group' \
+          --set 'manager.options.users[2].name=system:serviceaccounts:krci' \
+          --set 'certManager.generateCertificates=false' \
+          --set 'tls.create=true' \
+          --set 'tls.enableController=true' \
           --wait \
           --create-namespace \
           --namespace capsule-system
@@ -32,7 +40,18 @@ spec:
         content: |
           set -e
           helm uninstall capsule -n capsule-system
-        timeout: 2m
+
+          # Block until Capsule webhook configurations are gone; leftovers
+          # intercept namespace operations in the next suite.
+          for i in $(seq 1 60); do
+            all=$(kubectl get validatingwebhookconfigurations,mutatingwebhookconfigurations -o name)
+            left=$(printf '%s\n' "$all" | grep -c capsule || true)
+            [ "$left" -eq 0 ] && exit 0
+            sleep 1
+          done
+          echo "capsule webhook configurations did not clear in time" >&2
+          exit 1
+        timeout: 3m
         check:
           ($error == null): true
   - name: install-krci-dependencies
@@ -127,8 +146,9 @@ spec:
         check:
           ($error == null): true
     - assert:
-        # Verify Operator Deployment and Tenant
+        # Verify Operator Deployment, Tenant, and webhook readiness
         file: operator-assert.yaml
+        timeout: 1m
     cleanup:
     - script:
         env:
@@ -142,6 +162,8 @@ spec:
     # Create CDPipeline and Stages
     - apply:
         file: cdpipeline-and-stages.yaml
+        # Stage CREATE goes through the operator webhook.
+        timeout: 30s
     # Wait for CDPipeline and Stages to be processed
     - sleep:
         duration: 30s
@@ -195,6 +217,48 @@ spec:
     cleanup:
     - script:
         content: kubectl delete namespace foreign-app --ignore-not-found
+        timeout: 1m
+
+  - name: reject-preexisting-namespace-adoption
+    description: |
+      An existing namespace cannot be bound to a Tenant by relabeling.
+      Capsule allows this only for CapsuleConfiguration.spec.administrators,
+      which this suite does not set.
+    try:
+    - script:
+        content: |
+          kubectl create namespace preexisting-adoption-test --dry-run=client -o yaml | kubectl apply -f -
+        timeout: 30s
+        check:
+          ($error == null): true
+    - script:
+        # Operator ServiceAccount: Capsule admission denies.
+        content: |
+          kubectl label namespace preexisting-adoption-test capsule.clastix.io/tenant=edp-workload-krci \
+            --as=system:serviceaccount:krci:edp-cd-pipeline-operator
+        timeout: 30s
+        check:
+          ($error != null): true
+          (contains($stderr, 'denied the request')): true
+    - script:
+        # Capsule user with cluster-admin RBAC: RBAC passes, Capsule admission denies.
+        content: |
+          kubectl label namespace preexisting-adoption-test capsule.clastix.io/tenant=edp-workload-krci \
+            --as=adoption-probe --as-group=system:masters --as-group=capsule.clastix.io
+        timeout: 30s
+        check:
+          ($error != null): true
+          (contains($stderr, 'denied the request')): true
+    - assert:
+        resource:
+          apiVersion: v1
+          kind: Namespace
+          metadata:
+            name: preexisting-adoption-test
+            (labels."capsule.clastix.io/tenant" == null): true
+    cleanup:
+    - script:
+        content: kubectl delete namespace preexisting-adoption-test --ignore-not-found
         timeout: 1m
 
   - name: delete-stages-removes-namespaces
