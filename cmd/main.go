@@ -263,7 +263,9 @@ func main() {
 		os.Exit(1)
 	}
 
-	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
+	webhooksEnabled := os.Getenv("ENABLE_WEBHOOKS") != "false"
+
+	if webhooksEnabled {
 		if err = webhook.RegisterValidationWebHook(mgr); err != nil {
 			setupLog.Error(err, "failed to create webhook")
 			os.Exit(1)
@@ -293,7 +295,13 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = mgr.AddReadyzCheck("readyz", healthz.Ping); err != nil {
+	// Not ready until the webhook server accepts TLS connections.
+	readyzCheck := healthz.Ping
+	if webhooksEnabled {
+		readyzCheck = mgr.GetWebhookServer().StartedChecker()
+	}
+
+	if err = mgr.AddReadyzCheck("readyz", readyzCheck); err != nil {
 		setupLog.Error(err, "unable to set up ready check")
 		os.Exit(1)
 	}
