@@ -20,3 +20,18 @@ rules:
       - ''
     resources:
       - namespaces
+
+# The tenant owner group is registered via spec.users (the deprecated
+# capsuleUserGroups/userNames Helm keys are not used), so ServiceAccounts
+# under system:serviceaccounts:krci are recognized as Capsule identities.
+---
+apiVersion: capsule.clastix.io/v1beta2
+kind: CapsuleConfiguration
+metadata:
+  name: default
+spec:
+  users:
+    - kind: Group
+      name: capsule.clastix.io
+    - kind: Group
+      name: system:serviceaccounts:krci
