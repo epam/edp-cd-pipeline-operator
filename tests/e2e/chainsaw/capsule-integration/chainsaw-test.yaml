@@ -15,9 +15,18 @@ spec:
 
           # Pinned to the version edp-cluster-add-ons ships, so CI exercises what
           # customers run. Bump both together.
-          helm install --replace capsule projectcapsule/capsule --version 0.10.9 \
-          --set 'manager.options.capsuleUserGroups[0]=capsule.clastix.io' \
-          --set 'manager.options.capsuleUserGroups[1]=system:serviceaccounts:krci' \
+          # Since v0.13.0 the chart defaults to cert-manager-issued webhook
+          # certs, but cert-manager isn't installed until a later step here -
+          # and production (edp-cluster-add-ons) doesn't use cert-manager for
+          # Capsule at all. Keep Capsule's own TLS controller, matching prod.
+          helm install --replace capsule projectcapsule/capsule --version 0.14.3 \
+          --set 'manager.options.users[0].kind=Group' \
+          --set 'manager.options.users[0].name=capsule.clastix.io' \
+          --set 'manager.options.users[1].kind=Group' \
+          --set 'manager.options.users[1].name=system:serviceaccounts:krci' \
+          --set 'certManager.generateCertificates=false' \
+          --set 'tls.create=true' \
+          --set 'tls.enableController=true' \
           --wait \
           --create-namespace \
           --namespace capsule-system
@@ -32,7 +41,22 @@ spec:
         content: |
           set -e
           helm uninstall capsule -n capsule-system
-        timeout: 2m
+
+          # `helm uninstall` can return before the chart's cluster-scoped
+          # ValidatingWebhookConfiguration/MutatingWebhookConfiguration are
+          # actually deleted. In that gap they still intercept namespace
+          # create/delete cluster-wide while their backing Service is
+          # already gone, breaking whichever suite runs next. Block here
+          # until they're verifiably gone instead of trusting the command
+          # having returned.
+          for i in $(seq 1 30); do
+            left=$(kubectl get validatingwebhookconfigurations,mutatingwebhookconfigurations -o name 2>/dev/null | grep -c capsule || true)
+            [ "$left" -eq 0 ] && exit 0
+            sleep 1
+          done
+          echo "capsule webhook configurations did not clear in time" >&2
+          exit 1
+        timeout: 1m
         check:
           ($error == null): true
   - name: install-krci-dependencies
@@ -127,8 +151,9 @@ spec:
         check:
           ($error == null): true
     - assert:
-        # Verify Operator Deployment and Tenant
+        # Verify Operator Deployment, Tenant, and webhook CA injection
         file: operator-assert.yaml
+        timeout: 1m
     cleanup:
     - script:
         env:
@@ -196,6 +221,48 @@ spec:
     - script:
         content: kubectl delete namespace foreign-app --ignore-not-found
         timeout: 1m
+
+  - name: reject-preexisting-namespace-adoption
+    description: |
+      AC7: with this operator's actual Capsule configuration, nothing can
+      bind an already-live namespace to a Tenant via PATCH/UPDATE - not
+      the operator's own ServiceAccount, not a declared Tenant owner
+      impersonated with the right group, not even cluster-admin RBAC.
+      Confirmed against Capsule's source
+      (internal/webhook/namespace/mutation/assignment.go,
+      tenantForUpdate): that path is gated on user.IsAdmin(), which
+      checks CapsuleConfiguration.spec.administrators (Helm value
+      manager.options.administrators) - a distinct, stronger grant than
+      Tenant.spec.owners, and one this operator's chart/fixture never
+      sets. Tenant ownership only ever grants creating a *new*
+      namespace pre-bound to that tenant (what
+      put_namespace.go/put_openshift_project.go do); it never grants
+      adopting an existing one. Verified empirically: adding the probe
+      identity to spec.administrators made an otherwise-identical patch
+      succeed, isolating this as the actual gate. So: no config change
+      to this operator's chart flips this - onboarding a pre-existing
+      namespace requires a cluster operator to explicitly add an
+      identity to CapsuleConfiguration.spec.administrators out of band
+      and perform the migration as that identity; there is no
+      in-band/self-service path via this operator.
+    try:
+    - script:
+        content: kubectl create namespace preexisting-adoption-test
+        timeout: 30s
+    - script:
+        content: |
+          kubectl label namespace preexisting-adoption-test capsule.clastix.io/tenant=edp-workload-krci
+        timeout: 30s
+        check:
+          # Capsule version emitted it as a warning while allowing the patch,
+          # and a non-zero exit alone would pass on any unrelated kubectl
+          # failure. Assert the patch was rejected AND rejected for this reason.
+          ($error != null): true
+          (contains($stderr, 'namespace can not be patched into a tenant')): true
+    cleanup:
+    - script:
+        content: kubectl delete namespace preexisting-adoption-test --ignore-not-found
+        timeout: 30s
 
   - name: delete-stages-removes-namespaces
     description: |
