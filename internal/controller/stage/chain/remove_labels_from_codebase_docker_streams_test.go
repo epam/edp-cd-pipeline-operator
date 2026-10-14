@@ -19,31 +19,37 @@ import (
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/cluster"
 )
 
+// cleanupPipeName is the CDPipeline name shared by the cleanup fixtures.
+const (
+	cleanupPipeName = "demo"
+	cleanupDevStage = "dev"
+)
+
 // cleanupStage builds a first (order 0) auto-deploy Stage with lowercase names so
 // the resulting "<pipeline>/<stage>" label is a valid Kubernetes label key.
-func cleanupStage(pipeName, stageName string) *cdPipeApi.Stage {
+func cleanupStage(stageName string) *cdPipeApi.Stage {
 	return &cdPipeApi.Stage{
 		ObjectMeta: metaV1.ObjectMeta{
-			Name:      pipeName + "-" + stageName,
+			Name:      cleanupPipeName + "-" + stageName,
 			Namespace: namespace,
 		},
 		Spec: cdPipeApi.StageSpec{
 			Name:        stageName,
 			Order:       0,
-			CdPipeline:  pipeName,
+			CdPipeline:  cleanupPipeName,
 			TriggerType: cdPipeApi.TriggerTypeAutoDeploy,
 		},
 	}
 }
 
-func cleanupPipeline(pipeName string, inputStreams []string) *cdPipeApi.CDPipeline {
+func cleanupPipeline(inputStreams []string) *cdPipeApi.CDPipeline {
 	return &cdPipeApi.CDPipeline{
 		ObjectMeta: metaV1.ObjectMeta{
-			Name:      pipeName,
+			Name:      cleanupPipeName,
 			Namespace: namespace,
 		},
 		Spec: cdPipeApi.CDPipelineSpec{
-			Name:               pipeName,
+			Name:               cleanupPipeName,
 			InputDockerStreams: inputStreams,
 		},
 	}
@@ -90,11 +96,11 @@ func hasEnvLabel(t *testing.T, c client.Client, cisName, envLabel string) bool {
 // have the "<pipeline>/<stage>" label stripped from its CodebaseImageStream, while a
 // stream that is still part of the pipeline keeps it.
 func TestRemoveLabelsFromCodebaseDockerStreamsAfterCdPipelineUpdate_ServeRequest_PurgesOrphanKeepsMember(t *testing.T) {
-	pipeName, stageName := "demo", "dev"
+	pipeName, stageName := cleanupPipeName, cleanupDevStage
 	envLabel := createLabelName(pipeName, stageName)
 
-	stage := cleanupStage(pipeName, stageName)
-	pipe := cleanupPipeline(pipeName, []string{"app-member-main"})
+	stage := cleanupStage(stageName)
+	pipe := cleanupPipeline([]string{"app-member-main"})
 	member := cisWithEnvLabel("app-member-main", "app-member-main", "app-member", envLabel)
 	orphan := cisWithEnvLabel("app-removed-main", "app-removed-main", "app-removed", envLabel)
 
@@ -115,19 +121,19 @@ func TestRemoveLabelsFromCodebaseDockerStreamsAfterCdPipelineUpdate_ServeRequest
 // non-first stage is labelled on its upstream "<pipe>-<prevStage>-<codebase>-verified"
 // stream, so removing it must strip that verified stream while a still-promoted app keeps it.
 func TestRemoveLabelsFromCodebaseDockerStreamsAfterCdPipelineUpdate_ServeRequest_PurgesOrphanVerifiedKeepsPromotedMember(t *testing.T) {
-	pipeName, prevStageName, stageName := "demo", "dev", "qa"
+	pipeName, prevStageName, stageName := cleanupPipeName, cleanupDevStage, "qa"
 	envLabel := createLabelName(pipeName, stageName)
 
 	// FindPreviousStageName resolves this order-0 stage by its pipeline label to build
 	// the "<pipe>-<prevStage>-<codebase>-verified" stream name.
-	prevStage := cleanupStage(pipeName, prevStageName)
+	prevStage := cleanupStage(prevStageName)
 	prevStage.Labels = map[string]string{cdPipeApi.StageCdPipelineLabelName: pipeName}
 
-	stage := cleanupStage(pipeName, stageName)
+	stage := cleanupStage(stageName)
 	stage.Spec.Order = 1
 	stage.Labels = map[string]string{cdPipeApi.StageCdPipelineLabelName: pipeName}
 
-	pipe := cleanupPipeline(pipeName, []string{"app-member-main"})
+	pipe := cleanupPipeline([]string{"app-member-main"})
 	pipe.Spec.ApplicationsToPromote = []string{"app-member", "app-removed"}
 
 	// Surviving promoted app: input stream resolves the codebase, verified stream holds
@@ -155,19 +161,19 @@ func TestRemoveLabelsFromCodebaseDockerStreamsAfterCdPipelineUpdate_ServeRequest
 // first-stage tests nor PurgesOrphanVerifiedKeepsPromotedMember reach: a non-promoted app
 // on a non-first stage is labelled on its input stream, not a verified one.
 func TestRemoveLabelsFromCodebaseDockerStreamsAfterCdPipelineUpdate_ServeRequest_PurgesOrphanKeepsNonPromotedInputOnNonFirstStage(t *testing.T) {
-	pipeName, stageName := "demo", "qa"
+	pipeName, stageName := cleanupPipeName, "qa"
 	envLabel := createLabelName(pipeName, stageName)
 
 	// Non-first, but app-keep isn't promoted, so its input stream is labelled directly
 	// and FindPreviousStageName is never needed.
-	stage := cleanupStage(pipeName, stageName)
+	stage := cleanupStage(stageName)
 	stage.Spec.Order = 1
 
-	pipe := cleanupPipeline(pipeName, []string{"app-keep-main"})
+	pipe := cleanupPipeline([]string{"app-keep-main"})
 
 	member := cisWithEnvLabel("app-keep-main", "app-keep-main", "app-keep", envLabel)
 	orphan := cisWithEnvLabel(
-		createCisName(pipeName, "dev", "app-removed"), "app-removed-verified", "app-removed", envLabel)
+		createCisName(pipeName, cleanupDevStage, "app-removed"), "app-removed-verified", "app-removed", envLabel)
 
 	h := RemoveLabelsFromCodebaseDockerStreamsAfterCdPipelineUpdate{
 		client: fake.NewClientBuilder().WithScheme(schemeInit(t)).
@@ -184,12 +190,12 @@ func TestRemoveLabelsFromCodebaseDockerStreamsAfterCdPipelineUpdate_ServeRequest
 
 // A manual-trigger stage never owns env labels, so the handler must leave everything untouched.
 func TestRemoveLabelsFromCodebaseDockerStreamsAfterCdPipelineUpdate_ServeRequest_SkipManual(t *testing.T) {
-	pipeName, stageName := "demo", "dev"
+	pipeName, stageName := cleanupPipeName, cleanupDevStage
 	envLabel := createLabelName(pipeName, stageName)
 
-	stage := cleanupStage(pipeName, stageName)
+	stage := cleanupStage(stageName)
 	stage.Spec.TriggerType = cdPipeApi.TriggerTypeManual
-	pipe := cleanupPipeline(pipeName, []string{"app-member-main"})
+	pipe := cleanupPipeline([]string{"app-member-main"})
 	orphan := cisWithEnvLabel("app-removed-main", "app-removed-main", "app-removed", envLabel)
 
 	h := RemoveLabelsFromCodebaseDockerStreamsAfterCdPipelineUpdate{
@@ -205,11 +211,11 @@ func TestRemoveLabelsFromCodebaseDockerStreamsAfterCdPipelineUpdate_ServeRequest
 
 // Re-running the handler when nothing was removed must be a no-op (idempotency).
 func TestRemoveLabelsFromCodebaseDockerStreamsAfterCdPipelineUpdate_ServeRequest_NoOpWhenAllReferenced(t *testing.T) {
-	pipeName, stageName := "demo", "dev"
+	pipeName, stageName := cleanupPipeName, cleanupDevStage
 	envLabel := createLabelName(pipeName, stageName)
 
-	stage := cleanupStage(pipeName, stageName)
-	pipe := cleanupPipeline(pipeName, []string{"app-a-main", "app-b-main"})
+	stage := cleanupStage(stageName)
+	pipe := cleanupPipeline([]string{"app-a-main", "app-b-main"})
 	a := cisWithEnvLabel("app-a-main", "app-a-main", "app-a", envLabel)
 	b := cisWithEnvLabel("app-b-main", "app-b-main", "app-b", envLabel)
 
@@ -225,7 +231,7 @@ func TestRemoveLabelsFromCodebaseDockerStreamsAfterCdPipelineUpdate_ServeRequest
 }
 
 func TestRemoveLabelsFromCodebaseDockerStreamsAfterCdPipelineUpdate_ServeRequest_CantGetCdPipeline(t *testing.T) {
-	stage := cleanupStage("demo", "dev")
+	stage := cleanupStage(cleanupDevStage)
 
 	h := RemoveLabelsFromCodebaseDockerStreamsAfterCdPipelineUpdate{
 		client: fake.NewClientBuilder().WithScheme(schemeInit(t)).WithObjects(stage).Build(),
@@ -239,13 +245,13 @@ func TestRemoveLabelsFromCodebaseDockerStreamsAfterCdPipelineUpdate_ServeRequest
 // A failure to resolve a referenced input stream must NOT strip labels: the handler
 // errors (and requeues) instead, leaving every existing label intact.
 func TestRemoveLabelsFromCodebaseDockerStreamsAfterCdPipelineUpdate_ServeRequest_ResolveErrorKeepsLabels(t *testing.T) {
-	pipeName, stageName := "demo", "dev"
+	pipeName, stageName := cleanupPipeName, cleanupDevStage
 	envLabel := createLabelName(pipeName, stageName)
 
-	stage := cleanupStage(pipeName, stageName)
+	stage := cleanupStage(stageName)
 	// References "app-member-main", but no CodebaseImageStream with that branch label
 	// exists, so resolution fails.
-	pipe := cleanupPipeline(pipeName, []string{"app-member-main"})
+	pipe := cleanupPipeline([]string{"app-member-main"})
 	orphan := cisWithEnvLabel("app-removed-main", "app-removed-main", "app-removed", envLabel)
 
 	h := RemoveLabelsFromCodebaseDockerStreamsAfterCdPipelineUpdate{
@@ -260,11 +266,11 @@ func TestRemoveLabelsFromCodebaseDockerStreamsAfterCdPipelineUpdate_ServeRequest
 
 // An empty inputDockerStreams must not purge every labelled stream; the handler errors.
 func TestRemoveLabelsFromCodebaseDockerStreamsAfterCdPipelineUpdate_ServeRequest_EmptyInputKeepsLabels(t *testing.T) {
-	pipeName, stageName := "demo", "dev"
+	pipeName, stageName := cleanupPipeName, cleanupDevStage
 	envLabel := createLabelName(pipeName, stageName)
 
-	stage := cleanupStage(pipeName, stageName)
-	pipe := cleanupPipeline(pipeName, nil)
+	stage := cleanupStage(stageName)
+	pipe := cleanupPipeline(nil)
 	orphan := cisWithEnvLabel("app-removed-main", "app-removed-main", "app-removed", envLabel)
 
 	h := RemoveLabelsFromCodebaseDockerStreamsAfterCdPipelineUpdate{
