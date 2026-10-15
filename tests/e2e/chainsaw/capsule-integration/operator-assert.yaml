@@ -13,15 +13,43 @@ status:
   size: 0
   state: Active
 spec:
-  ingressOptions:
-    hostnameCollisionScope: Disabled
-  limitRanges: {}
-  networkPolicies: {}
+  # Capsule 0.14.2 no longer defaults ingressOptions/limitRanges/
+  # networkPolicies/resourceQuotas onto the Tenant spec the way 0.10.9 did -
+  # only owners (the security-relevant part) is asserted here.
   owners:
     - clusterRoles:
         - admin
         - capsule-namespace-deleter
       kind: ServiceAccount
       name: system:serviceaccount:krci:edp-cd-pipeline-operator
-  resourceQuotas:
-    scope: Tenant 
+
+---
+# cert-manager issues the webhook serving cert asynchronously (cainjector
+# patches the caBundle after the Deployment is already Ready), so
+# `helm install --wait` returns before the webhook is actually trustable.
+# Wait here for the CA to land before create-cdpipeline-and-stages starts
+# hitting the webhook, instead of racing it with a blind sleep.
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  name: edp-cd-pipeline-operator-validating-webhook-configuration-krci
+webhooks:
+  - name: cdpipeline.epam.com
+    (clientConfig.caBundle != ''): true
+  - name: stage.epam.com
+    (clientConfig.caBundle != ''): true
+
+---
+# Pod Ready and the Service can still refuse connections for a few seconds
+# after that (endpoint-controller/kube-proxy propagation lag), and the
+# 5s global ApplyTimeout is too tight to ride that out. Wait for a real,
+# routable endpoint before create-cdpipeline-and-stages starts sending
+# requests through the webhook Service.
+apiVersion: v1
+kind: Endpoints
+metadata:
+  name: edp-cd-pipeline-operator-webhook-service
+subsets:
+  - (length(addresses) > `0`): true
+    ports:
+      - port: 9443

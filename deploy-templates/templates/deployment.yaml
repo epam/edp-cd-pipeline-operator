@@ -58,11 +58,28 @@ spec:
               value: "{{ .Values.global.developerGroupName }}"
             - name: ENABLE_WEBHOOKS
               value: "{{ .Values.enableWebhooks }}"
-          {{- if .Values.enableWebhooks }}
           ports:
+            - containerPort: 8081
+              name: health
+              protocol: TCP
+          {{- if .Values.enableWebhooks }}
             - containerPort: 9443
               name: webhook-server
               protocol: TCP
+          {{- end }}
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: health
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: health
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          {{- if .Values.enableWebhooks }}
           volumeMounts:
             - mountPath: /tmp/k8s-webhook-server/serving-certs
               name: cert
