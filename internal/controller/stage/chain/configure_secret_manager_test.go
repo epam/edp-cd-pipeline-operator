@@ -426,7 +426,16 @@ func requireESOObjects(t *testing.T, cl client.Client, stage *cdPipeApi.Stage, a
 	externalSecret := externalsecrets.NewExternalSecret(apiVersion, externalSecretName, stage.Spec.Namespace)
 	require.NoError(t, cl.Get(context.Background(), client.ObjectKeyFromObject(externalSecret), externalSecret))
 	require.Equal(t, apiVersion, externalSecret.GetAPIVersion())
-	require.NotEmpty(t, externalSecret.Object["spec"])
+	requireNestedString(t, externalSecret.Object, secretStoreName, "spec", "secretStoreRef", "name")
+
+	data, found, err := unstructured.NestedSlice(externalSecret.Object, "spec", "data")
+	require.NoError(t, err)
+	require.True(t, found)
+	require.Len(t, data, 1)
+
+	entry, ok := data[0].(map[string]interface{})
+	require.True(t, ok)
+	requireNestedString(t, entry, sourceSecretName, "remoteRef", "key")
 }
 
 func requireNestedString(t *testing.T, obj map[string]interface{}, want string, fields ...string) {
