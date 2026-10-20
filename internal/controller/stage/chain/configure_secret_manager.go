@@ -23,6 +23,8 @@ const (
 	secretIntegrationServiceAccountName = "secret-manager"
 	secretStoreName                     = "edp-system"
 	externalSecretName                  = "regcred"
+	// Must match resourceNames of the external-secret-integration Role in secret_manager_eso_rbac.yaml.
+	sourceSecretName = "regcred"
 	// Must match the name prefix allowed by admissionpolicy_eso_rolebinding_kubernetes.yaml.
 	secretManagerRoleBindingPrefix = "eso-"
 )
@@ -130,9 +132,9 @@ func (h ConfigureSecretManager) configureOwn(ctx context.Context, stage *cdPipeA
 	recred := &corev1.Secret{}
 	if err := h.internalClient.Get(ctx, client.ObjectKey{
 		Namespace: stage.Namespace,
-		Name:      externalSecretName,
+		Name:      sourceSecretName,
 	}, recred); err != nil {
-		return fmt.Errorf("failed to get %s secret: %w", externalSecretName, err)
+		return fmt.Errorf("failed to get %s secret: %w", sourceSecretName, err)
 	}
 
 	externalRecred := &corev1.Secret{
@@ -285,7 +287,7 @@ func (h ConfigureSecretManager) createExternalSecret(
 			map[string]interface{}{
 				"secretKey": "secretValue",
 				"remoteRef": map[string]interface{}{
-					"key":                "regcred",
+					"key":                sourceSecretName,
 					"property":           ".dockerconfigjson",
 					"decodingStrategy":   "None",
 					"conversionStrategy": "Default",

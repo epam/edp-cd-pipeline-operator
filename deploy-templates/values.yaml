@@ -132,7 +132,7 @@ tenantScopePolicy:
 # For private registries, choose the most appropriate method to provide credentials to deployed environments. Refer to the guide for managing container registries (https://docs.kuberocketci.io/docs/user-guide/manage-container-registries).
 # Possible values: own/eso/none.
 #   - own: Copies the secret once from the parent namespace, without subsequent reconciliation. If updated in the parent namespace, manual updating in all created namespaces is required.
-#   - eso: The secret will be managed by the External Secrets Operator (requires installation and configuration in the cluster: https://docs.kuberocketci.io/docs/operator-guide/secrets-management/install-external-secrets-operator). Supports ESO serving the external-secrets.io/v1 API (ESO 0.16+) or the v1beta1 API (ESO 0.16 and older); v1 is used when both are served.
+#   - eso: The secret will be managed by the External Secrets Operator (requires installation and configuration in the cluster: https://docs.kuberocketci.io/docs/operator-guide/secrets-management/install-external-secrets-operator). Supports ESO serving the external-secrets.io/v1 API (ESO 0.16+) or the v1beta1 API (ESO 0.16 and older); ESO 0.16 serves both and v1 is used. Stage namespaces can read only the regcred Secret from the operator namespace.
 #   - none: Disables secrets management logic.
 secretManager: none
 
