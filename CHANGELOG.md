@@ -1,6 +1,32 @@
 <a name="unreleased"></a>
 ## [Unreleased]
 
+### Bug Fixes
+
+- migrate chainsaw capsule-integration suite to Capsule 0.14.3
+
+
+<a name="v2.33.1"></a>
+## [v2.33.1] - 2026-10-20
+### Bug Fixes
+
+- migrate chainsaw capsule-integration suite to Capsule 0.14.3
+
+
+<a name="v2.33.0"></a>
+## [v2.33.0] - 2026-10-20
+### Bug Fixes
+
+- restrict the ESO secret-manager Role to the regcred secret
+- support both v1 and v1beta1 External Secrets APIs and clean up eso RoleBindings
+- reduce cd-pipeline-operator permissions to its call sites
+- Resolve $namespace binding in chainsaw e2e tests
+
+### Routine
+
+- Bump Go to 1.26.9
+- Update current development version
+
 
 <a name="v2.32.0"></a>
 ## [v2.32.0] - 2026-08-10
@@ -455,7 +481,9 @@ Helm parameter kioskEnabled was removed. Use instead --set global.tenancyEngine=
 <a name="v2.1.0-36"></a>
 ## v2.1.0-36 - 2019-09-16
 
-[Unreleased]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.32.0...HEAD
+[Unreleased]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.33.1...HEAD
+[v2.33.1]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.33.0...v2.33.1
+[v2.33.0]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.32.0...v2.33.0
 [v2.32.0]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.31.0...v2.32.0
 [v2.31.0]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.30.0...v2.31.0
 [v2.30.0]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.29.0...v2.30.0
