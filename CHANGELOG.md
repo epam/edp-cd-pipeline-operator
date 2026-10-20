@@ -2,8 +2,8 @@
 ## [Unreleased]
 
 
-<a name="v2.33.0"></a>
-## v2.33.0 - 2026-10-20
+<a name="v2.33.1"></a>
+## v2.33.1 - 2026-08-26
 ### Features
 
 - replace self-signed cert generation with cert-manager
@@ -38,6 +38,7 @@
 
 ### Bug Fixes
 
+- migrate chainsaw capsule-integration suite to Capsule 0.14.3
 - restrict the ESO secret-manager Role to the regcred secret
 - support both v1 and v1beta1 External Secrets APIs and clean up eso RoleBindings
 - reduce cd-pipeline-operator permissions to its call sites
@@ -154,4 +155,4 @@
 Helm parameter kioskEnabled was removed. Use instead --set global.tenancyEngine=kiosk.
 
 
-[Unreleased]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.33.0...HEAD
+[Unreleased]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.33.1...HEAD
