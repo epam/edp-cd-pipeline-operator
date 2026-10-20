@@ -102,7 +102,7 @@ rules:
     - create
     - update
 {{- if eq .Values.secretManager "eso" }}
-# The eso-<target-ns> RoleBinding is created in this namespace.
+# The eso-<target-ns> RoleBinding is created and deleted with the Stage in this namespace.
 - apiGroups:
     - rbac.authorization.k8s.io
   resources:
@@ -110,6 +110,7 @@ rules:
   verbs:
     - get
     - create
+    - delete
 {{- end }}
 # Leader election: lease lock plus the event the recorder emits.
 - apiGroups:

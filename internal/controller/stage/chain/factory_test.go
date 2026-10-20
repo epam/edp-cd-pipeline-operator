@@ -2,6 +2,7 @@ package chain
 
 import (
 	"context"
+	"slices"
 	"testing"
 
 	"github.com/go-logr/logr"
@@ -12,6 +13,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
+	"github.com/epam/edp-cd-pipeline-operator/v2/internal/controller/stage/chain/handler"
 )
 
 func TestCreateChain(t *testing.T) {
@@ -82,4 +84,27 @@ func TestCreateDeleteChain(t *testing.T) {
 			assert.NotNil(t, chain)
 		})
 	}
+}
+
+func TestCreateDeleteChain_CleansUpSecretManagerRbac(t *testing.T) {
+	t.Parallel()
+
+	ch, err := CreateDeleteChain(
+		ctrl.LoggerInto(context.Background(), logr.Discard()),
+		fake.NewClientBuilder().Build(),
+		&cdPipeApi.Stage{
+			Spec: cdPipeApi.StageSpec{
+				ClusterName: cdPipeApi.InCluster,
+			},
+		},
+	)
+	require.NoError(t, err)
+
+	c, ok := ch.(*chain)
+	require.True(t, ok)
+
+	assert.True(t, slices.ContainsFunc(c.handlers, func(h handler.CdStageHandler) bool {
+		_, ok := h.(DeleteSecretManagerRbac)
+		return ok
+	}), "DeleteSecretManagerRbac must be registered in the delete chain")
 }

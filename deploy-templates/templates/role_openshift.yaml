@@ -102,7 +102,7 @@ rules:
     - create
     - update
 # RoleBindings that live in this namespace: sa-registry-viewer-<target-ns>
-# (created and deleted with the Stage) and eso-<target-ns>.
+# and eso-<target-ns>, both created and deleted with the Stage.
 - apiGroups:
     - rbac.authorization.k8s.io
   resources:

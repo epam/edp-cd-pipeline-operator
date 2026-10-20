@@ -98,6 +98,9 @@ func CreateDeleteChain(ctx context.Context, c client.Client, stage *cdPipeApi.St
 		DeleteRegistryViewerRbac{
 			multiClusterCl: multiClusterCl,
 		},
+		DeleteSecretManagerRbac{
+			multiClusterCl: multiClusterCl,
+		},
 	)
 
 	return ch, nil
