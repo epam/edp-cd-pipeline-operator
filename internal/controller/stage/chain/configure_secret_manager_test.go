@@ -9,24 +9,29 @@ import (
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	rbacApi "k8s.io/api/rbac/v1"
+	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
+	"github.com/epam/edp-cd-pipeline-operator/v2/internal/esotest"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/externalsecrets"
+	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/platform"
 )
 
 func TestConfigureManageSecretsRBAC_ServeRequest(t *testing.T) {
 	tests := []struct {
-		name    string
-		stage   *cdPipeApi.Stage
-		objects []client.Object
-		setup   func(t *testing.T)
-		want    func(t *testing.T, client client.Client, stage *cdPipeApi.Stage)
-		wantErr require.ErrorAssertionFunc
+		name        string
+		stage       *cdPipeApi.Stage
+		objects     []client.Object
+		esoVersions []string
+		setup       func(t *testing.T)
+		want        func(t *testing.T, client client.Client, stage *cdPipeApi.Stage)
+		wantErr     require.ErrorAssertionFunc
 	}{
 		{
 			name: "eso is configured successfully",
@@ -47,8 +52,9 @@ func TestConfigureManageSecretsRBAC_ServeRequest(t *testing.T) {
 					},
 				},
 			},
+			esoVersions: []string{"v1"},
 			setup: func(t *testing.T) {
-				t.Setenv(secretManagerEnv, secretManagerESO)
+				t.Setenv(platform.SecretManagerEnv, platform.SecretManagerESO)
 			},
 			want: func(t *testing.T, cl client.Client, stage *cdPipeApi.Stage) {
 				serviceAccount := &corev1.ServiceAccount{}
@@ -62,31 +68,117 @@ func TestConfigureManageSecretsRBAC_ServeRequest(t *testing.T) {
 				secretManagerRoleBinding := &rbacApi.RoleBinding{}
 				err = cl.Get(context.Background(), client.ObjectKey{
 					Namespace: stage.Namespace,
-					Name:      fmt.Sprintf("eso-%s", stage.Spec.Namespace),
+					Name:      secretManagerRoleBindingName(stage.Spec.Namespace),
 				}, secretManagerRoleBinding)
 
 				require.NoError(t, err)
-
-				secretStore := externalsecrets.NewSecretStore(secretStoreName, stage.Spec.Namespace)
-				err = cl.Get(context.Background(), client.ObjectKey{
+				require.Equal(t, rbacApi.RoleRef{
+					APIGroup: rbacApi.GroupName,
+					Kind:     "Role",
+					Name:     externalSecretIntegrationRoleName,
+				}, secretManagerRoleBinding.RoleRef)
+				require.Equal(t, []rbacApi.Subject{{
+					Kind:      rbacApi.ServiceAccountKind,
+					Name:      secretIntegrationServiceAccountName,
 					Namespace: stage.Spec.Namespace,
-					Name:      secretStoreName,
-				}, secretStore)
+				}}, secretManagerRoleBinding.Subjects)
 
-				require.NoError(t, err)
-
-				externalSecret := externalsecrets.NewExternalSecret(externalSecretName, stage.Spec.Namespace)
-				err = cl.Get(context.Background(), client.ObjectKey{
-					Namespace: stage.Spec.Namespace,
-					Name:      externalSecretName,
-				}, externalSecret)
-
-				require.NoError(t, err)
+				requireESOObjects(t, cl, stage, esoV1)
 			},
 			wantErr: require.NoError,
 		},
 		{
-			name: "secretManagerESO all objects already exist",
+			name: "eso is configured with v1beta1 when only v1beta1 is served",
+			stage: &cdPipeApi.Stage{
+				ObjectMeta: metaV1.ObjectMeta{
+					Name:      "stage-1",
+					Namespace: "default",
+				},
+				Spec: cdPipeApi.StageSpec{
+					Namespace: "test-namespace",
+				},
+			},
+			objects: []client.Object{
+				&rbacApi.Role{
+					ObjectMeta: metaV1.ObjectMeta{
+						Name:      externalSecretIntegrationRoleName,
+						Namespace: "default",
+					},
+				},
+			},
+			esoVersions: []string{"v1beta1"},
+			setup: func(t *testing.T) {
+				t.Setenv(platform.SecretManagerEnv, platform.SecretManagerESO)
+			},
+			want: func(t *testing.T, cl client.Client, stage *cdPipeApi.Stage) {
+				requireESOObjects(t, cl, stage, esoV1beta1)
+			},
+			wantErr: require.NoError,
+		},
+		{
+			name: "eso is configured with v1 when v1 and v1beta1 are served",
+			stage: &cdPipeApi.Stage{
+				ObjectMeta: metaV1.ObjectMeta{
+					Name:      "stage-1",
+					Namespace: "default",
+				},
+				Spec: cdPipeApi.StageSpec{
+					Namespace: "test-namespace",
+				},
+			},
+			objects: []client.Object{
+				&rbacApi.Role{
+					ObjectMeta: metaV1.ObjectMeta{
+						Name:      externalSecretIntegrationRoleName,
+						Namespace: "default",
+					},
+				},
+			},
+			esoVersions: []string{"v1beta1", "v1"},
+			setup: func(t *testing.T) {
+				t.Setenv(platform.SecretManagerEnv, platform.SecretManagerESO)
+			},
+			want: func(t *testing.T, cl client.Client, stage *cdPipeApi.Stage) {
+				requireESOObjects(t, cl, stage, esoV1)
+			},
+			wantErr: require.NoError,
+		},
+		{
+			name: "eso API is not served",
+			stage: &cdPipeApi.Stage{
+				ObjectMeta: metaV1.ObjectMeta{
+					Name:      "stage-1",
+					Namespace: "default",
+				},
+				Spec: cdPipeApi.StageSpec{
+					Namespace: "test-namespace",
+				},
+			},
+			objects: []client.Object{
+				&rbacApi.Role{
+					ObjectMeta: metaV1.ObjectMeta{
+						Name:      externalSecretIntegrationRoleName,
+						Namespace: "default",
+					},
+				},
+			},
+			setup: func(t *testing.T) {
+				t.Setenv(platform.SecretManagerEnv, platform.SecretManagerESO)
+			},
+			want: func(t *testing.T, cl client.Client, stage *cdPipeApi.Stage) {
+				err := cl.Get(context.Background(), client.ObjectKey{
+					Namespace: stage.Spec.Namespace,
+					Name:      secretIntegrationServiceAccountName,
+				}, &corev1.ServiceAccount{})
+
+				require.True(t, k8sErrors.IsNotFound(err))
+			},
+			wantErr: func(t require.TestingT, err error, _ ...interface{}) {
+				require.ErrorIs(t, err, externalsecrets.ErrAPINotServed)
+			},
+		},
+		{
+			name: "eso: all objects already exist",
 			stage: &cdPipeApi.Stage{
 				ObjectMeta: metaV1.ObjectMeta{
 					Name:      "stage-1",
@@ -111,15 +203,16 @@ func TestConfigureManageSecretsRBAC_ServeRequest(t *testing.T) {
 				},
 				&rbacApi.RoleBinding{
 					ObjectMeta: metaV1.ObjectMeta{
-						Name:      fmt.Sprintf("eso-%s", "test-namespace"),
+						Name:      secretManagerRoleBindingName("test-namespace"),
 						Namespace: "default",
 					},
 				},
-				externalsecrets.NewSecretStore(secretStoreName, "test-namespace"),
-				externalsecrets.NewExternalSecret(externalSecretName, "test-namespace"),
+				externalsecrets.NewSecretStore(esoV1, secretStoreName, "test-namespace"),
+				externalsecrets.NewExternalSecret(esoV1, externalSecretName, "test-namespace"),
 			},
+			esoVersions: []string{"v1"},
 			setup: func(t *testing.T) {
-				t.Setenv(secretManagerEnv, secretManagerESO)
+				t.Setenv(platform.SecretManagerEnv, platform.SecretManagerESO)
 			},
 			want:    func(t *testing.T, cl client.Client, stage *cdPipeApi.Stage) {},
 			wantErr: require.NoError,
@@ -135,9 +228,10 @@ func TestConfigureManageSecretsRBAC_ServeRequest(t *testing.T) {
 					Namespace: "test-namespace",
 				},
 			},
-			objects: []client.Object{},
+			objects:     []client.Object{},
+			esoVersions: []string{"v1"},
 			setup: func(t *testing.T) {
-				t.Setenv(secretManagerEnv, secretManagerESO)
+				t.Setenv(platform.SecretManagerEnv, platform.SecretManagerESO)
 			},
 			want: func(t *testing.T, cl client.Client, stage *cdPipeApi.Stage) {},
 			wantErr: func(t require.TestingT, err error, i ...interface{}) {
@@ -146,7 +240,7 @@ func TestConfigureManageSecretsRBAC_ServeRequest(t *testing.T) {
 			},
 		},
 		{
-			name: "env variable secretManagerEnv is not set",
+			name: "env variable SECRET_MANAGER is not set",
 			stage: &cdPipeApi.Stage{
 				ObjectMeta: metaV1.ObjectMeta{
 					Name:      "stage-1",
@@ -176,7 +270,7 @@ func TestConfigureManageSecretsRBAC_ServeRequest(t *testing.T) {
 			},
 			objects: []client.Object{},
 			setup: func(t *testing.T) {
-				t.Setenv(secretManagerEnv, "invalid value")
+				t.Setenv(platform.SecretManagerEnv, "invalid value")
 			},
 			want:    func(t *testing.T, cl client.Client, stage *cdPipeApi.Stage) {},
 			wantErr: require.NoError,
@@ -204,7 +298,7 @@ func TestConfigureManageSecretsRBAC_ServeRequest(t *testing.T) {
 				},
 			},
 			setup: func(t *testing.T) {
-				t.Setenv(secretManagerEnv, secretManagerOwn)
+				t.Setenv(platform.SecretManagerEnv, platform.SecretManagerOwn)
 			},
 			want: func(t *testing.T, cl client.Client, stage *cdPipeApi.Stage) {
 				secret := &corev1.Secret{}
@@ -250,7 +344,7 @@ func TestConfigureManageSecretsRBAC_ServeRequest(t *testing.T) {
 				},
 			},
 			setup: func(t *testing.T) {
-				t.Setenv(secretManagerEnv, secretManagerOwn)
+				t.Setenv(platform.SecretManagerEnv, platform.SecretManagerOwn)
 			},
 			want: func(t *testing.T, cl client.Client, stage *cdPipeApi.Stage) {
 				secret := &corev1.Secret{}
@@ -277,7 +371,7 @@ func TestConfigureManageSecretsRBAC_ServeRequest(t *testing.T) {
 			},
 			objects: []client.Object{},
 			setup: func(t *testing.T) {
-				t.Setenv(secretManagerEnv, secretManagerOwn)
+				t.Setenv(platform.SecretManagerEnv, platform.SecretManagerOwn)
 			},
 			want: func(t *testing.T, cl client.Client, stage *cdPipeApi.Stage) {},
 			wantErr: func(t require.TestingT, err error, i ...interface{}) {
@@ -300,6 +394,7 @@ func TestConfigureManageSecretsRBAC_ServeRequest(t *testing.T) {
 			cl := fake.NewClientBuilder().
 				WithScheme(sc).
 				WithObjects(tt.objects...).
+				WithRESTMapper(esotest.NewRESTMapper(tt.esoVersions...)).
 				Build()
 
 			h := ConfigureSecretManager{
@@ -311,4 +406,34 @@ func TestConfigureManageSecretsRBAC_ServeRequest(t *testing.T) {
 			tt.want(t, h.multiClusterClient, tt.stage)
 		})
 	}
+}
+
+const (
+	esoV1      = "external-secrets.io/v1"
+	esoV1beta1 = "external-secrets.io/v1beta1"
+)
+
+func requireESOObjects(t *testing.T, cl client.Client, stage *cdPipeApi.Stage, apiVersion string) {
+	t.Helper()
+
+	secretStore := externalsecrets.NewSecretStore(apiVersion, secretStoreName, stage.Spec.Namespace)
+	require.NoError(t, cl.Get(context.Background(), client.ObjectKeyFromObject(secretStore), secretStore))
+	require.Equal(t, apiVersion, secretStore.GetAPIVersion())
+	requireNestedString(t, secretStore.Object, stage.Namespace, "spec", "provider", "kubernetes", "remoteNamespace")
+	requireNestedString(t, secretStore.Object, secretIntegrationServiceAccountName,
+		"spec", "provider", "kubernetes", "auth", "serviceAccount", "name")
+
+	externalSecret := externalsecrets.NewExternalSecret(apiVersion, externalSecretName, stage.Spec.Namespace)
+	require.NoError(t, cl.Get(context.Background(), client.ObjectKeyFromObject(externalSecret), externalSecret))
+	require.Equal(t, apiVersion, externalSecret.GetAPIVersion())
+	require.NotEmpty(t, externalSecret.Object["spec"])
+}
+
+func requireNestedString(t *testing.T, obj map[string]interface{}, want string, fields ...string) {
+	t.Helper()
+
+	got, found, err := unstructured.NestedString(obj, fields...)
+	require.NoError(t, err)
+	require.True(t, found, "field %v not found", fields)
+	require.Equal(t, want, got, "field %v", fields)
 }

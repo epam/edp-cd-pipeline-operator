@@ -3,7 +3,6 @@ package chain
 import (
 	"context"
 	"fmt"
-	"os"
 
 	corev1 "k8s.io/api/core/v1"
 	rbacApi "k8s.io/api/rbac/v1"
@@ -15,6 +14,7 @@ import (
 
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/externalsecrets"
+	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/platform"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/rbac"
 )
 
@@ -23,9 +23,8 @@ const (
 	secretIntegrationServiceAccountName = "secret-manager"
 	secretStoreName                     = "edp-system"
 	externalSecretName                  = "regcred"
-	secretManagerEnv                    = "SECRET_MANAGER"
-	secretManagerESO                    = "eso"
-	secretManagerOwn                    = "own"
+	// Must match the name prefix allowed by admissionpolicy_eso_rolebinding_kubernetes.yaml.
+	secretManagerRoleBindingPrefix = "eso-"
 )
 
 // ConfigureSecretManager is a stage chain element that configures secret management.
@@ -36,18 +35,18 @@ type ConfigureSecretManager struct {
 
 // ServeRequest implements the logic to configure secret management.
 func (h ConfigureSecretManager) ServeRequest(ctx context.Context, stage *cdPipeApi.Stage) error {
-	secretManager := os.Getenv(secretManagerEnv)
+	secretManager := platform.GetSecretManager()
 	logger := ctrl.LoggerFrom(ctx).WithValues(
 		"target-ns", stage.Spec.Namespace,
 		"secret-manager", secretManager,
 	)
 
 	switch secretManager {
-	case secretManagerESO:
+	case platform.SecretManagerESO:
 		if err := h.configureEso(ctrl.LoggerInto(ctx, logger), stage); err != nil {
 			return err
 		}
-	case secretManagerOwn:
+	case platform.SecretManagerOwn:
 		if err := h.configureOwn(ctrl.LoggerInto(ctx, logger), stage); err != nil {
 			return err
 		}
@@ -67,6 +66,13 @@ func (h ConfigureSecretManager) configureEso(ctx context.Context, stage *cdPipeA
 	logger := ctrl.LoggerFrom(ctx)
 
 	logger.Info("Configuring external secret integration")
+
+	esoAPIVersion, err := externalsecrets.ResolveAPIVersion(h.multiClusterClient.RESTMapper())
+	if err != nil {
+		return err
+	}
+
+	logger.Info("Resolved external secrets API version", "apiVersion", esoAPIVersion)
 
 	externalSecretIntegrationRole := &rbacApi.Role{}
 	if err := h.multiClusterClient.Get(ctx, client.ObjectKey{
@@ -93,6 +99,7 @@ func (h ConfigureSecretManager) configureEso(ctx context.Context, stage *cdPipeA
 
 	secretStore, err := h.createSecretStore(
 		ctrl.LoggerInto(ctx, logger),
+		esoAPIVersion,
 		stage.Namespace,
 		stage.Spec.Namespace,
 		serviceAccount.Name,
@@ -103,6 +110,7 @@ func (h ConfigureSecretManager) configureEso(ctx context.Context, stage *cdPipeA
 
 	if _, err = h.createExternalSecret(
 		ctrl.LoggerInto(ctx, logger),
+		esoAPIVersion,
 		stage.Spec.Namespace,
 		secretStore.GetName(),
 	); err != nil {
@@ -189,7 +197,7 @@ func (h ConfigureSecretManager) createRoleBinding(
 
 	secretManagerRoleBinding := &rbacApi.RoleBinding{
 		ObjectMeta: metaV1.ObjectMeta{
-			Name:      fmt.Sprintf("eso-%s", stageTargetNamespace),
+			Name:      secretManagerRoleBindingName(stageTargetNamespace),
 			Namespace: stageNamespace,
 		},
 		Subjects: []rbacApi.Subject{
@@ -219,13 +227,14 @@ func (h ConfigureSecretManager) createRoleBinding(
 
 func (h ConfigureSecretManager) createSecretStore(
 	ctx context.Context,
+	apiVersion,
 	stageNamespace,
 	stageTargetNamespace,
 	serviceAccountName string,
 ) (*unstructured.Unstructured, error) {
 	l := ctrl.LoggerFrom(ctx)
 
-	secretStore := externalsecrets.NewSecretStore(secretStoreName, stageTargetNamespace)
+	secretStore := externalsecrets.NewSecretStore(apiVersion, secretStoreName, stageTargetNamespace)
 	secretStore.Object["spec"] = map[string]interface{}{
 		"provider": map[string]interface{}{
 			"kubernetes": map[string]interface{}{
@@ -259,12 +268,13 @@ func (h ConfigureSecretManager) createSecretStore(
 
 func (h ConfigureSecretManager) createExternalSecret(
 	ctx context.Context,
+	apiVersion,
 	stageTargetNamespace,
 	secretStoreName string,
 ) (*unstructured.Unstructured, error) {
 	l := ctrl.LoggerFrom(ctx)
 
-	externalSecret := externalsecrets.NewExternalSecret(externalSecretName, stageTargetNamespace)
+	externalSecret := externalsecrets.NewExternalSecret(apiVersion, externalSecretName, stageTargetNamespace)
 	externalSecret.Object["spec"] = map[string]interface{}{
 		"refreshInterval": "1h",
 		"secretStoreRef": map[string]interface{}{
@@ -304,4 +314,8 @@ func (h ConfigureSecretManager) createExternalSecret(
 	}
 
 	return externalSecret, nil
+}
+
+func secretManagerRoleBindingName(stageTargetNamespace string) string {
+	return secretManagerRoleBindingPrefix + stageTargetNamespace
 }

@@ -1,0 +1,44 @@
+{{- if and (eq .Values.global.platform "kubernetes") (eq .Values.secretManager "eso") -}}
+# Limits the operator ServiceAccount to deleting eso-<target-ns> RoleBindings in
+# the release namespace. Other principals are not evaluated. The eso- prefix
+# must match secretManagerRoleBindingPrefix in configure_secret_manager.go.
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicy
+metadata:
+  labels:
+    {{- include "cd-pipeline-operator.labels" . | nindent 4 }}
+  name: edp-{{ .Values.name }}-{{ .Release.Namespace }}-eso-rolebinding-delete
+spec:
+  failurePolicy: Fail
+  matchConstraints:
+    resourceRules:
+      - apiGroups: ["rbac.authorization.k8s.io"]
+        apiVersions: ["v1"]
+        operations: ["DELETE"]
+        resources: ["rolebindings"]
+        scope: "Namespaced"
+  matchConditions:
+    - name: is-operator
+      expression: >-
+        request.userInfo.username ==
+        'system:serviceaccount:{{ .Release.Namespace }}:edp-{{ .Values.name }}'
+  validations:
+    - expression: >-
+        request.namespace == '{{ .Release.Namespace }}' && request.name.startsWith('eso-')
+      message: >-
+        edp-{{ .Values.name }} may delete only eso-<target-ns> RoleBindings in
+        namespace {{ .Release.Namespace }}.
+      reason: Forbidden
+
+---
+
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicyBinding
+metadata:
+  labels:
+    {{- include "cd-pipeline-operator.labels" . | nindent 4 }}
+  name: edp-{{ .Values.name }}-{{ .Release.Namespace }}-eso-rolebinding-delete
+spec:
+  policyName: edp-{{ .Values.name }}-{{ .Release.Namespace }}-eso-rolebinding-delete
+  validationActions: ["Deny"]
+{{- end -}}

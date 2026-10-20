@@ -165,3 +165,39 @@ func TestGetOIDCDeveloperGroupName(t *testing.T) {
 		})
 	}
 }
+
+func TestIsSecretManagerESO(t *testing.T) {
+	tests := []struct {
+		name  string
+		setup func(t *testing.T)
+		want  bool
+	}{
+		{
+			name: "secret manager is eso",
+			setup: func(t *testing.T) {
+				t.Setenv(SecretManagerEnv, SecretManagerESO)
+			},
+			want: true,
+		},
+		{
+			name: "secret manager is own",
+			setup: func(t *testing.T) {
+				t.Setenv(SecretManagerEnv, SecretManagerOwn)
+			},
+			want: false,
+		},
+		{
+			name:  "secret manager is not set",
+			setup: func(t *testing.T) {},
+			want:  false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tt.setup(t)
+
+			assert.Equal(t, tt.want, IsSecretManagerESO())
+		})
+	}
+}

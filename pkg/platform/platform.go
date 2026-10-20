@@ -14,6 +14,9 @@ const (
 	TenancyEngineCapsule   = "capsule"
 	OIDCAdminGroupName     = "OIDC_ADMIN_GROUP_NAME"
 	OIDCDeveloperGroupName = "OIDC_DEVELOPER_GROUP_NAME"
+	SecretManagerEnv       = "SECRET_MANAGER"
+	SecretManagerESO       = "eso"
+	SecretManagerOwn       = "own"
 )
 
 func GetPlatformTypeEnv() string {
@@ -54,6 +57,16 @@ func ManageNamespace() bool {
 	}
 
 	return b
+}
+
+// GetSecretManager returns the secret manager mode: eso, own, or empty/none when disabled.
+func GetSecretManager() string {
+	return os.Getenv(SecretManagerEnv)
+}
+
+// IsSecretManagerESO returns true if secrets are managed by the External Secrets Operator.
+func IsSecretManagerESO() bool {
+	return GetSecretManager() == SecretManagerESO
 }
 
 // GetOIDCAdminGroupName returns the name of the OIDC admin group.
