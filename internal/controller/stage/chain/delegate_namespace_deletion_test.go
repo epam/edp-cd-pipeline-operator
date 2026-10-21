@@ -16,6 +16,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
+	"github.com/epam/edp-cd-pipeline-operator/v2/internal/controller/stage/chain/util"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/platform"
 )
 
@@ -82,7 +83,8 @@ func TestDelegateNamespaceDeletion_ServeRequest(t *testing.T) {
 			objects: []client.Object{
 				&corev1.Namespace{
 					ObjectMeta: metaV1.ObjectMeta{
-						Name: "default-stage-1",
+						Name:   "default-stage-1",
+						Labels: map[string]string{util.TenantLabelName: "default"},
 					},
 				},
 			},
@@ -105,7 +107,8 @@ func TestDelegateNamespaceDeletion_ServeRequest(t *testing.T) {
 			objects: []client.Object{
 				&corev1.Namespace{
 					ObjectMeta: metaV1.ObjectMeta{
-						Name: "default-stage-1",
+						Name:   "default-stage-1",
+						Labels: map[string]string{util.TenantLabelName: "default"},
 					},
 				},
 			},
@@ -137,7 +140,8 @@ func TestDelegateNamespaceDeletion_ServeRequest(t *testing.T) {
 			objects: []client.Object{
 				&corev1.Namespace{
 					ObjectMeta: metaV1.ObjectMeta{
-						Name: "default-stage-1",
+						Name:   "default-stage-1",
+						Labels: map[string]string{util.TenantLabelName: "default"},
 					},
 				},
 			},

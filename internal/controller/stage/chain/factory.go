@@ -33,6 +33,9 @@ func CreateChain(ctx context.Context, c client.Client, stage *cdPipeApi.Stage) (
 
 	ch := &chain{}
 	ch.Use(
+		VerifyNamespaceOwnership{
+			client: multiClusterCl,
+		},
 		PutCodebaseImageStream{
 			client: c,
 		},

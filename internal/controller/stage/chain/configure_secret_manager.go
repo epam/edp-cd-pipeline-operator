@@ -185,7 +185,7 @@ func (h ConfigureSecretManager) createServiceAccount(
 	return serviceAccount, nil
 }
 
-// The eso-<target-ns> RoleBinding lives in the operator namespace.
+// The eso-<target-ns> RoleBinding lives in the Stage namespace (the tenant namespace, where the release runs).
 // +kubebuilder:rbac:groups=rbac.authorization.k8s.io,namespace=placeholder,resources=rolebindings,verbs=get;create
 
 func (h ConfigureSecretManager) createRoleBinding(

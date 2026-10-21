@@ -14,6 +14,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
+	"github.com/epam/edp-cd-pipeline-operator/v2/internal/controller/stage/chain/util"
+	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/platform"
 )
 
 var (
@@ -47,7 +49,8 @@ func TestPutNamespace_CreateNs(t *testing.T) {
 func TestPutNamespace_NSExists(t *testing.T) {
 	ns := &v1.Namespace{
 		ObjectMeta: metaV1.ObjectMeta{
-			Name: fmt.Sprintf("%v-%v", namespace, name),
+			Name:   fmt.Sprintf("%v-%v", namespace, name),
+			Labels: map[string]string{util.TenantLabelName: namespace},
 		},
 	}
 
@@ -64,5 +67,39 @@ func TestPutNamespace_NSExists(t *testing.T) {
 		},
 	}
 	err := ch.ServeRequest(ctrl.LoggerInto(context.Background(), logr.Discard()), s)
+	assert.NoError(t, err)
+}
+
+func putExistingNamespace(t *testing.T, labels map[string]string) error {
+	t.Helper()
+
+	ns := &v1.Namespace{
+		ObjectMeta: metaV1.ObjectMeta{Name: "existing-ns", Labels: labels},
+	}
+	ch := PutNamespace{
+		client: fake.NewClientBuilder().WithRuntimeObjects(ns).Build(),
+	}
+	s := &cdPipeApi.Stage{
+		ObjectMeta: metaV1.ObjectMeta{Name: name, Namespace: namespace},
+		Spec:       cdPipeApi.StageSpec{Namespace: ns.Name},
+	}
+
+	return ch.ServeRequest(ctrl.LoggerInto(context.Background(), logr.Discard()), s)
+}
+
+func TestPutNamespace_NSExistsUnlabeled(t *testing.T) {
+	err := putExistingNamespace(t, nil)
+	assert.ErrorIs(t, err, util.ErrNamespaceNotOwned)
+}
+
+func TestPutNamespace_NSExistsOtherTenant(t *testing.T) {
+	err := putExistingNamespace(t, map[string]string{util.TenantLabelName: "other"})
+	assert.ErrorIs(t, err, util.ErrNamespaceNotOwned)
+}
+
+func TestPutNamespace_NSExistsCapsuleInCluster(t *testing.T) {
+	t.Setenv(platform.TenancyEngineEnv, platform.TenancyEngineCapsule)
+
+	err := putExistingNamespace(t, nil)
 	assert.NoError(t, err)
 }

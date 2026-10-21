@@ -48,12 +48,18 @@ spec:
         check:
           ($error == null): true
   - name: pre-create-target-namespace
-    description: The platform administrator owns the namespace, not the operator.
+    description: |
+      The platform administrator owns the namespace, not the operator, and
+      delegates it by labeling it with the tenant (the Stage namespace).
     try:
     - script:
+        env:
+        - name: NAMESPACE
+          value: ($namespace)
         content: |
           set -e
           kubectl create namespace unm-target-dev --dry-run=client -o yaml | kubectl apply -f -
+          kubectl label namespace unm-target-dev app.edp.epam.com/tenant=$NAMESPACE --overwrite
         timeout: 30s
   - name: install-cd-pipeline-operator
     try:
@@ -118,6 +124,25 @@ spec:
           status:
             available: true
             value: active
+  - name: unlabeled-namespace-is-rejected
+    description: A pre-created namespace without the tenant label is not delegated.
+    try:
+    - script:
+        content: |
+          kubectl create namespace unm-unlabeled --dry-run=client -o yaml | kubectl apply -f -
+        timeout: 30s
+    - script:
+        content: |
+          kubectl apply -f stage-unlabeled.yaml -n $NAMESPACE
+        env:
+        - name: NAMESPACE
+          value: ($namespace)
+        check:
+          (contains($stderr, 'is not owned by tenant')): true
+    cleanup:
+    - script:
+        content: kubectl delete namespace unm-unlabeled --ignore-not-found
+        timeout: 2m
   - name: delete-stage-keeps-namespace
     description: The operator did not create the namespace, so it must not remove it.
     try:
