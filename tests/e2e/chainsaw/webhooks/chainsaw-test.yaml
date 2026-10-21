@@ -112,7 +112,7 @@ spec:
         check:
           (contains($stderr, 'namespace test-namespace is already used in CDPipeline test-pipeline Stage test-stage-1')): true
 
-  - name: test-duplicate-namespace-across-cluster
+  - name: test-namespace-labeled-for-another-tenant
     try:
     - apply:
         file: test-namespace.yaml
@@ -120,10 +120,37 @@ spec:
         content: |
           kubectl apply -f test-stage-3-cluster-namespace.yaml -n webhooks-test
         check:
-          (contains($stderr, 'namespace test-cluster-namespace is already used in the cluster')): true
+          (contains($stderr, 'is not owned by tenant webhooks-test')): true
     cleanup:
     - delete:
         file: test-namespace.yaml
+
+  - name: test-unlabeled-namespace
+    try:
+    - apply:
+        file: test-namespace-unlabeled.yaml
+    - script:
+        content: |
+          kubectl apply -f test-stage-3-cluster-namespace.yaml -n webhooks-test
+        check:
+          (contains($stderr, 'is not owned by tenant webhooks-test')): true
+    cleanup:
+    - delete:
+        file: test-namespace-unlabeled.yaml
+
+  - name: test-owned-namespace-is-admitted
+    try:
+    - apply:
+        file: test-namespace-owned.yaml
+    - apply:
+        file: test-stage-3-cluster-namespace.yaml
+    cleanup:
+    - delete:
+        file: test-stage-3-cluster-namespace.yaml
+        timeout: 1m
+    - delete:
+        file: test-namespace-owned.yaml
+        timeout: 1m
 
   - name: test-resource-protection-on-update
     try:

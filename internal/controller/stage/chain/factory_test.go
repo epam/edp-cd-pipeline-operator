@@ -51,6 +51,28 @@ func TestCreateChain(t *testing.T) {
 	}
 }
 
+func TestCreateChain_VerifiesNamespaceOwnershipFirst(t *testing.T) {
+	t.Parallel()
+
+	ch, err := CreateChain(
+		context.Background(),
+		fake.NewClientBuilder().WithScheme(runtime.NewScheme()).Build(),
+		&cdPipeApi.Stage{
+			Spec: cdPipeApi.StageSpec{
+				ClusterName: cdPipeApi.InCluster,
+			},
+		},
+	)
+	require.NoError(t, err)
+
+	c, ok := ch.(*chain)
+	require.True(t, ok)
+	require.NotEmpty(t, c.handlers)
+
+	_, ok = c.handlers[0].(VerifyNamespaceOwnership)
+	assert.True(t, ok, "VerifyNamespaceOwnership must be the first handler of the create chain")
+}
+
 func TestCreateDeleteChain(t *testing.T) {
 	t.Parallel()
 

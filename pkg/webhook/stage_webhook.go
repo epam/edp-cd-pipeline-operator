@@ -4,8 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	corev1 "k8s.io/api/core/v1"
+	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -14,12 +16,18 @@ import (
 
 	pipelineApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
 	"github.com/epam/edp-cd-pipeline-operator/v2/internal/controller/stage/chain/util"
+	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/multiclusterclient"
 )
 
 const listLimit = 1000
 
+// targetNamespaceLookupTimeout bounds the target namespace lookup so that an unreachable
+// cluster yields a warning before the webhook own timeout (10s) expires.
+const targetNamespaceLookupTimeout = 3 * time.Second
+
 // +kubebuilder:webhook:path=/validate-v2-edp-epam-com-v1-stage,mutating=false,failurePolicy=fail,sideEffects=None,groups=v2.edp.epam.com,resources=stages,verbs=create;update;delete,versions=v1,name=stage.epam.com,admissionReviewVersions=v1
-// +kubebuilder:rbac:groups="",resources=namespaces,verbs=list;watch
+// Stage target namespaces are arbitrary, so this rule is cluster-scoped.
+// +kubebuilder:rbac:groups="",resources=namespaces,verbs=get
 
 // StageValidationWebhook is a webhook for validating Stage CRD.
 type StageValidationWebhook struct {
@@ -57,7 +65,7 @@ func (r *StageValidationWebhook) ValidateCreate(ctx context.Context, obj runtime
 		return nil, err
 	}
 
-	return nil, r.uniqueTargetNamespaceAcrossCluster(ctx, createdStage)
+	return r.targetNamespaceOwnership(ctx, createdStage)
 }
 
 // ValidateUpdate is a webhook for validating the updating of the Stage CR.
@@ -103,26 +111,44 @@ func (r *StageValidationWebhook) uniqueTargetNamespaces(ctx context.Context, sta
 	return nil
 }
 
-func (r *StageValidationWebhook) uniqueTargetNamespaceAcrossCluster(
+// targetNamespaceOwnership rejects a Stage whose target namespace exists but is not owned by the Stage tenant.
+// A target cluster that cannot be reached does not block the Stage, a warning is returned instead.
+func (r *StageValidationWebhook) targetNamespaceOwnership(
 	ctx context.Context,
 	stage *pipelineApi.Stage,
-) error {
-	namespaces := &corev1.NamespaceList{}
-	if err := r.client.List(
-		ctx,
-		namespaces,
-		client.MatchingLabels{
-			util.TenantLabelName: stage.Spec.Namespace,
-		},
-	); err != nil {
-		return fmt.Errorf("failed to list namespaces: %w", err)
+) (admission.Warnings, error) {
+	if !util.OwnershipEnforced(stage) {
+		return nil, nil
 	}
 
-	for i := range namespaces.Items {
-		if namespaces.Items[i].Name == stage.Spec.Namespace {
-			return fmt.Errorf("namespace %s is already used in the cluster", stage.Spec.Namespace)
+	ctx, cancel := context.WithTimeout(ctx, targetNamespaceLookupTimeout)
+	defer cancel()
+
+	targetClient, err := multiclusterclient.NewClientProvider(r.client).
+		GetClusterClient(ctx, stage.Namespace, stage.Spec.ClusterName, client.Options{})
+	if err != nil {
+		return ownershipWarning(ctx, stage, err), nil
+	}
+
+	ns := &corev1.Namespace{}
+	if err = targetClient.Get(ctx, client.ObjectKey{Name: stage.Spec.Namespace}, ns); err != nil {
+		if k8sErrors.IsNotFound(err) {
+			return nil, nil
 		}
+
+		return ownershipWarning(ctx, stage, err), nil
 	}
 
-	return nil
+	return nil, util.CheckNamespaceOwnership(ns, stage.Namespace)
+}
+
+// ownershipWarning keeps the lookup error out of the response: it can reveal whether a cluster
+// Secret exists and remote server URLs. The error is logged instead.
+func ownershipWarning(ctx context.Context, stage *pipelineApi.Stage, err error) admission.Warnings {
+	ctrl.LoggerFrom(ctx).Error(err, "Cannot verify target namespace ownership",
+		"cluster", stage.Spec.ClusterName, "namespace", stage.Spec.Namespace)
+
+	return admission.Warnings{
+		fmt.Sprintf("cannot verify target namespace ownership on cluster %s; the operator re-checks", stage.Spec.ClusterName),
+	}
 }

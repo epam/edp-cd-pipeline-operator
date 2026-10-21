@@ -1,13 +1,14 @@
 {{- $tenantScope := .Values.tenantScopePolicy | default (dict "enabled" true) -}}
-{{- if and (eq .Values.global.platform "kubernetes") (eq .Values.tenancyEngine "none") .Values.manageNamespace $tenantScope.enabled -}}
+{{- if and (eq .Values.global.platform "kubernetes") (eq .Values.tenancyEngine "none") $tenantScope.enabled -}}
 # tenancyEngine=none has no isolation engine. RBAC cannot scope a verb to the
 # namespaces the operator provisioned: Stage target namespaces are arbitrary and
 # resourceNames does not apply to create. This policy supplies the boundary
 # Capsule would otherwise enforce. It constrains only the operator
 # ServiceAccount; every other principal passes unchanged.
 #
-# Requires manageNamespace=true. PutNamespace is the only writer of the tenant
-# label, so with manageNamespace=false there is nothing to key on.
+# The boundary is the label app.edp.epam.com/tenant=<release namespace> on the
+# target namespace. With manageNamespace=true the operator writes it; with
+# manageNamespace=false the administrator delegates a namespace by setting it.
 apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingAdmissionPolicy
 metadata:
@@ -45,24 +46,28 @@ spec:
         'system:serviceaccount:{{ .Release.Namespace }}:edp-{{ .Values.name }}'
     # The operator also writes into its own namespace: the Argo CD cluster
     # secret and the eso-<target-ns> RoleBinding. That namespace carries no
-    # tenant label.
+    # tenant label. The eso- prefix is secretManagerRoleBindingPrefix.
     - name: isOwnNamespace
       expression: >-
-        request.resource.resource != 'namespaces' &&
-        request.namespace == '{{ .Release.Namespace }}'
+        request.namespace == '{{ .Release.Namespace }}' &&
+        (request.resource.resource == 'secrets' ||
+        (request.resource.resource == 'rolebindings' &&
+        request.name.startsWith('eso-')))
     - name: tenantScoped
       expression: >-
         request.resource.resource == 'namespaces'
           ? (oldObject != null && has(oldObject.metadata.labels)
-              && 'app.edp.epam.com/tenant' in oldObject.metadata.labels)
+              && 'app.edp.epam.com/tenant' in oldObject.metadata.labels
+              && oldObject.metadata.labels['app.edp.epam.com/tenant'] == '{{ .Release.Namespace }}')
           : (namespaceObject != null && has(namespaceObject.metadata.labels)
-              && 'app.edp.epam.com/tenant' in namespaceObject.metadata.labels)
+              && 'app.edp.epam.com/tenant' in namespaceObject.metadata.labels
+              && namespaceObject.metadata.labels['app.edp.epam.com/tenant'] == '{{ .Release.Namespace }}')
   validations:
     - expression: >-
         !variables.isOperator || variables.isOwnNamespace || variables.tenantScoped
       message: >-
         edp-{{ .Values.name }} may act only on its own namespace and namespaces
-        it provisioned (label app.edp.epam.com/tenant).
+        it was delegated (label app.edp.epam.com/tenant={{ .Release.Namespace }}).
       reason: Forbidden
 
 ---

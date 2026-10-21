@@ -8,6 +8,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	cdPipeApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
 	"github.com/epam/edp-cd-pipeline-operator/v2/internal/controller/stage/chain/util"
@@ -18,7 +19,7 @@ type PutNamespace struct {
 }
 
 // Stage target namespaces are arbitrary, so this rule is cluster-scoped.
-// +kubebuilder:rbac:groups="",resources=namespaces,verbs=create
+// +kubebuilder:rbac:groups="",resources=namespaces,verbs=get;create
 
 func (h PutNamespace) ServeRequest(ctx context.Context, stage *cdPipeApi.Stage) error {
 	l := ctrl.LoggerFrom(context.Background())
@@ -37,7 +38,16 @@ func (h PutNamespace) ServeRequest(ctx context.Context, stage *cdPipeApi.Stage) 
 		if apierrors.IsAlreadyExists(err) {
 			l.Info("Namespace already exists")
 
-			return nil
+			if !util.OwnershipEnforced(stage) {
+				return nil
+			}
+
+			existing := &v1.Namespace{}
+			if err = h.client.Get(ctx, client.ObjectKey{Name: stage.Spec.Namespace}, existing); err != nil {
+				return fmt.Errorf("failed to get namespace: %w", err)
+			}
+
+			return util.CheckNamespaceOwnership(existing, stage.Namespace)
 		}
 
 		return fmt.Errorf("failed to create namespace: %w", err)

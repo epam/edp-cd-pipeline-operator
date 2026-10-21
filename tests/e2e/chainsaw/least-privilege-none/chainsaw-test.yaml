@@ -145,9 +145,22 @@ spec:
           # The operator legitimately writes into its own namespace (Argo CD
           # cluster secret, eso-<target-ns> RoleBinding). The policy must not
           # break that.
-          if ! kubectl -n ${NAMESPACE} create rolebinding probe --clusterrole=admin \
+          if ! kubectl -n ${NAMESPACE} create rolebinding eso-probe --clusterrole=admin \
                --group=probe --as=$SA --dry-run=server >/dev/null 2>&1; then
-            echo "OPERATOR BROKEN: cannot write RBAC in its own namespace"
+            echo "OPERATOR BROKEN: cannot write eso-* RBAC in its own namespace"
+            exit 1
+          fi
+
+          # Anything else in its own namespace stays denied.
+          if kubectl -n ${NAMESPACE} create rolebinding probe --clusterrole=admin \
+               --group=probe --as=$SA --dry-run=server 2>/dev/null; then
+            echo "ESCAPE PATH OPEN: operator may create a non eso-* RoleBinding in its own namespace"
+            exit 1
+          fi
+
+          if kubectl -n ${NAMESPACE} create serviceaccount probe \
+               --as=$SA --dry-run=server 2>/dev/null; then
+            echo "ESCAPE PATH OPEN: operator may create ServiceAccounts in its own namespace"
             exit 1
           fi
         env:

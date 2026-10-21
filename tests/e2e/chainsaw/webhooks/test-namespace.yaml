@@ -3,4 +3,4 @@ kind: Namespace
 metadata:
   name: test-cluster-namespace
   labels:
-    app.edp.epam.com/tenant: test-cluster-namespace
+    app.edp.epam.com/tenant: other-tenant

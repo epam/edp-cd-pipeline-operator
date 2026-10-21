@@ -32,7 +32,7 @@ A Helm chart for KubeRocketCI CD Pipeline Operator
 | image.tag | string | `nil` | KubeRocketCI cd-pipeline-operator Docker image tag. The released image can be found on [Dockerhub](https://hub.docker.com/r/epamedp/cd-pipeline-operator/tags) |
 | imagePullPolicy | string | `"IfNotPresent"` |  |
 | imagePullSecrets | list | `[]` | Optional array of imagePullSecrets containing private registry credentials # Ref: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry |
-| manageNamespace | bool | `true` | should the operator manage(create/delete) namespaces for stages Refer to the guide for managing namespace (https://docs.kuberocketci.io/docs/operator-guide/auth/namespace-management) |
+| manageNamespace | bool | `true` | should the operator manage(create/delete) namespaces for stages Refer to the guide for managing namespace (https://docs.kuberocketci.io/docs/operator-guide/auth/namespace-management) When false, the administrator creates each target namespace and labels it app.edp.epam.com/tenant={{ .Release.Namespace }}. Upgrade note: with manageNamespace=false, pre-created target namespaces must carry the label app.edp.epam.com/tenant={{ .Release.Namespace }}. Stages on unlabeled namespaces stop reconciling after upgrade (nothing is deleted). Audit existing foreign namespaces: earlier tenant-admin RoleBindings are not cleaned up. |
 | name | string | `"cd-pipeline-operator"` | component name |
 | nodeSelector | object | `{}` |  |
 | podSecurityContext | object | `{"runAsNonRoot":true}` | Pod Security Context Ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/ |
@@ -43,6 +43,6 @@ A Helm chart for KubeRocketCI CD Pipeline Operator
 | securityContext | object | `{"allowPrivilegeEscalation":false}` | Container Security Context Ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/ |
 | serviceAccount.annotations | object | `{}` |  |
 | tenancyEngine | string | `"none"` | defines the type of the tenant engine that can be "none" or "capsule"; for Stages with external cluster tenancyEngine will be ignored |
-| tenantScopePolicy.enabled | bool | `true` | Restrict the operator to namespaces it provisioned when tenancyEngine is none. Installs a ValidatingAdmissionPolicy that denies namespace deletion and RoleBinding creation outside namespaces labelled app.edp.epam.com/tenant. Ignored when tenancyEngine is capsule, which enforces the same boundary through the Tenant. Requires Kubernetes 1.30 or later. |
+| tenantScopePolicy.enabled | bool | `true` | Restrict the operator to namespaces labelled app.edp.epam.com/tenant={{ .Release.Namespace }} when tenancyEngine is none, for any manageNamespace value. Installs a ValidatingAdmissionPolicy that denies namespace deletion and creation of RoleBindings, Secrets, ServiceAccounts and External Secrets resources in other namespaces. Ignored when tenancyEngine is capsule, which enforces the same boundary through the Tenant. Requires Kubernetes 1.30 or later. |
 | tolerations | list | `[]` |  |
 
