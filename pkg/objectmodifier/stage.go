@@ -115,6 +115,11 @@ func newStageOwnerRefModifier(k8sClient client.Client, scheme *runtime.Scheme) *
 	return &stageOwnerRefModifier{k8sClient: k8sClient, scheme: scheme}
 }
 
+// OwnerReferencesPermissionEnforcement admits the controller reference patch only with delete on the Stage
+// and update on cdpipelines/finalizers.
+// +kubebuilder:rbac:groups=v2.edp.epam.com,namespace=placeholder,resources=stages,verbs=delete
+// +kubebuilder:rbac:groups=v2.edp.epam.com,namespace=placeholder,resources=cdpipelines/finalizers,verbs=update
+
 // Apply sets CDPipeline owner reference to stage object.
 func (m *stageOwnerRefModifier) Apply(ctx context.Context, stage *cdPipeApi.Stage) (bool, error) {
 	log := ctrl.LoggerFrom(ctx)

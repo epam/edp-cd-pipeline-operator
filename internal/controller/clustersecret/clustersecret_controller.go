@@ -98,6 +98,11 @@ func (r *ReconcileClusterSecret) SetupWithManager(mgr ctrl.Manager) error {
 }
 
 // +kubebuilder:rbac:groups="",namespace=placeholder,resources=secrets,verbs=get;list;watch;create;update
+// OwnerReferencesPermissionEnforcement admits the controller reference on the Argo CD cluster Secret and
+// the IRSA kubeconfig Secret only with update on secrets/finalizers. Adopting an existing Secret also
+// needs delete on it.
+// +kubebuilder:rbac:groups="",namespace=placeholder,resources=secrets,verbs=delete
+// +kubebuilder:rbac:groups="",namespace=placeholder,resources=secrets/finalizers,verbs=update
 
 // Reconcile process secrets with label app.edp.epam.com/secret-type=cluster.
 // Based on the second label app.edp.epam.com/cluster-type the secret will be processed in different ways:
