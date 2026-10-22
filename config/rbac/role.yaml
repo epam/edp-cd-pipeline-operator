@@ -68,10 +68,17 @@ rules:
   - secrets
   verbs:
   - create
+  - delete
   - get
   - list
   - update
   - watch
+- apiGroups:
+  - ""
+  resources:
+  - secrets/finalizers
+  verbs:
+  - update
 - apiGroups:
   - argoproj.io
   resources:
@@ -156,6 +163,7 @@ rules:
   resources:
   - stages
   verbs:
+  - delete
   - deletecollection
   - get
   - list

@@ -27,13 +27,15 @@ rules:
     - watch
     - update
 # objectmodifier patches the cdPipelineName label and the owner reference
-# before reconcile. Stages only.
+# before reconcile. Stages only. OwnerReferencesPermissionEnforcement admits
+# the owner reference patch only with delete on the Stage.
 - apiGroups:
     - v2.edp.epam.com
   resources:
     - stages
   verbs:
     - patch
+    - delete
 # DeleteAllOf issues a collection DELETE; the RBAC authorizer maps it to
 # deletecollection, not delete.
 - apiGroups:
@@ -50,6 +52,9 @@ rules:
   verbs:
     - get
     - update
+# OwnerReferencesPermissionEnforcement admits a controller reference only with
+# update on the owner finalizers: CDPipeline on Stages, Stage on ConfigMaps and
+# CodebaseImageStreams.
 - apiGroups:
     - v2.edp.epam.com
   resources:
@@ -100,6 +105,22 @@ rules:
     - list
     - watch
     - create
+    - update
+# The Argo CD cluster Secret and the IRSA kubeconfig Secret carry a controller
+# reference to their cluster Secret. OwnerReferencesPermissionEnforcement admits
+# it only with update on secrets/finalizers, and on an existing Secret also with
+# delete on it.
+- apiGroups:
+    - ""
+  resources:
+    - secrets
+  verbs:
+    - delete
+- apiGroups:
+    - ""
+  resources:
+    - secrets/finalizers
+  verbs:
     - update
 # RoleBindings that live in this namespace: sa-registry-viewer-<target-ns>
 # and eso-<target-ns>, both created and deleted with the Stage.

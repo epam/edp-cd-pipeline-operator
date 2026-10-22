@@ -96,5 +96,6 @@ tests/e2e/chainsaw/         — Chainsaw-based e2e scenarios (webhooks, capsule-
 
 - Tests use Ginkgo v2 + Gomega; mock files end in `_generated.mock.go`.
 - RBAC markers (`// +kubebuilder:rbac:...`) go above the owning controller's `Reconcile`, per operator-sdk convention; call sites outside a controller (chain handlers, `cmd/main.go`) declare their own. Run `make manifests` to regenerate. OpenShift-only grants are hand-written in the chart's `*_openshift.yaml` templates, not markers — `config/rbac/` stays a Kubernetes role.
+- A new ownerReference write needs `update` on `<owner>/finalizers` (`SetControllerReference` sets `blockOwnerDeletion`) and, when it changes an existing object, `delete` on that object, because OwnerReferencesPermissionEnforcement checks both. Declare them as markers, mirror them into both chart Roles, and add a row to `tests/chart/role_test.go`, which binds `config/rbac/role.yaml` and both chart Roles.
 - `Stage.Spec.Namespace` is immutable (CEL validation rule in the CRD).
 - The `app.edp.epam.com/cdPipelineName` label is auto-set on Stage by `objectmodifier` before reconcile — used for listing Stages by pipeline.
