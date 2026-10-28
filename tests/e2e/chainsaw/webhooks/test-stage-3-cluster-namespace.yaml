@@ -6,7 +6,7 @@ spec:
   name: test-stage-3
   cdPipeline: test-pipeline
   namespace: test-cluster-namespace
-  order: 0
+  order: 1
   description: "Test stage 3"
   qualityGates:
     - qualityGateType: manual

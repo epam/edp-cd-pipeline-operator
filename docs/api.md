@@ -322,7 +322,8 @@ NOTE: for deleting the stage use stages order - delete only the latest stage.
         <td>integer</td>
         <td>
           The order to lay out Stages.
-The order should start from 0, and the next stages should use +1 for the order.<br/>
+The order should start from 0, and the next stages should use +1 for the order.
+Each Stage of a CD pipeline must use a unique order.<br/>
         </td>
         <td>true</td>
       </tr><tr>

@@ -112,6 +112,14 @@ spec:
         check:
           (contains($stderr, 'namespace test-namespace is already used in CDPipeline test-pipeline Stage test-stage-1')): true
 
+  - name: test-duplicate-order-in-cdpipeline
+    try:
+    - script:
+        content: |
+          kubectl apply -f test-stage-5-duplicate-order.yaml -n webhooks-test
+        check:
+          (contains($stderr, 'order 0 is already used in CDPipeline test-pipeline Stage test-stage-1')): true
+
   - name: test-namespace-labeled-for-another-tenant
     try:
     - apply:
@@ -144,6 +152,11 @@ spec:
         file: test-namespace-owned.yaml
     - apply:
         file: test-stage-3-cluster-namespace.yaml
+    - script:
+        content: |
+          kubectl patch stage test-stage-3 -n webhooks-test --type=merge -p '{"spec":{"order":0}}'
+        check:
+          (contains($stderr, 'order 0 is already used in CDPipeline test-pipeline Stage test-stage-1')): true
     cleanup:
     - delete:
         file: test-stage-3-cluster-namespace.yaml
