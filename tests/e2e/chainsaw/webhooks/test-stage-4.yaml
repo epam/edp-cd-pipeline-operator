@@ -8,7 +8,7 @@ spec:
   name: test-stage-4
   cdPipeline: test-pipeline
   namespace: test-namespace-4
-  order: 1
+  order: 2
   description: "Test stage 4"
   qualityGates:
     - qualityGateType: manual

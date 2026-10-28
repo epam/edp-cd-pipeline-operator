@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 	"time"
 
 	corev1 "k8s.io/api/core/v1"
@@ -61,7 +62,16 @@ func (r *StageValidationWebhook) ValidateCreate(ctx context.Context, obj runtime
 		return nil, errors.New("the wrong object given, expected Stage")
 	}
 
-	if err := r.uniqueTargetNamespaces(ctx, createdStage); err != nil {
+	stages, err := r.listStages(ctx, createdStage.Namespace)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = uniqueTargetNamespaces(stages, createdStage); err != nil {
+		return nil, err
+	}
+
+	if err = uniqueOrder(stages, createdStage); err != nil {
 		return nil, err
 	}
 
@@ -69,11 +79,32 @@ func (r *StageValidationWebhook) ValidateCreate(ctx context.Context, obj runtime
 }
 
 // ValidateUpdate is a webhook for validating the updating of the Stage CR.
-func (*StageValidationWebhook) ValidateUpdate(
-	_ context.Context,
+func (r *StageValidationWebhook) ValidateUpdate(
+	ctx context.Context,
 	oldObj, newObj runtime.Object,
 ) (admission.Warnings, error) {
-	return nil, checkResourceProtectionFromModificationOnUpdate(oldObj, newObj)
+	if err := checkResourceProtectionFromModificationOnUpdate(oldObj, newObj); err != nil {
+		return nil, err
+	}
+
+	oldStage, oldOk := oldObj.(*pipelineApi.Stage)
+	newStage, newOk := newObj.(*pipelineApi.Stage)
+
+	if !oldOk || !newOk {
+		return nil, errors.New("the wrong object given, expected Stage")
+	}
+
+	// An update that keeps the order and the CDPipeline is admitted even if a duplicate already exists.
+	if oldStage.Spec.Order == newStage.Spec.Order && oldStage.Spec.CdPipeline == newStage.Spec.CdPipeline {
+		return nil, nil
+	}
+
+	stages, err := r.listStages(ctx, newStage.Namespace)
+	if err != nil {
+		return nil, err
+	}
+
+	return nil, uniqueOrder(stages, newStage)
 }
 
 // ValidateDelete is a webhook for validating the deleting of the Stage CR.
@@ -81,18 +112,22 @@ func (*StageValidationWebhook) ValidateDelete(_ context.Context, obj runtime.Obj
 	return nil, checkResourceProtectionFromModificationOnDelete(obj)
 }
 
-func (r *StageValidationWebhook) uniqueTargetNamespaces(ctx context.Context, stage *pipelineApi.Stage) error {
+func (r *StageValidationWebhook) listStages(ctx context.Context, namespace string) (*pipelineApi.StageList, error) {
 	stages := &pipelineApi.StageList{}
 
 	if err := r.client.List(
 		ctx,
 		stages,
-		client.InNamespace(stage.Namespace),
+		client.InNamespace(namespace),
 		client.Limit(listLimit),
 	); err != nil {
-		return fmt.Errorf("failed to list stages: %w", err)
+		return nil, fmt.Errorf("failed to list stages: %w", err)
 	}
 
+	return stages, nil
+}
+
+func uniqueTargetNamespaces(stages *pipelineApi.StageList, stage *pipelineApi.Stage) error {
 	for i := range stages.Items {
 		if stages.Items[i].Name == stage.Name || stages.Items[i].Spec.ClusterName != stage.Spec.ClusterName {
 			continue
@@ -109,6 +144,38 @@ func (r *StageValidationWebhook) uniqueTargetNamespaces(ctx context.Context, sta
 	}
 
 	return nil
+}
+
+// uniqueOrder rejects a Stage whose order is used by another Stage of the same CDPipeline.
+// Stages are matched by spec.cdPipeline, not by the CDPipeline label.
+func uniqueOrder(stages *pipelineApi.StageList, stage *pipelineApi.Stage) error {
+	others := make([]*pipelineApi.Stage, 0, len(stages.Items))
+
+	for i := range stages.Items {
+		if stages.Items[i].Name != stage.Name && stages.Items[i].Spec.CdPipeline == stage.Spec.CdPipeline {
+			others = append(others, &stages.Items[i])
+		}
+	}
+
+	for _, other := range others {
+		if other.Spec.Order == stage.Spec.Order && holdsOrder(other, others) {
+			return fmt.Errorf(
+				"order %d is already used in CDPipeline %s Stage %s",
+				stage.Spec.Order,
+				stage.Spec.CdPipeline,
+				other.Name,
+			)
+		}
+	}
+
+	return nil
+}
+
+// holdsOrder reports whether the Stage occupies its order: a live Stage does; a Stage being deleted does
+// while another Stage of the CDPipeline has a higher order.
+func holdsOrder(stage *pipelineApi.Stage, others []*pipelineApi.Stage) bool {
+	return stage.GetDeletionTimestamp().IsZero() ||
+		slices.ContainsFunc(others, func(other *pipelineApi.Stage) bool { return other.Spec.Order > stage.Spec.Order })
 }
 
 // targetNamespaceOwnership rejects a Stage whose target namespace exists but is not owned by the Stage tenant.

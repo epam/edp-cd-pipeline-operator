@@ -2,6 +2,7 @@ package webhook
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"testing"
 	"time"
@@ -13,12 +14,47 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 
 	codebaseApi "github.com/epam/edp-codebase-operator/v2/api/v1"
 
 	pipelineApi "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
 	"github.com/epam/edp-cd-pipeline-operator/v2/internal/controller/stage/chain/util"
 )
+
+// newStageWithOrder returns an in-cluster Stage whose target namespace is "<name>-ns".
+func newStageWithOrder(namespace, name, cdPipeline string, order int) *pipelineApi.Stage {
+	return &pipelineApi.Stage{
+		ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace},
+		Spec: pipelineApi.StageSpec{
+			Name:        name,
+			CdPipeline:  cdPipeline,
+			ClusterName: pipelineApi.InCluster,
+			Namespace:   name + "-ns",
+			Order:       order,
+		},
+	}
+}
+
+func newTerminatingStage(namespace, name, cdPipeline string, order int) *pipelineApi.Stage {
+	stage := newStageWithOrder(namespace, name, cdPipeline, order)
+	stage.Finalizers = []string{"test-finalizer"}
+	stage.DeletionTimestamp = &metav1.Time{Time: time.Now()}
+
+	return stage
+}
+
+var listFails = interceptor.Funcs{
+	List: func(context.Context, client.WithWatch, client.ObjectList, ...client.ListOption) error {
+		return errors.New("connection refused")
+	},
+}
+
+func errContains(msg string) require.ErrorAssertionFunc {
+	return func(t require.TestingT, err error, _ ...interface{}) {
+		require.ErrorContains(t, err, msg)
+	}
+}
 
 func TestStageValidationWebhook_ValidateCreate(t *testing.T) {
 	t.Parallel()
@@ -58,6 +94,7 @@ func TestStageValidationWebhook_ValidateCreate(t *testing.T) {
 						CdPipeline:  "pipeline",
 						ClusterName: pipelineApi.InCluster,
 						Namespace:   "stage2-ns",
+						Order:       1,
 					},
 				}
 
@@ -71,6 +108,7 @@ func TestStageValidationWebhook_ValidateCreate(t *testing.T) {
 						CdPipeline:  "pipeline",
 						ClusterName: "cluster2",
 						Namespace:   "stage1-ns",
+						Order:       2,
 					},
 				}
 
@@ -106,6 +144,7 @@ func TestStageValidationWebhook_ValidateCreate(t *testing.T) {
 						CdPipeline:  "pipeline",
 						ClusterName: pipelineApi.InCluster,
 						Namespace:   "stage1-ns",
+						Order:       1,
 					},
 				}
 
@@ -117,6 +156,103 @@ func TestStageValidationWebhook_ValidateCreate(t *testing.T) {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), "namespace stage1-ns is already used in CDPipeline pipeline Stage stage2")
 			},
+		},
+		{
+			name: "namespace conflict is reported before order conflict",
+			obj:  newStageWithOrder("default", "stage1", "pipeline", 0),
+			client: func(t *testing.T) client.Client {
+				stageWithSameTargetNsAndOrder := newStageWithOrder("default", "stage2", "pipeline", 0)
+				stageWithSameTargetNsAndOrder.Spec.Namespace = "stage1-ns"
+
+				return fake.NewClientBuilder().WithScheme(scheme).WithObjects(
+					stageWithSameTargetNsAndOrder,
+				).Build()
+			},
+			wantErr: errContains("namespace stage1-ns is already used in CDPipeline pipeline Stage stage2"),
+		},
+		{
+			name: "order conflict is reported before the target namespace ownership",
+			obj:  newStageWithOrder("default", "stage1", "pipeline", 1),
+			client: func(t *testing.T) client.Client {
+				unlabeledTargetNamespace := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "stage1-ns"}}
+
+				return fake.NewClientBuilder().WithScheme(scheme).WithObjects(
+					newStageWithOrder("default", "stage2", "pipeline", 1),
+					unlabeledTargetNamespace,
+				).Build()
+			},
+			wantErr: errContains("order 1 is already used in CDPipeline pipeline Stage stage2"),
+		},
+		{
+			name: "order is used by a Stage of another CDPipeline that carries this CDPipeline label",
+			obj:  newStageWithOrder("default", "stage1", "pipeline", 1),
+			client: func(t *testing.T) client.Client {
+				mislabeled := newStageWithOrder("default", "stage2", "other", 1)
+				mislabeled.Labels = map[string]string{pipelineApi.StageCdPipelineLabelName: "pipeline"}
+
+				return fake.NewClientBuilder().WithScheme(scheme).WithObjects(mislabeled).Build()
+			},
+			wantErr: require.NoError,
+		},
+		{
+			name: "order conflict, the existing Stage is being deleted below a live Stage",
+			obj:  newStageWithOrder("default", "stage1", "pipeline", 1),
+			client: func(t *testing.T) client.Client {
+				return fake.NewClientBuilder().WithScheme(scheme).WithObjects(
+					newTerminatingStage("default", "stage2", "pipeline", 1),
+					newStageWithOrder("default", "stage3", "pipeline", 2),
+				).Build()
+			},
+			wantErr: errContains("order 1 is already used in CDPipeline pipeline Stage stage2"),
+		},
+		{
+			name: "order of the last Stage that is being deleted is admitted",
+			obj:  newStageWithOrder("default", "stage1", "pipeline", 1),
+			client: func(t *testing.T) client.Client {
+				return fake.NewClientBuilder().WithScheme(scheme).WithObjects(
+					newTerminatingStage("default", "stage2", "pipeline", 1),
+				).Build()
+			},
+			wantErr: require.NoError,
+		},
+		{
+			name: "unused order, contiguity is not checked",
+			obj:  newStageWithOrder("default", "stage1", "pipeline", 5),
+			client: func(t *testing.T) client.Client {
+				return fake.NewClientBuilder().WithScheme(scheme).WithObjects(
+					newStageWithOrder("default", "stage2", "pipeline", 0),
+				).Build()
+			},
+			wantErr: require.NoError,
+		},
+		{
+			name: "order is used in another namespace",
+			obj:  newStageWithOrder("default", "stage1", "pipeline", 1),
+			client: func(t *testing.T) client.Client {
+				return fake.NewClientBuilder().WithScheme(scheme).WithObjects(
+					newStageWithOrder("other", "stage2", "pipeline", 1),
+				).Build()
+			},
+			wantErr: require.NoError,
+		},
+		{
+			name: "order is used by a Stage that is being deleted below a live Stage in another namespace",
+			obj:  newStageWithOrder("default", "stage1", "pipeline", 1),
+			client: func(t *testing.T) client.Client {
+				return fake.NewClientBuilder().WithScheme(scheme).WithObjects(
+					newTerminatingStage("other", "stage2", "pipeline", 1),
+					newStageWithOrder("other", "stage3", "pipeline", 2),
+				).Build()
+			},
+			wantErr: require.NoError,
+		},
+		{
+			name: "listing the Stages fails",
+			obj:  newStageWithOrder("default", "stage1", "pipeline", 1),
+			client: func(t *testing.T) client.Client {
+				return fake.NewClientBuilder().WithScheme(scheme).WithInterceptorFuncs(listFails).Build()
+			},
+			wantErr: errContains("failed to list stages: connection refused"),
 		},
 		{
 			name: "invalid object given",
@@ -390,6 +526,202 @@ func TestStageValidationWebhook_ValidateUpdate(t *testing.T) {
 
 			assert.Nil(t, w)
 			tt.wantErr(t, err)
+		})
+	}
+}
+
+func TestStageValidationWebhook_ValidateUpdate_Order(t *testing.T) {
+	t.Parallel()
+
+	scheme := runtime.NewScheme()
+	require.NoError(t, pipelineApi.AddToScheme(scheme))
+
+	stageBeforeFinalizerRemoval := newStageWithOrder("default", "stage2", "pipeline", 1)
+	stageBeforeFinalizerRemoval.Finalizers = []string{"test-finalizer"}
+
+	tests := []struct {
+		name    string
+		objects []client.Object
+		funcs   interceptor.Funcs
+		oldObj  runtime.Object
+		newObj  runtime.Object
+		wantErr require.ErrorAssertionFunc
+	}{
+		{
+			name: "order changed to a free value",
+			objects: []client.Object{
+				newStageWithOrder("default", "stage1", "pipeline", 0),
+				newStageWithOrder("default", "stage2", "pipeline", 1),
+			},
+			oldObj:  newStageWithOrder("default", "stage2", "pipeline", 1),
+			newObj:  newStageWithOrder("default", "stage2", "pipeline", 3),
+			wantErr: require.NoError,
+		},
+		{
+			name: "order changed to a used value",
+			objects: []client.Object{
+				newStageWithOrder("default", "stage1", "pipeline", 0),
+				newStageWithOrder("default", "stage2", "pipeline", 1),
+			},
+			oldObj:  newStageWithOrder("default", "stage2", "pipeline", 1),
+			newObj:  newStageWithOrder("default", "stage2", "pipeline", 0),
+			wantErr: errContains("order 0 is already used in CDPipeline pipeline Stage stage1"),
+		},
+		{
+			name: "order and CDPipeline unchanged while a duplicate exists",
+			objects: []client.Object{
+				newStageWithOrder("default", "stage1", "pipeline", 1),
+				newStageWithOrder("default", "stage2", "pipeline", 1),
+			},
+			oldObj:  stageBeforeFinalizerRemoval,
+			newObj:  newStageWithOrder("default", "stage2", "pipeline", 1),
+			wantErr: require.NoError,
+		},
+		{
+			name: "CDPipeline changed to one where the order is taken",
+			objects: []client.Object{
+				newStageWithOrder("default", "stage1", "other-pipeline", 1),
+				newStageWithOrder("default", "stage2", "pipeline", 1),
+			},
+			oldObj:  newStageWithOrder("default", "stage2", "pipeline", 1),
+			newObj:  newStageWithOrder("default", "stage2", "other-pipeline", 1),
+			wantErr: errContains("order 1 is already used in CDPipeline other-pipeline Stage stage1"),
+		},
+		{
+			name: "CDPipeline changed to one where the order is free",
+			objects: []client.Object{
+				newStageWithOrder("default", "stage1", "other-pipeline", 0),
+				newStageWithOrder("default", "stage2", "pipeline", 1),
+			},
+			oldObj:  newStageWithOrder("default", "stage2", "pipeline", 1),
+			newObj:  newStageWithOrder("default", "stage2", "other-pipeline", 1),
+			wantErr: require.NoError,
+		},
+		{
+			name:    "listing the Stages fails",
+			funcs:   listFails,
+			oldObj:  newStageWithOrder("default", "stage2", "pipeline", 1),
+			newObj:  newStageWithOrder("default", "stage2", "pipeline", 2),
+			wantErr: errContains("failed to list stages: connection refused"),
+		},
+		{
+			name:    "invalid object given",
+			oldObj:  &codebaseApi.Codebase{},
+			newObj:  &codebaseApi.Codebase{},
+			wantErr: errContains("the wrong object given, expected Stage"),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			r := NewStageValidationWebhook(
+				fake.NewClientBuilder().WithScheme(scheme).WithObjects(tt.objects...).WithInterceptorFuncs(tt.funcs).Build(),
+			)
+			w, err := r.ValidateUpdate(context.Background(), tt.oldObj, tt.newObj)
+
+			assert.Nil(t, w)
+			tt.wantErr(t, err)
+		})
+	}
+}
+
+func TestUniqueOrder(t *testing.T) {
+	t.Parallel()
+
+	stageList := func(stages ...*pipelineApi.Stage) *pipelineApi.StageList {
+		items := make([]pipelineApi.Stage, 0, len(stages))
+
+		for _, stage := range stages {
+			items = append(items, *stage)
+		}
+
+		return &pipelineApi.StageList{Items: items}
+	}
+
+	tests := []struct {
+		name    string
+		stages  *pipelineApi.StageList
+		stage   *pipelineApi.Stage
+		wantErr string
+	}{
+		{
+			name:    "order is used by a live Stage",
+			stages:  stageList(newStageWithOrder("default", "stage2", "pipeline", 1)),
+			stage:   newStageWithOrder("default", "stage1", "pipeline", 1),
+			wantErr: "order 1 is already used in CDPipeline pipeline Stage stage2",
+		},
+		{
+			name:   "order is used in another CDPipeline",
+			stages: stageList(newStageWithOrder("default", "stage2", "other-pipeline", 1)),
+			stage:  newStageWithOrder("default", "stage1", "pipeline", 1),
+		},
+		{
+			name:   "order is used by the Stage itself",
+			stages: stageList(newStageWithOrder("default", "stage1", "pipeline", 1)),
+			stage:  newStageWithOrder("default", "stage1", "pipeline", 1),
+		},
+		{
+			name:   "order is used by the last Stage that is being deleted",
+			stages: stageList(newTerminatingStage("default", "stage2", "pipeline", 1)),
+			stage:  newStageWithOrder("default", "stage1", "pipeline", 1),
+		},
+		{
+			name: "order is used by a Stage that is being deleted below a live Stage",
+			stages: stageList(
+				newTerminatingStage("default", "stage2", "pipeline", 1),
+				newStageWithOrder("default", "stage3", "pipeline", 2),
+			),
+			stage:   newStageWithOrder("default", "stage1", "pipeline", 1),
+			wantErr: "order 1 is already used in CDPipeline pipeline Stage stage2",
+		},
+		{
+			name: "order is used by a Stage that is being deleted below Stages that are being deleted",
+			stages: stageList(
+				newTerminatingStage("default", "stage2", "pipeline", 1),
+				newTerminatingStage("default", "stage3", "pipeline", 2),
+			),
+			stage:   newStageWithOrder("default", "stage1", "pipeline", 1),
+			wantErr: "order 1 is already used in CDPipeline pipeline Stage stage2",
+		},
+		{
+			name: "order is used by a Stage that is being deleted below a live Stage of another CDPipeline",
+			stages: stageList(
+				newTerminatingStage("default", "stage2", "pipeline", 1),
+				newStageWithOrder("default", "stage3", "other-pipeline", 2),
+			),
+			stage: newStageWithOrder("default", "stage1", "pipeline", 1),
+		},
+		{
+			name: "order is used by a Stage that is being deleted below a live Stage in another CDPipeline",
+			stages: stageList(
+				newTerminatingStage("default", "stage2", "other-pipeline", 1),
+				newStageWithOrder("default", "stage3", "other-pipeline", 2),
+			),
+			stage: newStageWithOrder("default", "stage1", "pipeline", 1),
+		},
+		{
+			name: "order is used by a Stage that is being deleted below the Stage under validation",
+			stages: stageList(
+				newTerminatingStage("default", "stage2", "pipeline", 1),
+				newStageWithOrder("default", "stage1", "pipeline", 5),
+			),
+			stage: newStageWithOrder("default", "stage1", "pipeline", 1),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			err := uniqueOrder(tt.stages, tt.stage)
+
+			if tt.wantErr != "" {
+				require.EqualError(t, err, tt.wantErr)
+			} else {
+				require.NoError(t, err)
+			}
 		})
 	}
 }

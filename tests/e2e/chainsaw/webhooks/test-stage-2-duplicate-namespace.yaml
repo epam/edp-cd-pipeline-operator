@@ -6,7 +6,7 @@ spec:
   name: test-stage-2
   cdPipeline: test-pipeline
   namespace: test-namespace
-  order: 0
+  order: 1
   description: "Test stage 2"
   qualityGates:
     - qualityGateType: manual

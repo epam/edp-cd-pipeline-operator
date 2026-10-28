@@ -45,6 +45,7 @@ type StageSpec struct {
 
 	// The order to lay out Stages.
 	// The order should start from 0, and the next stages should use +1 for the order.
+	// Each Stage of a CD pipeline must use a unique order.
 	Order int `json:"order"`
 
 	// A list of quality gates to be processed
