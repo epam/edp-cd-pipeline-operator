@@ -19,7 +19,9 @@ var _ = Describe("secret with kube config", func() {
 	When("secret contains valid kube config", func() {
 		var clusterSecretName = "cluster-secret-with-valid-kube-config"
 
-		BeforeEach(func() {
+		// JustBeforeEach runs after the nested BeforeEach blocks, so a pre-existing
+		// argocd secret is in place before the controller reconciles the cluster secret.
+		JustBeforeEach(func() {
 			By("creating cluster secret")
 
 			secret := &corev1.Secret{
@@ -91,6 +93,8 @@ var _ = Describe("secret with kube config", func() {
 			})
 		})
 		When("argocd secret exists", func() {
+			const staleServer = "https://stale-server"
+
 			BeforeEach(func() {
 				By("creating argocd secret")
 
@@ -99,7 +103,13 @@ var _ = Describe("secret with kube config", func() {
 						Name:      clusterSecretNameToArgocdSecretName(clusterSecretName),
 						Namespace: "default",
 					},
+					Data: map[string][]byte{
+						"server": []byte(staleServer),
+					},
 				}
+
+				// A late reconcile from a previous spec can recreate the secret.
+				Expect(ctrlclient.IgnoreNotFound(k8sClient.Delete(ctx, argoSecret.DeepCopy()))).ToNot(HaveOccurred())
 				Expect(k8sClient.Create(ctx, argoSecret)).ToNot(HaveOccurred())
 			})
 			AfterEach(func() {
@@ -124,6 +134,7 @@ var _ = Describe("secret with kube config", func() {
 					g.Expect(argoSecret.Data["config"]).ShouldNot(BeEmpty())
 					g.Expect(argoSecret.Data["name"]).ShouldNot(BeEmpty())
 					g.Expect(argoSecret.Data["server"]).ShouldNot(BeEmpty())
+					g.Expect(string(argoSecret.Data["server"])).ShouldNot(Equal(staleServer))
 					g.Expect(argoSecret.GetLabels()).ShouldNot(BeEmpty())
 					g.Expect(argoSecret.GetLabels()).Should(HaveKeyWithValue(argocd.ClusterLabel, argocd.ClusterLabelVal))
 				}).Should(Succeed())
