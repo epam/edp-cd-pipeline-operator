@@ -21,6 +21,7 @@ var _ = Describe("secret with kube config", func() {
 
 		BeforeEach(func() {
 			By("creating cluster secret")
+
 			secret := &corev1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      clusterSecretName,
@@ -92,6 +93,7 @@ var _ = Describe("secret with kube config", func() {
 		When("argocd secret exists", func() {
 			BeforeEach(func() {
 				By("creating argocd secret")
+
 				argoSecret := &corev1.Secret{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      clusterSecretNameToArgocdSecretName(clusterSecretName),
@@ -133,6 +135,7 @@ var _ = Describe("secret with kube config", func() {
 
 		BeforeEach(func() {
 			By("creating cluster secret")
+
 			secret := &corev1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      clusterSecretName,
@@ -176,12 +179,14 @@ var _ = Describe("secret with kube config", func() {
 
 		BeforeEach(func() {
 			By("creating config with invalid host")
+
 			cfgInvalid := rest.CopyConfig(cfg)
 			cfgInvalid.Host = "https://invalid-host"
 			raw, err := ConvertRestConfigToKubeConfig(cfgInvalid)
 			Expect(err).ToNot(HaveOccurred())
 
 			By("creating cluster secret")
+
 			secret := &corev1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      clusterSecretName,
@@ -230,6 +235,7 @@ var _ = Describe("secret with irsa config", func() {
 
 		BeforeEach(func() {
 			By("creating irsa secret")
+
 			secret := &corev1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      clusterSecretName,
@@ -300,6 +306,7 @@ var _ = Describe("secret with irsa config", func() {
 
 		BeforeEach(func() {
 			By("creating irsa secret")
+
 			secret := &corev1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      clusterSecretName,

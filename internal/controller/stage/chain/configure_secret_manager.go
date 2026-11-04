@@ -27,6 +27,7 @@ const (
 	sourceSecretName = "regcred"
 	// Must match the name prefix allowed by admissionpolicy_eso_rolebinding_kubernetes.yaml.
 	secretManagerRoleBindingPrefix = "eso-"
+	esoNameField                   = "name"
 )
 
 // ConfigureSecretManager is a stage chain element that configures secret management.
@@ -243,14 +244,14 @@ func (h ConfigureSecretManager) createSecretStore(
 				"remoteNamespace": stageNamespace,
 				"auth": map[string]interface{}{
 					"serviceAccount": map[string]interface{}{
-						"name": serviceAccountName,
+						esoNameField: serviceAccountName,
 					},
 				},
 				"server": map[string]interface{}{
 					"caProvider": map[string]interface{}{
-						"type": "ConfigMap",
-						"name": "kube-root-ca.crt",
-						"key":  "ca.crt",
+						"type":       "ConfigMap",
+						esoNameField: "kube-root-ca.crt",
+						"key":        "ca.crt",
 					},
 				},
 			},
@@ -280,8 +281,8 @@ func (h ConfigureSecretManager) createExternalSecret(
 	externalSecret.Object["spec"] = map[string]interface{}{
 		"refreshInterval": "1h",
 		"secretStoreRef": map[string]interface{}{
-			"kind": externalsecrets.SecretStoreKind,
-			"name": secretStoreName,
+			"kind":       externalsecrets.SecretStoreKind,
+			esoNameField: secretStoreName,
 		},
 		"data": []interface{}{
 			map[string]interface{}{
