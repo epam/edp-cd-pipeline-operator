@@ -1597,3 +1597,56 @@ func Test_processGeneratorListElements_mixedOldAndNewGenerators(t *testing.T) {
 
 	require.True(t, foundStage2, "stage2 element must be preserved")
 }
+
+func Test_sshRepoURL(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name       string
+		spec       codebaseApi.GitServerSpec
+		gitUrlPath string
+		want       string
+	}{
+		{
+			name: "bitbucket cloud uses ssh.bitbucket.org",
+			spec: codebaseApi.GitServerSpec{
+				GitHost:     "bitbucket.org",
+				GitProvider: codebaseApi.GitProviderBitbucket,
+				GitUser:     "git",
+				SshPort:     22,
+			},
+			gitUrlPath: "/workspace/app1",
+			want:       "ssh://git@ssh.bitbucket.org:22/workspace/app1",
+		},
+		{
+			name: "self-hosted bitbucket keeps host",
+			spec: codebaseApi.GitServerSpec{
+				GitHost:     "bitbucket.example.com",
+				GitProvider: codebaseApi.GitProviderBitbucket,
+				GitUser:     "git",
+				SshPort:     7999,
+			},
+			gitUrlPath: "/project/app1",
+			want:       "ssh://git@bitbucket.example.com:7999/project/app1",
+		},
+		{
+			name: "github keeps host",
+			spec: codebaseApi.GitServerSpec{
+				GitHost:     "github.com",
+				GitProvider: codebaseApi.GitProviderGithub,
+				GitUser:     "git",
+				SshPort:     22,
+			},
+			gitUrlPath: "/company/app1",
+			want:       "ssh://git@github.com:22/company/app1",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			require.Equal(t, tt.want, sshRepoURL(&codebaseApi.GitServer{Spec: tt.spec}, tt.gitUrlPath))
+		})
+	}
+}

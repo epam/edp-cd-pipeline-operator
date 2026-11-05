@@ -37,7 +37,11 @@ type generatorElement struct {
 	CustomValues    bool   `json:"customValues"`
 }
 
-const codebaseTypeSystem = "system"
+const (
+	codebaseTypeSystem    = "system"
+	bitbucketCloudHost    = "bitbucket.org"
+	bitbucketCloudSSHHost = "ssh.bitbucket.org"
+)
 
 var gitOpsCodebaseLabels = map[string]string{
 	"app.edp.epam.com/codebaseType": "system",
@@ -239,16 +243,10 @@ func (c *ArgoApplicationSetManager) makeStageGenerators(
 			ImageRepository: image,
 			Cluster:         stage.Spec.ClusterName,
 			Namespace:       stage.Spec.Namespace,
-			RepoURL: fmt.Sprintf(
-				"ssh://%s@%s:%d%s",
-				gitServer.Spec.GitUser,
-				gitServer.Spec.GitHost,
-				gitServer.Spec.SshPort,
-				spec.GitUrlPath,
-			),
-			GitUrlPath:   spec.GetProjectID(),
-			VersionType:  string(spec.Versioning.Type),
-			CustomValues: false,
+			RepoURL:         sshRepoURL(&gitServer, spec.GitUrlPath),
+			GitUrlPath:      spec.GetProjectID(),
+			VersionType:     string(spec.Versioning.Type),
+			CustomValues:    false,
 		}
 
 		var raw []byte
@@ -359,13 +357,18 @@ func (c *ArgoApplicationSetManager) getGitOpsRepoUrl(ctx context.Context, ns str
 		return "", fmt.Errorf("failed to get gitops GitServer: %w", err)
 	}
 
-	return fmt.Sprintf(
-		"ssh://%s@%s:%d%s",
-		gitServer.Spec.GitUser,
-		gitServer.Spec.GitHost,
-		gitServer.Spec.SshPort,
-		gitOpsCodebase.Spec.GitUrlPath,
-	), nil
+	return sshRepoURL(gitServer, gitOpsCodebase.Spec.GitUrlPath), nil
+}
+
+// sshRepoURL returns the SSH repository URL for a GitServer.
+// Bitbucket Cloud SSH endpoint: ssh.bitbucket.org.
+func sshRepoURL(gitServer *codebaseApi.GitServer, gitUrlPath string) string {
+	host := gitServer.Spec.GitHost
+	if gitServer.Spec.GitProvider == codebaseApi.GitProviderBitbucket && strings.EqualFold(host, bitbucketCloudHost) {
+		host = bitbucketCloudSSHHost
+	}
+
+	return fmt.Sprintf("ssh://%s@%s:%d%s", gitServer.Spec.GitUser, host, gitServer.Spec.SshPort, gitUrlPath)
 }
 
 func generateTemplatePatch(pipeline, gitopsUrl string) string {
