@@ -34,7 +34,7 @@ In order to install the CD Pipeline Operator, follow the steps below:
      ```bash
      helm search repo epamedp/cd-pipeline-operator -l
      NAME                              CHART VERSION   APP VERSION     DESCRIPTION
-     epamedp/cd-pipeline-operator      2.20.0          2.20.0          A Helm chart for KubeRocketCI CD Pipeline Operator
+     epamedp/cd-pipeline-operator      2.34.0          2.34.0          A Helm chart for KubeRocketCI CD Pipeline Operator
      ```
 
    _**NOTE:** It is highly recommended to use the latest released version._
