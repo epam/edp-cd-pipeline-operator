@@ -1,9 +1,37 @@
 <a name="unreleased"></a>
 ## [Unreleased]
 
+### Routine
+
+- Update current development version
+
+
+<a name="v2.34.0"></a>
+## [v2.34.0] - 2026-11-07
 ### Bug Fixes
 
+- Use ssh.bitbucket.org in Argo CD ApplicationSets for Bitbucket Cloud
+- reject a duplicate Stage order in a CDPipeline
+- verify ownership of the Stage target namespace
 - migrate chainsaw capsule-integration suite to Capsule 0.14.3
+
+### Testing
+
+- fix argocd secret race in clustersecret suite
+
+### Routine
+
+- Bump Go to 1.27.3
+- Update current development version
+
+### BREAKING CHANGE:
+
+
+with manageNamespace=false, pre-created target
+namespaces must carry app.edp.epam.com/tenant=<operator namespace>.
+Stages on unlabeled namespaces stop reconciling after upgrade (status
+failed); nothing is deleted and earlier tenant-admin RoleBindings are
+not cleaned up.
 
 
 <a name="v2.33.1"></a>
@@ -481,7 +509,8 @@ Helm parameter kioskEnabled was removed. Use instead --set global.tenancyEngine=
 <a name="v2.1.0-36"></a>
 ## v2.1.0-36 - 2019-09-16
 
-[Unreleased]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.33.1...HEAD
+[Unreleased]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.34.0...HEAD
+[v2.34.0]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.33.1...v2.34.0
 [v2.33.1]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.33.0...v2.33.1
 [v2.33.0]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.32.0...v2.33.0
 [v2.32.0]: https://github.com/epam/edp-cd-pipeline-operator/compare/v2.31.0...v2.32.0
