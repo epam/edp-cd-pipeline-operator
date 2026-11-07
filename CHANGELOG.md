@@ -5,6 +5,10 @@
 
 - Update current development version
 
+### Documentation
+
+- Update chart version in the README install example
+
 
 <a name="v2.34.0"></a>
 ## [v2.34.0] - 2026-11-07
