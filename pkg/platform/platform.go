@@ -17,6 +17,8 @@ const (
 	SecretManagerEnv       = "SECRET_MANAGER"
 	SecretManagerESO       = "eso"
 	SecretManagerOwn       = "own"
+
+	SecurityEnabledEnv = "SECURITY_ENABLED"
 )
 
 func GetPlatformTypeEnv() string {
@@ -77,4 +79,11 @@ func GetOIDCAdminGroupName() string {
 // GetOIDCDeveloperGroupName returns the name of the OIDC developer group.
 func GetOIDCDeveloperGroupName() string {
 	return os.Getenv(OIDCDeveloperGroupName)
+}
+
+// SecurityEnabled returns true if the runtime security controller is enabled.
+func SecurityEnabled() bool {
+	enabled, err := strconv.ParseBool(os.Getenv(SecurityEnabledEnv))
+
+	return err == nil && enabled
 }

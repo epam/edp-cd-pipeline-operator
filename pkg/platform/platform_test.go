@@ -201,3 +201,14 @@ func TestIsSecretManagerESO(t *testing.T) {
 		})
 	}
 }
+
+func TestSecurity(t *testing.T) {
+	assert.False(t, SecurityEnabled())
+
+	t.Setenv(SecurityEnabledEnv, "true")
+
+	assert.True(t, SecurityEnabled())
+
+	t.Setenv(SecurityEnabledEnv, "not-a-bool")
+	assert.False(t, SecurityEnabled())
+}

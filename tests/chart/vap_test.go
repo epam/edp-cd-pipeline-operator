@@ -24,7 +24,8 @@ type vapDoc struct {
 	} `json:"spec"`
 }
 
-func renderVAP(t *testing.T, sets ...string) *vapDoc {
+// helmTemplate renders the chart in the krci namespace and returns the manifests.
+func helmTemplate(t *testing.T, sets ...string) string {
 	t.Helper()
 
 	args := make([]string, 0, 7+2*len(sets))
@@ -37,7 +38,13 @@ func renderVAP(t *testing.T, sets ...string) *vapDoc {
 	out, err := exec.Command("helm", args...).CombinedOutput()
 	require.NoError(t, err, string(out))
 
-	for _, raw := range strings.Split(string(out), "\n---") {
+	return string(out)
+}
+
+func renderVAP(t *testing.T, sets ...string) *vapDoc {
+	t.Helper()
+
+	for _, raw := range strings.Split(helmTemplate(t, sets...), "\n---") {
 		var d vapDoc
 		if yaml.Unmarshal([]byte(raw), &d) != nil {
 			continue

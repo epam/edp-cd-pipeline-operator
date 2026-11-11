@@ -104,6 +104,10 @@ func CreateDeleteChain(ctx context.Context, c client.Client, stage *cdPipeApi.St
 		DeleteSecretManagerRbac{
 			multiClusterCl: multiClusterCl,
 		},
+		DeleteRuntimeSecurityRbac{
+			multiClusterClient: multiClusterCl,
+			internalClient:     c,
+		},
 	)
 
 	return ch, nil

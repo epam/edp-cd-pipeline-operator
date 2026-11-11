@@ -44,7 +44,7 @@ make helm-docs    # regenerate deploy-templates/README.md from chart values
 
 ```
 cmd/main.go
-  └── registers three controllers + admission webhooks with controller-runtime manager
+  └── registers the controllers + admission webhooks with controller-runtime manager
 
 api/v1/
   ├── cdpipeline_types.go   — CDPipeline spec/status
@@ -60,15 +60,22 @@ internal/controller/
   │       ├── factory.go    — CreateChain() / CreateDeleteChain()
   │       ├── chain.go      — sequential handler runner
   │       └── <step>.go     — individual chain handlers (put_namespace, configure_*_rbac, etc.)
-  └── clustersecret/        — watches Secrets labeled app.edp.epam.com/secret-type=cluster,
+  ├── clustersecret/        — watches Secrets labeled app.edp.epam.com/secret-type=cluster,
                               converts kubeconfig/IRSA secrets → Argo CD cluster secrets
+  └── runtimesecurity/      — opt-in (security.enabled): re-imports Trivy Operator reports of in-cluster
+                              Stage namespaces into DefectDojo; reads the integration Secret on every pass. Reads a Stage namespace only
+                              if the names are DNS labels and the tenant owns it; the controller itself creates the per-namespace
+                              RoleBinding it reads through (no cluster-wide read), and a failure never blocks Stage provisioning;
+                              DeleteRuntimeSecurityRbac in the delete chain removes it
 
 pkg/
   ├── argocd/               — ArgoApplicationSetManager: create/update/remove ApplicationSet generators
   ├── aws/                  — EKS IRSA token generator (sigs.k8s.io/aws-iam-authenticator)
+  ├── defectdojo/           — DefectDojo API client: re-import, list tests, close a test; retries, per-test locks
   ├── multiclusterclient/   — ClientProvider: resolves in-cluster or external cluster client from Secret
   ├── objectmodifier/       — StageBatchModifier: patches Stage label + CDPipeline owner ref pre-reconcile
   ├── platform/             — reads PLATFORM_TYPE / TENANCY_ENGINE / MANAGE_NAMESPACE env vars
+  ├── security/             — Trivy report to DefectDojo product/engagement/test/tags mapping, workload identity
   ├── rbac/                 — RbacManager: create/delete RoleBindings cross-namespace
   ├── webhook/              — admission webhooks for CDPipeline and Stage validation
   └── util/consts/          — shared constants (CDPipelineKind, status strings)
@@ -95,6 +102,6 @@ tests/e2e/chainsaw/         — Chainsaw-based e2e scenarios (webhooks, capsule-
 ## Conventions
 
 - Tests use Ginkgo v2 + Gomega; mock files end in `_generated.mock.go`.
-- RBAC markers (`// +kubebuilder:rbac:...`) go above the owning controller's `Reconcile`, per operator-sdk convention; call sites outside a controller (chain handlers, `cmd/main.go`) declare their own. Run `make manifests` to regenerate. OpenShift-only grants are hand-written in the chart's `*_openshift.yaml` templates, not markers — `config/rbac/` stays a Kubernetes role.
+- RBAC markers (`// +kubebuilder:rbac:...`) go above the owning controller's `Reconcile`, per operator-sdk convention; call sites outside a controller (chain handlers, `cmd/main.go`) declare their own. Run `make manifests` to regenerate. OpenShift-only grants are hand-written in the chart's `*_openshift.yaml` templates, not markers — `config/rbac/` stays a Kubernetes role. The runtime security grants (release-scoped ClusterRole names, per-namespace RoleBinding) are hand-written in `deploy-templates/templates/clusterrole_runtime_security.yaml`, not markers, so `config/rbac/` carries no runtime security rules.
 - `Stage.Spec.Namespace` is immutable (CEL validation rule in the CRD).
 - The `app.edp.epam.com/cdPipelineName` label is auto-set on Stage by `objectmodifier` before reconcile — used for listing Stages by pipeline.
