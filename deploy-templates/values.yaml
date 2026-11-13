@@ -142,5 +142,30 @@ tenantScopePolicy:
 #   - none: Disables secrets management logic.
 secretManager: none
 
+security:
+  # -- Enable the runtime security controller. For each Stage of this cluster it re-imports the Trivy Operator
+  # reports (VulnerabilityReport, ExposedSecretReport) of the Stage namespace into DefectDojo, so the runtime and CI
+  # findings of a codebase meet in one DefectDojo product. Requires Trivy Operator in the cluster and the DefectDojo
+  # integration Secret in the operator namespace. Stages of external clusters are skipped.
+  # Limits: one DefectDojo serves one tenant, because product names are global in DefectDojo; DefectDojo must have
+  # deduplication enabled (enable_deduplication); runtime medium and low counts are 0 while Trivy Operator keeps
+  # its HIGH,CRITICAL severity policy.
+  # Access: the operator reads the reports, ReplicaSets, Deployments and Jobs of a Stage namespace only through a
+  # RoleBinding that the runtime security controller creates in that namespace after it verified that the tenant owns
+  # it (label app.edp.epam.com/tenant). A failure to create it is logged and retried; it never blocks Stage
+  # provisioning. No cluster-wide read is granted. The operator holds only the bind verb on the reader ClusterRole.
+  # With tenancyEngine=capsule the RoleBinding is created through the Capsule admin binding.
+  # Not supported on OpenShift, where ownership of a Project is not verified: nothing is granted or imported.
+  enabled: false
+  # -- Name of the Secret in the operator namespace with the DefectDojo `url` and `token` keys.
+  # While the Secret is absent nothing is imported.
+  secretName: ci-defectdojo
+  # -- DefectDojo product type the products are created in.
+  productType: KubeRocketCI
+  # -- Period between two passes over the reports of a Stage namespace, a Go duration.
+  pollInterval: 5m
+  # -- Number of Stages processed at the same time. Imports into one DefectDojo test always run one at a time.
+  concurrency: 2
+
 serviceAccount:
   annotations: {}

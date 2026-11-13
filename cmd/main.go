@@ -31,9 +31,11 @@ import (
 	cdPipeApiV1 "github.com/epam/edp-cd-pipeline-operator/v2/api/v1"
 	"github.com/epam/edp-cd-pipeline-operator/v2/internal/controller/cdpipeline"
 	"github.com/epam/edp-cd-pipeline-operator/v2/internal/controller/clustersecret"
+	"github.com/epam/edp-cd-pipeline-operator/v2/internal/controller/runtimesecurity"
 	"github.com/epam/edp-cd-pipeline-operator/v2/internal/controller/stage"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/argocd"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/aws"
+	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/defectdojo"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/objectmodifier"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/util/cluster"
 	"github.com/epam/edp-cd-pipeline-operator/v2/pkg/webhook"
@@ -261,6 +263,24 @@ func main() {
 		SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "cluster-secret")
 		os.Exit(1)
+	}
+
+	securityConfig, err := runtimesecurity.ConfigFromEnv()
+	if err != nil {
+		setupLog.Error(err, "invalid runtime security configuration")
+		os.Exit(1)
+	}
+
+	if securityConfig.Enabled {
+		if err = runtimesecurity.NewReconciler(
+			cl,
+			ns,
+			securityConfig,
+			runtimesecurity.NewConnector(defectdojo.New()),
+		).SetupWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create controller", "controller", "runtime-security")
+			os.Exit(1)
+		}
 	}
 
 	webhooksEnabled := os.Getenv("ENABLE_WEBHOOKS") != "false"

@@ -1,0 +1,88 @@
+{{- if and .Values.security.enabled (ne .Values.global.platform "openshift") -}}
+# Nothing here is bound cluster-wide. The runtime security controller binds the reader ClusterRole to the operator
+# ServiceAccount with a RoleBinding in each Stage namespace, after it verified the tenant ownership of the namespace.
+# The operator holds only the bind verb on the reader ClusterRole, not its reads.
+# OpenShift renders nothing: ownership of a Project is not verified there, so no read is granted.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    {{- include "cd-pipeline-operator.labels" . | nindent 4 }}
+  name: edp-{{ .Values.name }}-{{ .Release.Namespace }}-runtime-security
+rules:
+# Trivy Operator reports of a Stage namespace. Read-only.
+- apiGroups:
+    - aquasecurity.github.io
+  resources:
+    - vulnerabilityreports
+    - exposedsecretreports
+  verbs:
+    - get
+    - list
+# A report names a ReplicaSet; the owning Deployment and its revision tell whether the report is current.
+- apiGroups:
+    - apps
+  resources:
+    - replicasets
+    - deployments
+  verbs:
+    - get
+    - list
+# A Job of a CronJob reports under the CronJob; the Jobs tell the owner and the newest run.
+- apiGroups:
+    - batch
+  resources:
+    - jobs
+  verbs:
+    - get
+    - list
+
+---
+
+# Lets the operator bind the reader ClusterRole without holding its reads.
+# tenancyEngine=capsule: Capsule gives the operator ClusterRole admin inside each adopted namespace, which covers
+# creating and deleting the RoleBinding, so only bind is added here.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    {{- include "cd-pipeline-operator.labels" . | nindent 4 }}
+  name: edp-{{ .Values.name }}-{{ .Release.Namespace }}-runtime-security-binder
+rules:
+- apiGroups:
+    - rbac.authorization.k8s.io
+  resources:
+    - clusterroles
+  resourceNames:
+    - edp-{{ .Values.name }}-{{ .Release.Namespace }}-runtime-security
+  verbs:
+    - bind
+{{- if eq .Values.tenancyEngine "none" }}
+# Create comes from the target-namespace ClusterRole.
+- apiGroups:
+    - rbac.authorization.k8s.io
+  resources:
+    - rolebindings
+  resourceNames:
+    - runtime-security-reader
+  verbs:
+    - delete
+{{- end }}
+
+---
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  labels:
+    {{- include "cd-pipeline-operator.labels" . | nindent 4 }}
+  name: edp-{{ .Values.name }}-{{ .Release.Namespace }}-runtime-security-binder
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: edp-{{ .Values.name }}-{{ .Release.Namespace }}-runtime-security-binder
+subjects:
+  - kind: ServiceAccount
+    name: edp-{{ .Values.name }}
+    namespace: {{ .Release.Namespace }}
+{{- end -}}

@@ -58,6 +58,22 @@ spec:
               value: "{{ .Values.global.developerGroupName }}"
             - name: ENABLE_WEBHOOKS
               value: "{{ .Values.enableWebhooks }}"
+          {{- if and .Values.security.enabled (ne .Values.global.platform "openshift") }}
+            - name: SECURITY_ENABLED
+              value: "true"
+            - name: SECURITY_SERVICE_ACCOUNT
+              value: edp-{{ .Values.name }}
+            - name: SECURITY_READER_CLUSTER_ROLE
+              value: edp-{{ .Values.name }}-{{ .Release.Namespace }}-runtime-security
+            - name: SECURITY_SECRET_NAME
+              value: {{ .Values.security.secretName | quote }}
+            - name: SECURITY_PRODUCT_TYPE
+              value: {{ .Values.security.productType | quote }}
+            - name: SECURITY_POLL_INTERVAL
+              value: {{ .Values.security.pollInterval | quote }}
+            - name: SECURITY_CONCURRENCY
+              value: {{ .Values.security.concurrency | quote }}
+          {{- end }}
           ports:
             - containerPort: 8081
               name: health
